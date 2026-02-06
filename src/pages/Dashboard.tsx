@@ -49,14 +49,11 @@ const Dashboard: React.FC = () => {
 
       {/* Placeholder for DocumentList and PdfViewer */}
       <h3>Your Documents</h3>
-      <p>[DocumentList component will go here]</p>
+      <p>Documents will go here</p>
 
-      <h3>PDF Viewer</h3>
-      <p>[PdfViewer component will go here]</p>
+      <hr style={{ margin: '30px 0' }} />
 
-      <hr style={{ margin: '20px 0' }} />
-
-      <h3>Backend Prototype Tables for FigJam (4 Tables)</h3>
+    <h3>Backend Prototype Tables for FigJam (4 Tables)</h3>
       <div style={{ backgroundColor: '#f0f0f0', padding: '15px', borderRadius: '5px', marginBottom: '20px', overflowX: 'auto' }}>
         {/* Table: documents */}
         <h4 style={{ marginBottom: '10px' }}>Table: documents</h4>

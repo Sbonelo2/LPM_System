@@ -32,7 +32,7 @@ const Login: React.FC = () => {
     setMessage('');
 
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data: _data, error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       setMessage('Sign up successful! Check your email for confirmation.');
       // Optional: Automatically log in or redirect after sign up
@@ -73,6 +73,16 @@ const Login: React.FC = () => {
         </button>
       </form>
       {message && <p>{message}</p>}
+
+      <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
+        <h3>Dummy User Credentials for Testing:</h3>
+        <p><strong>Email:</strong> <code>test@email.co.za</code></p>
+        <p><strong>Password:</strong> <code>Pass123</code></p>
+        <p style={{ fontSize: '0.8em', color: '#666' }}>
+          <em>Please use the "Sign Up" button above to register this user in Supabase first,
+          then you can log in.</em>
+        </p>
+      </div>
     </div>
   );
 };

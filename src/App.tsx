@@ -29,7 +29,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         setUser(session?.user || null);
         setLoading(false);
         if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
@@ -42,7 +42,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     // Initial check
     const getUserSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error: _error } = await supabase.auth.getSession();
       setUser(session?.user || null);
       setLoading(false);
       if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
