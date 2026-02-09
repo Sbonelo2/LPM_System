@@ -3,6 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // Import useAuth
 import UploadDocument from "../components/UploadDocument";
+import AddHostModal from "../components/AddHostModal";
 // import DocumentList from '../components/DocumentList'; // Placeholder
 // import PdfViewer from '../components/PdfViewer'; // Placeholder
 
@@ -10,6 +11,7 @@ const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [message, setMessage] = useState("");
+  const [addHostOpen, setAddHostOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -45,7 +47,21 @@ const Dashboard: React.FC = () => {
       <h2>Dashboard</h2>
       <p>Welcome, {user.email}!</p>
       <button onClick={handleLogout}>Logout</button>
+      <button
+        onClick={() => setAddHostOpen(true)}
+        style={{ marginLeft: "10px" }}
+      >
+        Add New Host
+      </button>
       {message && <p>{message}</p>}
+
+      <AddHostModal
+        open={addHostOpen}
+        onClose={() => setAddHostOpen(false)}
+        onCreate={(payload) => {
+          console.log("Create host:", payload);
+        }}
+      />
 
       <UploadDocument />
 

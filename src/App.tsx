@@ -6,42 +6,43 @@ import Dashboard from './pages/Dashboard';
 import { AuthContext } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import './App.css';
+import AddHostModal from './components/AddHostModal';
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user || null);
-        setLoading(false);
-        if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
-          navigate('/dashboard');
-        } else if (!session?.user && window.location.pathname === '/dashboard') {
-          navigate('/login');
-        }
-      }
-    );
+  // useEffect(() => {
+  //   const { data: authListener } = supabase.auth.onAuthStateChange(
+  //     async (_event, session) => {
+  //       setUser(session?.user || null);
+  //       setLoading(false);
+  //       if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
+  //         navigate('/dashboard');
+  //       } else if (!session?.user && window.location.pathname === '/dashboard') {
+  //         navigate('/login');
+  //       }
+  //     }
+  //   );
 
-    // Initial check
-    const getUserSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
-      setLoading(false);
-      if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
-        navigate('/dashboard');
-      } else if (!session?.user && window.location.pathname === '/dashboard') {
-        navigate('/login');
-      }
-    };
-    getUserSession();
+  //   // Initial check
+  //   const getUserSession = async () => {
+  //     const { data: { session } } = await supabase.auth.getSession();
+  //     setUser(session?.user || null);
+  //     setLoading(false);
+  //     if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {
+  //       navigate('/dashboard');
+  //     } else if (!session?.user && window.location.pathname === '/dashboard') {
+  //       navigate('/login');
+  //     }
+  //   };
+  //   getUserSession();
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, [navigate]);
+  //   return () => {
+  //     authListener.subscription.unsubscribe();
+  //   };
+  // }, [navigate]);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
@@ -71,18 +72,7 @@ function App() {
   return (
     <AuthProvider>
       <div className="App">
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Login />} /> {/* Default route */}
-        </Routes>
+        <AddHostModal open={true} onClose={() => {}}/>
       </div>
     </AuthProvider>
   );
