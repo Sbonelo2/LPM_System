@@ -28,8 +28,8 @@ export default function DocumentList() {
 
       if (error) throw error
       setDocuments(data || [])
-    } catch (error: any) {
-      console.error('Error fetching documents:', error.message)
+    } catch (error: unknown) {
+      console.error('Error fetching documents:', error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setLoading(false)
     }

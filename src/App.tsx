@@ -1,29 +1,14 @@
-import React, { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { supabase } from './services/supabaseClient';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import { AuthContext } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
 import './App.css';
 
-// Define a type for the user object, or use `any` for simplicity for now
-interface AuthContextType {
-  user: any; // Supabase user object
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Custom hook to use the AuthContext
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
@@ -42,7 +27,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     // Initial check
     const getUserSession = async () => {
-      const { data: { session }, error: _error } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       setLoading(false);
       if (session?.user && (window.location.pathname === '/' || window.location.pathname === '/login')) {

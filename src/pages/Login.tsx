@@ -19,8 +19,8 @@ const Login: React.FC = () => {
       if (error) throw error;
       setMessage('Logged in successfully!');
       navigate('/dashboard'); // Redirect to dashboard on successful login
-    } catch (error: any) {
-      setMessage(`Login failed: ${error.message}`);
+    } catch (error: unknown) {
+      setMessage(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -32,12 +32,12 @@ const Login: React.FC = () => {
     setMessage('');
 
     try {
-      const { data: _data, error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
       setMessage('Sign up successful! Check your email for confirmation.');
       // Optional: Automatically log in or redirect after sign up
-    } catch (error: any) {
-      setMessage(`Sign up failed: ${error.message}`);
+    } catch (error: unknown) {
+      setMessage(`Sign up failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
