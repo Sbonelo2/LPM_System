@@ -1,7 +1,13 @@
 import { createContext } from 'react';
 
 export interface AuthContextType {
-  user: { id: string; email?: string } | null;
+  user: { 
+    id: string; 
+    email?: string; 
+    user_metadata?: {
+      role?: string;
+    }
+  } | null;
   loading: boolean;
 }
 
