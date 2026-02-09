@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // Import useAuth
-import UploadDocument from "../components/UploadDocument";
+import UploadDocument from "../components/UploadDocuments";
+
 // import DocumentList from '../components/DocumentList'; // Placeholder
 // import PdfViewer from '../components/PdfViewer'; // Placeholder
 
