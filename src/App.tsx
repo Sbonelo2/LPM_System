@@ -8,6 +8,7 @@ import { AuthContext } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import './App.css';
 
+
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<{ id: string; email?: string; user_metadata?: { role?: string } } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -94,11 +95,13 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <Dashboard />
+                
               </MainLayout>
             </ProtectedRoute>
           }
         />
         <Route path="/" element={<Login />} />
+       
       </Routes>
     </AuthProvider>
   );
