@@ -76,7 +76,7 @@ const Login: React.FC = () => {
 
       <div style={{ marginTop: '20px', padding: '10px', border: '1px solid #ccc', borderRadius: '5px' }}>
         <h3>Dummy User Credentials for Testing:</h3>
-        <p><strong>Email:</strong> <code>test@email.co.za</code></p>
+        <p><strong>Email:</strong> <code>test@mail.co.za</code></p>
         <p><strong>Password:</strong> <code>Pass123</code></p>
         <p style={{ fontSize: '0.8em', color: '#666' }}>
           <em>Please use the "Sign Up" button above to register this user in Supabase first,
