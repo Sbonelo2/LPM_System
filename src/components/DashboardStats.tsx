@@ -1,40 +1,24 @@
 import React from 'react';
 import './DashboardStats.css';
 
-interface DashboardStatsProps {
-  myPlacements?: number;
-  activePlacement?: number;
-  pendingConfirmation?: number;
-  profileStatus?: string;
+interface Stat {
+  label: string;
+  value: string | number;
 }
 
-const DashboardStats: React.FC<DashboardStatsProps> = ({
-  myPlacements = 1,
-  activePlacement = 0,
-  pendingConfirmation = 0,
-  profileStatus = 'ACTIVE',
-}) => {
+interface DashboardStatsProps {
+  stats: Stat[];
+}
+
+const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
   return (
     <div className="dashboard-stats">
-      <div className="stat-box">
-        <h3>My Placements</h3>
-        <p className="stat-number">{myPlacements}</p>
-      </div>
-      
-      <div className="stat-box">
-        <h3>Active Placement</h3>
-        <p className="stat-number">{activePlacement}</p>
-      </div>
-      
-      <div className="stat-box">
-        <h3>Pending Confirmation</h3>
-        <p className="stat-number">{pendingConfirmation}</p>
-      </div>
-      
-      <div className="stat-box">
-        <h3>Profile Status</h3>
-        <p className="stat-status">{profileStatus}</p>
-      </div>
+      {stats.map((stat, index) => (
+        <div key={index} className="stat-box">
+          <h3>{stat.label}</h3>
+          <p className="stat-number">{stat.value}</p>
+        </div>
+      ))}
     </div>
   );
 };

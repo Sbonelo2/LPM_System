@@ -3,7 +3,7 @@ import React from 'react';
 import './card.css'; // Import the dedicated CSS file
 
 interface CardProps {
-  title: string;
+  title?: string; // Made optional
   subtitle?: string;
   description?: string;
   children?: React.ReactNode;
@@ -28,9 +28,11 @@ const Card: React.FC<CardProps> = ({
       className={`card-base ${onClick ? 'card-clickable' : ''} ${className || ''}`}
       onClick={onClick}
     >
-      <h2 className="card-title">
-        {title}
-      </h2>
+      {title && ( // Conditionally render title
+        <h2 className="card-title">
+          {title}
+        </h2>
+      )}
       {subtitle && (
         <h3 className="card-subtitle">
           {subtitle}
