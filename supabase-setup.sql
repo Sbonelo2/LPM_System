@@ -18,6 +18,10 @@ CREATE POLICY "Users can view their own documents." ON public.documents
 CREATE POLICY "Only authenticated users can upload documents." ON public.documents
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+-- Policy to allow authenticated users to delete their own documents
+CREATE POLICY "Allow authenticated users to delete their own documents." ON public.documents
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- Create storage bucket for documents
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('documents', 'documents', true)
@@ -43,7 +47,7 @@ CREATE POLICY "Allow authenticated users to view documents." ON storage.objects
   );
 
 -- Allow authenticated users to delete their own documents
-CREATE POLICY "Allow authenticated users to delete their own documents." ON storage.objects
+CREATE POLICY "Allow authenticated users to delete their own documents in storage." ON storage.objects
   FOR DELETE USING (
     bucket_id = 'documents' AND
     auth.uid()::text = split_part(name, '/', 1)
