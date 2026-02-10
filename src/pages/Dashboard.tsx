@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // Import useAuth
 import UploadDocument from "../components/UploadDocuments";
 import DocumentList from "../components/DocumentsList";
-
+import Button from "../components/Button";
+import DashboardStats from "../components/DashboardStats";
 import AddHostModal from "../components/AddHostModal";
 // import DocumentList from '../components/DocumentList'; // Placeholder
 // import PdfViewer from '../components/PdfViewer'; // Placeholder
@@ -48,6 +49,10 @@ const Dashboard: React.FC = () => {
     <div>
       <h2>Dashboard</h2>
       <p>Welcome, {user.email}!</p>
+      
+      {/* Dashboard Stats */}
+      <DashboardStats />
+      
       <button onClick={handleLogout}>Logout</button>
       <button
         onClick={() => setAddHostOpen(true)}
