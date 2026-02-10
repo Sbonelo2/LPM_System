@@ -74,3 +74,8 @@ export default function PillButton(props: PillButtonProps) {
     </button>
   );
 }
+
+
+//example usage
+{/* <PillButton text="Dashboard" to="/dashboard" badge={{ variant: "dot" }} /> */}
+{/* <PillButton text="Dashboard" to="/dashboard" badge={{ variant: "count", count: 5 }} /> */}

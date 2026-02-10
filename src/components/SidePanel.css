@@ -1,0 +1,31 @@
+.side-panel {
+  width: 260px;
+  padding: 18px 18px 22px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.side-panel__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: #111;
+}
+
+.side-panel__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.side-panel__pill {
+  width: 170px;
+  justify-content: flex-start;
+  padding-left: 18px;
+}
+
+.side-panel__bottom {
+  margin-top: auto;
+}
