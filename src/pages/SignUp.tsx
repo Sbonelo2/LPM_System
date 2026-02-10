@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
@@ -88,6 +88,9 @@ const SignUp: React.FC = () => {
               className="auth-cta"
               disabled={loading}
             />
+            <div className="auth-links">
+              Already have an account? <Link to="/login">Login</Link>
+            </div>
           </div>
         </form>
 
