@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth"; // Import useAuth
-import UploadDocument from "../components/UploadDocuments";
-import DocumentList from "../components/DocumentsList";
-import Button from "../components/Button";
+import { useAuth } from "../hooks/useAuth";
 import DashboardStats from "../components/DashboardStats";
 import AddHostModal from "../components/AddHostModal";
-// import DocumentList from '../components/DocumentList'; // Placeholder
-// import PdfViewer from '../components/PdfViewer'; // Placeholder
+import TableComponent from "../components/TableComponent";
+import Card from "../components/Card"; // Import Card component
+import "./Dashboard.css"; // Import Dashboard CSS
+
+// Placeholder for table data structure
+interface PlacementData {
+  id: string;
+  student: string;
+  host: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
@@ -45,38 +53,67 @@ const Dashboard: React.FC = () => {
     return null; // Should be redirected by ProtectedRoute
   }
 
+  // Placeholder data for DashboardStats (adjusted for empty state)
+  const dashboardStats = [
+    { label: "MY PLACEMENTS", value: 0 },
+    { label: "ACTIVE PLACEMENTS", value: 0 },
+    { label: "PENDING PLACEMENTS", value: 0 },
+    { label: "PROFILE STATUS", value: "Incomplete" },
+  ];
+
+  // Placeholder columns for TableComponent
+  const placementColumns = [
+    { key: "student", header: "Student" },
+    { key: "host", header: "Host" },
+    { key: "startDate", header: "Start Date" },
+    { key: "endDate", header: "End Date" },
+    { key: "status", header: "Status" },
+  ];
+
+  // Empty data for TableComponent
+  const placementData: PlacementData[] = [];
+
   return (
-    <div>
-      <h2>Dashboard</h2>
-      <p>Welcome, {user.email}!</p>
-      
-      {/* Dashboard Stats */}
-      <DashboardStats />
-      
-      <button onClick={handleLogout}>Logout</button>
-      <button
-        onClick={() => setAddHostOpen(true)}
-        style={{ marginLeft: "10px" }}
-      >
-        Add New Host
-      </button>
-      {message && <p>{message}</p>}
+    <div className="dashboard-layout">
+      {/* SideBar is provided by MainLayout in App.tsx */}
+      <div className="dashboard-content">
+        <div className="dashboard-header">
+          <h2>Dashboard</h2>
+          {message && <p>{message}</p>}
+          {/* Buttons removed as per user request */}
+        </div>
 
-      <AddHostModal
-        open={addHostOpen}
-        onClose={() => setAddHostOpen(false)}
-        onCreate={(payload) => {
-          console.log("Create host:", payload);
-        }}
-      />
+        <div className="dashboard-stats-container">
+          <DashboardStats stats={dashboardStats} />
+        </div>
 
-      <UploadDocument />
+        {/* MY PLACEMENTS Section */}
+        <div className="dashboard-my-placements-container">
+          <h3>MY PLACEMENTS</h3>
+          <Card>
+            <TableComponent
+              columns={[
+                { key: "host", header: "Host" },
+                { key: "program", header: "Program" },
+                { key: "status", header: "Status" },
+                { key: "startDate", header: "Start Date" },
+                { key: "endDate", header: "End Date" },
+              ]}
+              data={[]} // Empty data for now
+              caption="Your specific placements will be listed here."
+            />
+          </Card>
+        </div>
 
-      <DocumentList />
 
-      {/* Placeholder for DocumentList and PdfViewer */}
-
-
+        <AddHostModal
+          open={addHostOpen}
+          onClose={() => setAddHostOpen(false)}
+          onCreate={(payload) => {
+            console.log("Create host:", payload);
+          }}
+        />
+      </div>
     </div>
   );
 };

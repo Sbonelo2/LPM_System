@@ -42,8 +42,10 @@ const SideBar: React.FC = () => {
         { label: 'Registrations', path: '/registrations' }
       ],
       learner: [
-        { label: 'My Placements', path: '/my-placements' },
-        { label: 'My Documents', path: '/my-documents' }
+        { label: 'MY PLACEMENTS', path: '/my-placements' },
+        { label: 'MY DOCUMENTS', path: '/my-documents' },
+        { label: 'PROFILE', path: '/profile' },
+        { label: 'NOTIFICATIONS', path: '/notifications' }
       ],
       qa_officer: [
         { label: 'PLACEMENTS', path: '/placements' },
