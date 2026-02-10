@@ -1,33 +1,40 @@
 import React, { useState } from "react";
-import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import "./Auth.css";
 
-const Login: React.FC = () => {
+const SignUp: React.FC = () => {
+  const [fullName, setFullName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            fullName,
+          },
+        },
       });
+
       if (error) throw error;
-      setMessage("Logged in successfully!");
-      navigate("/dashboard"); // Redirect to dashboard on successful login
+      setMessage("Sign up successful! Check your email for confirmation.");
+      navigate("/login");
     } catch (error: unknown) {
       setMessage(
-        `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Sign up failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setLoading(false);
@@ -37,9 +44,19 @@ const Login: React.FC = () => {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-title">Login</h1>
+        <h1 className="auth-title">Sign Up</h1>
 
-        <form className="auth-form" onSubmit={handleLogin}>
+        <form className="auth-form" onSubmit={handleSignUp}>
+          <InputField
+            label="Full Name"
+            value={fullName}
+            onChange={setFullName}
+            placeholder="John Doe"
+            disabled={loading}
+            name="fullName"
+            autoComplete="name"
+          />
+
           <InputField
             label="Email"
             value={email}
@@ -61,12 +78,12 @@ const Login: React.FC = () => {
             required
             disabled={loading}
             name="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
           />
 
           <div className="auth-actions">
             <Button
-              text={loading ? "Loading..." : "Sign In"}
+              text={loading ? "Loading..." : "Create Account"}
               type="submit"
               className="auth-cta"
               disabled={loading}
@@ -80,4 +97,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default SignUp;
