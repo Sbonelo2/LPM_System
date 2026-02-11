@@ -1,7 +1,8 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { supabase } from '../services/supabaseClient';
+import React from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { supabase } from '../services/supabaseClient'
+import NotificationBell from './NotificationBell';
 
 type UserRole = 'admin' | 'learner' | 'qa_officer' | 'programme_coordinator';
 
@@ -100,37 +101,41 @@ const SideBar: React.FC = () => {
       
       <nav style={{ flex: 1 }}>
         {menuItems.map((item, index) => (
-          <button
-            key={index}
-            onClick={() => item.action ? item.action() : handleNavigation(item.path!)}
-            style={{
-              width: '100%',
-              padding: '15px 20px',
-              marginBottom: '10px',
-              backgroundColor: isActive(item.path) ? '#ffffff' : '#ffffff',
-              border: 'none',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              cursor: 'pointer',
-              fontSize: item.isSpecial ? '18px' : '14px',
-              fontWeight: item.isSpecial ? 'bold' : '500',
-              color: item.isSignOut ? '#dc3545' : '#2c3e50',
-              textAlign: 'left',
-              transition: 'all 0.2s ease',
-              outline: 'none',
-              ...(isActive(item.path) && { border: '2px solid #007bff' })
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
-            }}
-          >
-            {item.label}
-          </button>
+          <div key={index} style={{ marginBottom: '10px' }}>
+            {item.label === 'NOTIFICATIONS' ? (
+              <NotificationBell onClick={() => handleNavigation(item.path!)} />
+            ) : (
+              <button
+                onClick={() => item.action ? item.action() : handleNavigation(item.path!)}
+                style={{
+                  width: '100%',
+                  padding: '15px 20px',
+                  backgroundColor: isActive(item.path) ? '#ffffff' : '#ffffff',
+                  border: 'none',
+                  borderRadius: '12px',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  cursor: 'pointer',
+                  fontSize: item.isSpecial ? '18px' : '14px',
+                  fontWeight: item.isSpecial ? 'bold' : '500',
+                  color: item.isSignOut ? '#dc3545' : '#2c3e50',
+                  textAlign: 'left',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  ...(isActive(item.path) && { border: '2px solid #007bff' })
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                }}
+              >
+                {item.label}
+              </button>
+            )}
+          </div>
         ))}
       </nav>
       
