@@ -24,7 +24,7 @@ const Dashboard: React.FC = () => {
       navigate("/login");
     }
   }, [user, loading, navigate]);
-
+// addded a comment for debugging purposes
   const handleLogout = async () => {
     setMessage("");
 
