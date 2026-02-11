@@ -102,7 +102,7 @@ export default function Documents(): React.JSX.Element {
       } = supabase.storage.from("documents").getPublicUrl(filePath);
 
       const taggedFileName = `${selectedType}__${selectedFile.name}`; // Simplified tag
-      const { data: inserted, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from("documents")
         .insert([
           {

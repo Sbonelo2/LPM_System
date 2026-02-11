@@ -40,7 +40,6 @@ const Dashboard: React.FC = () => {
       <div className="dashboard-content">
         <div className="dashboard-header">
           <h2>Dashboard</h2>
-          {message && <p>{message}</p>}
           {/* Buttons removed as per user request */}
         </div>
 
