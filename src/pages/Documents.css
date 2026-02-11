@@ -29,6 +29,24 @@
   gap: 20px;
 }
 
+.no-documents-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+
+.no-documents-message h3 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.no-documents-message p {
+  margin: 0;
+  font-size: 16px;
+}
+
 .document-card {
   padding: 22px;
 }

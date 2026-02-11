@@ -1,12 +1,12 @@
 import React from "react";
 import "./MyDocuments.css";
+import Documents from "./Documents";
 
 const MyDocuments: React.FC = () => {
   return (
     <div className="documents-container">
-      <main className="documents-main">
-        <h1>Documents</h1>
-      </main>
+      <h1>Documents</h1>
+      <Documents />
     </div>
   );
 };
