@@ -1,0 +1,124 @@
+.document-card {
+  width: 100%;
+  max-width: 760px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 22px 24px;
+  box-sizing: border-box;
+
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+.document-card__title {
+  margin: 0 0 16px 0;
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+
+.document-card__panel {
+  border: 1px solid #e6e9ef;
+  border-radius: 6px;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #fbfcfe;
+}
+
+.document-card__panel-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+  margin-bottom: 10px;
+}
+
+.document-card__current {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 16px;
+  align-items: center;
+
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #eef1f5;
+  background: #fff;
+
+  text-align: left;
+  cursor: pointer;
+}
+
+.document-card__current:disabled {
+  cursor: default;
+}
+
+.document-card__thumb {
+  width: 110px;
+  height: 64px;
+  background: #dcdcdc;
+  border-radius: 2px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.document-card__thumb-text {
+  font-size: 12px;
+  font-weight: 800;
+  color: #8a8a8a;
+  text-align: center;
+  padding: 0 6px;
+}
+
+.document-card__meta {
+  display: grid;
+  gap: 6px;
+}
+
+.document-card__file {
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.document-card__date {
+  font-size: 16px;
+  color: #4b5563;
+}
+
+.document-card__toggle {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  color: #0b49ff;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.document-card__chevron {
+  width: 10px;
+  height: 10px;
+  border-right: 3px solid #0b49ff;
+  border-bottom: 3px solid #0b49ff;
+  transform: rotate(45deg);
+  margin-left: 6px;
+}
+
+.document-card__chevron--up {
+  transform: rotate(-135deg);
+}
+
+.document-card__previous {
+  display: none;
+  margin-top: 14px;
+}
+
+.document-card__previous--open {
+  display: block;
+}

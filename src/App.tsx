@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { supabase } from './services/supabaseClient';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import SignUp from './pages/SignUp';
-import { AuthContext } from './contexts/AuthContext';
-import { useAuth } from './hooks/useAuth';
-import SideBar from './components/SideBar';
-import Footer from './components/Footer';
-import './App.css';
-import MyDocuments from './pages/MyDocuments';
+import React, { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { supabase } from "./services/supabaseClient";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import SignUp from "./pages/SignUp";
+import Documents from "./pages/Documents";
+import { AuthContext } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
+import SideBar from "./components/SideBar";
+import Footer from "./components/Footer";
+import "./App.css";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -133,11 +133,21 @@ function App() {
           }
         />
         <Route
-          path="/myDocuments"
+          path="/documents"
           element={
             <ProtectedRoute>
               <MainLayout>
-                <MyDocuments />
+                <Documents />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-documents"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Documents />
               </MainLayout>
             </ProtectedRoute>
           }
