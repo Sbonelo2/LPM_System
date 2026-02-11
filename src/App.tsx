@@ -5,12 +5,12 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
-import Documents from "./pages/Documents";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
+import MyDocuments from "./pages/MyDocuments";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -133,21 +133,11 @@ function App() {
           }
         />
         <Route
-          path="/documents"
+          path="/myDocuments"
           element={
             <ProtectedRoute>
               <MainLayout>
-                <Documents />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-documents"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Documents />
+                <MyDocuments/>
               </MainLayout>
             </ProtectedRoute>
           }
