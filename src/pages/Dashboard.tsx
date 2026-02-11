@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import DashboardStats from "../components/DashboardStats";
@@ -8,20 +7,9 @@ import TableComponent from "../components/TableComponent";
 import Card from "../components/Card"; // Import Card component
 import "./Dashboard.css"; // Import Dashboard CSS
 
-// Placeholder for table data structure
-interface PlacementData {
-  id: string;
-  student: string;
-  host: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-}
-
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [message, setMessage] = useState("");
   const [addHostOpen, setAddHostOpen] = useState(false);
 
   useEffect(() => {

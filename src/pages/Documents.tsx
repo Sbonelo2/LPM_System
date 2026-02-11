@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import { supabase } from "../services/supabaseClient";
@@ -10,14 +10,6 @@ type DocumentTypeKey =
   | "TERTIARY_QUALIFICATION"
   | "PROOF_OF_ADDRESS";
 
-type DocumentRecord = {
-  id: string;
-  user_id: string;
-  file_name: string;
-  file_url: string;
-  created_at: string;
-};
-
 const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
   { key: "ID_COPY", label: "ID Copy" },
   { key: "MATRIC_CERTIFICATE", label: "Matric Certificate" },
@@ -25,33 +17,8 @@ const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
   { key: "PROOF_OF_ADDRESS", label: "Proof of Address" },
 ];
 
-function resolveDocumentType(fileName: string): DocumentTypeKey | null {
-  if (fileName.startsWith(TYPE_PREFIX)) {
-    const typeSplitIndex = fileName.indexOf("__", TYPE_PREFIX.length);
-    if (typeSplitIndex > -1) {
-      const key = fileName.slice(TYPE_PREFIX.length, typeSplitIndex);
-      if (DOCUMENT_TYPES.some((entry) => entry.key === key)) {
-        return key as DocumentTypeKey;
-      }
-    }
-  }
-
-  const normalized = fileName.toLowerCase();
-  if (normalized.includes("id")) return "ID_COPY";
-  if (normalized.includes("matric")) return "MATRIC_CERTIFICATE";
-  if (normalized.includes("tertiary") || normalized.includes("qual")) {
-    return "TERTIARY_QUALIFICATION";
-  }
-  if (normalized.includes("proof") || normalized.includes("address")) {
-    return "PROOF_OF_ADDRESS";
-  }
-
-  return null;
-}
-
 export default function Documents(): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -70,14 +37,10 @@ export default function Documents(): React.JSX.Element {
           return;
         }
 
-        const { data, error } = await supabase
-          .from("documents")
-          .select("id, user_id, file_name, file_url, created_at")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setDocuments(data ?? []);
+        // Documents are no longer being fetched or stored in state as they were unused.
+        // If document display is needed, this logic will need to be re-introduced
+        // along with components to render the documents.
+        
       } catch (error: unknown) {
         setFeedback(
           `Failed to load documents: ${
@@ -138,7 +101,7 @@ export default function Documents(): React.JSX.Element {
         data: { publicUrl },
       } = supabase.storage.from("documents").getPublicUrl(filePath);
 
-      const taggedFileName = `${TYPE_PREFIX}${selectedType}__${selectedFile.name}`;
+      const taggedFileName = `${selectedType}__${selectedFile.name}`; // Simplified tag
       const { data: inserted, error: insertError } = await supabase
         .from("documents")
         .insert([
@@ -155,7 +118,7 @@ export default function Documents(): React.JSX.Element {
         throw insertError;
       }
 
-      setDocuments((prev) => [inserted, ...prev]);
+      // No longer updating 'documents' state as it is removed.
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
