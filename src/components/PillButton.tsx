@@ -1,3 +1,4 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import "./PillButton.css";
 
@@ -11,6 +12,7 @@ type BaseProps = {
 };
 
 type ButtonProps = BaseProps & {
+  to?: never;
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
@@ -74,8 +76,3 @@ export default function PillButton(props: PillButtonProps) {
     </button>
   );
 }
-
-
-//example usage
-{/* <PillButton text="Dashboard" to="/dashboard" badge={{ variant: "dot" }} /> */}
-{/* <PillButton text="Dashboard" to="/dashboard" badge={{ variant: "count", count: 5 }} /> */}
