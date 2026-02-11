@@ -1,0 +1,10 @@
+.documents-container {
+  display: flex;
+  height: 100vh;
+}
+
+.documents-main {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}

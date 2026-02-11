@@ -44,7 +44,7 @@ const SideBar: React.FC = () => {
       ],
       learner: [
         { label: 'MY PLACEMENTS', path: '/my-placements' },
-        { label: 'MY DOCUMENTS', path: '/my-documents' },
+        { label: 'MY DOCUMENTS', path: '/myDocuments' },
         { label: 'PROFILE', path: '/profile' },
         { label: 'NOTIFICATIONS', path: '/notifications' }
       ],
