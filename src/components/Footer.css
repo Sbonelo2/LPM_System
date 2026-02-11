@@ -1,0 +1,32 @@
+.footer-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 10px 20px; /* Add some horizontal padding */
+  background-color: #073f4e; /* Bluegreen-ish background */
+  text-align: center;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1); /* Adjust shadow for top edge */
+  z-index: 1000; /* Ensure it stays on top of other content, increased z-index */
+}
+
+.footer-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between; /* Distribute items with space between them */
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%; /* Ensure content takes full width to use space-between effectively */
+}
+
+.footer-logo {
+  height: 50px;
+}
+
+.footer-copyright {
+  font-size: 15px; /* Smaller font size */
+  color: #ffffff; /* White text color for contrast with dark background */
+  margin: 0;
+}

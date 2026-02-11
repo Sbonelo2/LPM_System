@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import SideBar from "./components/SideBar";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
+import Footer from "./components/Footer";
 import "./App.css";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -121,6 +122,7 @@ function App() {
         />
         <Route path="/" element={<Login />} />
       </Routes>
+      <Footer />
     </AuthProvider>
   );
 }
