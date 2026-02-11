@@ -105,6 +105,11 @@ const UploadDocument: React.FC = () => {
 
       setSelectedFile(null); // Clear selected file after successful upload
       setUploadedFileUrl(publicUrl); // Set the uploaded file URL
+
+      // Refresh the document list to show the new document
+      if ((window as any).refreshDocuments) {
+        (window as any).refreshDocuments();
+      }
     } catch (error: unknown) {
       console.error("Upload error:", error);
       setMessage(

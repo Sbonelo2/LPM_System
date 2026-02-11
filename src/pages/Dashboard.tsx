@@ -3,7 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth"; // Import useAuth
 import UploadDocument from "../components/UploadDocument";
-// import DocumentList from '../components/DocumentList'; // Placeholder
+import DocumentList from '../components/DocumentList'; // Uncommented
 // import PdfViewer from '../components/PdfViewer'; // Placeholder
 
 const Dashboard: React.FC = () => {
@@ -49,9 +49,8 @@ const Dashboard: React.FC = () => {
 
       <UploadDocument />
 
-      {/* Placeholder for DocumentList and PdfViewer */}
-      <h3>Your Documents</h3>
-      <p>Documents will go here</p>
+      {/* DocumentList component */}
+      <DocumentList />
 
       <hr style={{ margin: "30px 0" }} />
 
