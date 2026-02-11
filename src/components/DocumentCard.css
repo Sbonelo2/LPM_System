@@ -196,3 +196,102 @@
 .previous-document-delete:hover {
   background-color: #fee2e2;
 }
+
+@media (max-width: 768px) {
+  .document-card {
+    padding: 16px;
+  }
+
+  .document-card__title {
+    font-size: 20px;
+  }
+
+  .document-card__current {
+    grid-template-columns: 80px 1fr;
+    gap: 12px;
+  }
+
+  .document-card__thumb {
+    width: 80px;
+    height: 48px;
+  }
+
+  .document-card__file {
+    font-size: 16px;
+  }
+
+  .document-card__date {
+    font-size: 14px;
+  }
+
+  .document-card__toggle {
+    font-size: 16px;
+  }
+
+  .document-card__delete-btn {
+    font-size: 16px;
+    top: 12px;
+    right: 12px;
+  }
+
+  .previous-document-link {
+    font-size: 14px;
+  }
+
+  .previous-document-date {
+    font-size: 12px;
+  }
+
+  .previous-document-delete {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .document-card {
+    padding: 12px;
+  }
+
+  .document-card__title {
+    font-size: 18px;
+  }
+
+  .document-card__current {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .document-card__thumb {
+    width: 100%;
+    height: 60px;
+  }
+
+  .document-card__file {
+    font-size: 14px;
+  }
+
+  .document-card__date {
+    font-size: 12px;
+  }
+
+  .document-card__toggle {
+    font-size: 14px;
+  }
+
+  .document-card__delete-btn {
+    font-size: 14px;
+    top: 8px;
+    right: 8px;
+  }
+
+  .previous-document-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .previous-document-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

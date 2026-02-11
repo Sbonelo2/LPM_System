@@ -72,9 +72,6 @@ export default function Documents(): React.JSX.Element {
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [expandedType, setExpandedType] = useState<DocumentTypeKey | null>(
-    null,
-  );
 
   const groupedDocuments = useMemo(() => {
     const result: Record<DocumentTypeKey, DocumentRecord[]> = {
@@ -283,35 +280,20 @@ export default function Documents(): React.JSX.Element {
                   onCurrentClick={currentDoc ? () => window.open(currentDoc.file_url, '_blank') : undefined}
                   onDeleteCurrent={currentDoc ? () => handleDelete(currentDoc.id, currentDoc.file_name) : undefined}
                   showPreviousToggle={previousDocs.length > 0}
-                  expanded={expandedType === type.key}
-                  onExpandedChange={(expanded: boolean) => setExpandedType(expanded ? type.key : null)}
+                  defaultExpanded={false}
                 >
-                  {previousDocs.length > 0 && (
-                    <div className="previous-documents-list">
-                      {previousDocs.map((doc) => (
-                        <div key={doc.id} className="previous-document-item">
-                          <button
-                            className="previous-document-link"
-                            onClick={() => window.open(doc.file_url, '_blank')}
-                          >
-                            {stripTypePrefix(doc.file_name)}
-                          </button>
-                          <div className="previous-document-meta">
-                            <span className="previous-document-date">
-                              {new Date(doc.created_at).toLocaleDateString()}
-                            </span>
-                            <button
-                              className="previous-document-delete"
-                              onClick={() => handleDelete(doc.id, doc.file_name)}
-                              title="Delete document"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {previousDocs.map((doc) => (
+                    <DocumentCard
+                      key={doc.id}
+                      title={`${type.label} (Previous)`}
+                      currentFileName={stripTypePrefix(doc.file_name)}
+                      uploadedAt={new Date(doc.created_at).toLocaleDateString()}
+                      thumbnailLabel={type.label}
+                      onCurrentClick={() => window.open(doc.file_url, '_blank')}
+                      onDeleteCurrent={() => handleDelete(doc.id, doc.file_name)}
+                      showPreviousToggle={false}
+                    />
+                  ))}
                 </DocumentCard>
               );
             })}
