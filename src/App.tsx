@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { supabase } from "./services/supabaseClient";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import Dashboard from "./pages/Dashboard";
-import SideBar from "./components/SideBar";
-import { AuthContext } from "./contexts/AuthContext";
-import { useAuth } from "./hooks/useAuth";
-import Footer from "./components/Footer";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { supabase } from './services/supabaseClient';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import { AuthContext } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import './App.css';
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
