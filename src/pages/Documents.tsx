@@ -25,21 +25,6 @@ const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
   { key: "PROOF_OF_ADDRESS", label: "Proof of Address" },
 ];
 
-const TYPE_PREFIX = "__DOC_TYPE__";
-
-function stripTypePrefix(fileName: string): string {
-  if (!fileName.startsWith(TYPE_PREFIX)) {
-    return fileName;
-  }
-
-  const typeSplitIndex = fileName.indexOf("__", TYPE_PREFIX.length);
-  if (typeSplitIndex === -1) {
-    return fileName;
-  }
-
-  return fileName.slice(typeSplitIndex + 2);
-}
-
 function resolveDocumentType(fileName: string): DocumentTypeKey | null {
   if (fileName.startsWith(TYPE_PREFIX)) {
     const typeSplitIndex = fileName.indexOf("__", TYPE_PREFIX.length);
@@ -67,32 +52,10 @@ function resolveDocumentType(fileName: string): DocumentTypeKey | null {
 export default function Documents(): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [expandedType, setExpandedType] = useState<DocumentTypeKey | null>(
-    null,
-  );
-
-  const groupedDocuments = useMemo(() => {
-    const result: Record<DocumentTypeKey, DocumentRecord[]> = {
-      ID_COPY: [],
-      MATRIC_CERTIFICATE: [],
-      TERTIARY_QUALIFICATION: [],
-      PROOF_OF_ADDRESS: [],
-    };
-
-    documents.forEach((doc) => {
-      const type = resolveDocumentType(doc.file_name);
-      if (type) {
-        result[type].push(doc);
-      }
-    });
-
-    return result;
-  }, [documents]);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -121,8 +84,6 @@ export default function Documents(): React.JSX.Element {
             error instanceof Error ? error.message : "Unknown error"
           }`,
         );
-      } finally {
-        setLoading(false);
       }
     };
 

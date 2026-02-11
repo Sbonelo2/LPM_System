@@ -29,21 +29,6 @@ const Dashboard: React.FC = () => {
       navigate("/login");
     }
   }, [user, loading, navigate]);
-  // addded a comment for debugging purposes
-  const handleLogout = async () => {
-    setMessage("");
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setMessage("Logged out successfully!");
-      navigate("/login");
-    } catch (error: unknown) {
-      setMessage(
-        `Logout failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      console.error("Logout error:", error);
-    }
-  };
 
   if (loading) {
     return <div>Loading dashboard...</div>;
@@ -60,18 +45,6 @@ const Dashboard: React.FC = () => {
     { label: "PENDING PLACEMENTS", value: 0 },
     { label: "PROFILE STATUS", value: "Incomplete" },
   ];
-
-  // Placeholder columns for TableComponent
-  const placementColumns = [
-    { key: "student", header: "Student" },
-    { key: "host", header: "Host" },
-    { key: "startDate", header: "Start Date" },
-    { key: "endDate", header: "End Date" },
-    { key: "status", header: "Status" },
-  ];
-
-  // Empty data for TableComponent
-  const placementData: PlacementData[] = [];
 
   return (
     <div className="dashboard-layout">

@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import "./PillButton.css";
 
@@ -53,9 +52,10 @@ export default function PillButton(props: PillButtonProps) {
   );
 
   if ("to" in props) {
+    const linkProps = props as LinkProps;
     return (
       <Link
-        to={props.to}
+        to={linkProps.to}
         className={classes}
         aria-current={active ? "page" : undefined}
       >
