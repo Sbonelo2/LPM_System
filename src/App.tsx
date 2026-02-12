@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
 import Documents from "./pages/Documents";
+import Notifications from "./pages/Notifications";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
@@ -148,6 +149,16 @@ function App() {
             <ProtectedRoute>
               <MainLayout>
                 <Documents />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Notifications />
               </MainLayout>
             </ProtectedRoute>
           }
