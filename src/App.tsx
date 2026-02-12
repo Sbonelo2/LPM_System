@@ -11,6 +11,7 @@ import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
 import MyDocuments from "./pages/MyDocuments";
+import LandingPage from "./pages/LandingPage";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -110,6 +111,7 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route
@@ -137,14 +139,14 @@ function App() {
           element={
             <ProtectedRoute>
               <MainLayout>
-                <MyDocuments/>
+                <MyDocuments />
               </MainLayout>
             </ProtectedRoute>
           }
         />
-        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
-      <Footer />
+      {/* <Footer /> */}
     </AuthProvider>
   );
 }
