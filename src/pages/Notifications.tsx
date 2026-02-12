@@ -19,6 +19,9 @@ const Notifications: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [sortKey, setSortKey] = useState<'timestamp' | 'read'>('timestamp');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [filterReadStatus, setFilterReadStatus] = useState<'all' | 'read' | 'unread'>('all');
 
   useEffect(() => {
     // Simulate fetching notifications from an API
@@ -82,13 +85,31 @@ const Notifications: React.FC = () => {
   };
 
   const sortNotifications = () => {
-    // Placeholder for sorting logic
-    console.log("Sorting notifications...");
+    const newSortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newSortDirection);
+    setNotifications(prevNotifications =>
+      [...prevNotifications].sort((a, b) => {
+        if (sortKey === 'timestamp') {
+          return newSortDirection === 'asc'
+            ? new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+            : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        } else if (sortKey === 'read') {
+          // Sort unread first if ascending, read first if descending
+          return newSortDirection === 'asc'
+            ? (a.read === b.read ? 0 : a.read ? 1 : -1)
+            : (a.read === b.read ? 0 : a.read ? -1 : 1);
+        }
+        return 0;
+      })
+    );
   };
 
   const filterNotifications = () => {
-    // Placeholder for filtering logic
-    console.log("Filtering notifications...");
+    setFilterReadStatus(prevStatus => {
+      if (prevStatus === 'all') return 'unread';
+      if (prevStatus === 'unread') return 'read';
+      return 'all';
+    });
   };
 
   const closeNotificationModal = () => {
@@ -114,18 +135,35 @@ const Notifications: React.FC = () => {
           <p>No new notifications.</p>
         ) : (
           <div className="notifications-list">
-            {notifications.map(notification => (
+            {notifications
+              .filter(notification => {
+                if (filterReadStatus === 'read') return notification.read;
+                if (filterReadStatus === 'unread') return !notification.read;
+                return true;
+              })
+              .sort((a, b) => {
+                if (sortKey === 'timestamp') {
+                  return sortDirection === 'asc'
+                    ? new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                    : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+                } else if (sortKey === 'read') {
+                  return sortDirection === 'asc'
+                    ? (a.read === b.read ? 0 : a.read ? 1 : -1)
+                    : (a.read === b.read ? 0 : a.read ? -1 : 1);
+                }
+                return 0;
+              })
+              .map(notification => (
               <Card key={notification.id} className={"notification-item " + (notification.read ? "read" : "unread")}>
                 <div className="notification-content">
                   <p>{notification.message}</p>
                   <span className="notification-timestamp">{new Date(notification.timestamp).toLocaleString()}</span>
                 </div>
                 <div className="notification-actions">
-                  <Button onClick={() => openNotificationModal(notification)} variant="ghost">View</Button>
+                  <Button onClick={() => openNotificationModal(notification)} variant="primary">View</Button>
                   {!notification.read && (
-                    <Button onClick={() => markAsRead(notification.id)}>Mark as Read</Button>
+                    <Button onClick={() => markAsRead(notification.id)} variant="secondary">Mark as Read</Button>
                   )}
-                  <Button onClick={() => deleteNotification(notification.id)} variant="secondary">Delete</Button>
                 </div>
               </Card>
             ))}
