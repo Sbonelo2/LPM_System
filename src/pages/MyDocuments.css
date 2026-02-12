@@ -1,0 +1,12 @@
+.documents-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+
+.documents-main {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}

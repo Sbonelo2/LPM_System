@@ -109,54 +109,52 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Dashboard />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Profile />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Documents />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-documents"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Documents />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Login />} />
-        </Routes>
-        <Footer />
-      </div>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Profile />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/documents"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Documents />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-documents"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Documents />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/" element={<Login />} />
+      </Routes>
+      <Footer />
     </AuthProvider>
   );
 }

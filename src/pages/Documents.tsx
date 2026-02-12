@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../components/Button";
 import Card from "../components/Card";
+import DocumentCard from "../components/DocumentCard";
 import { supabase } from "../services/supabaseClient";
 import "./Documents.css";
 
@@ -67,14 +68,10 @@ function resolveDocumentType(fileName: string): DocumentTypeKey | null {
 export default function Documents(): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState("");
-  const [expandedType, setExpandedType] = useState<DocumentTypeKey | null>(
-    null,
-  );
 
   const groupedDocuments = useMemo(() => {
     const result: Record<DocumentTypeKey, DocumentRecord[]> = {
@@ -122,7 +119,7 @@ export default function Documents(): React.JSX.Element {
           }`,
         );
       } finally {
-        setLoading(false);
+        setUploading(false);
       }
     };
 
@@ -137,6 +134,52 @@ export default function Documents(): React.JSX.Element {
     const file = event.target.files?.[0] ?? null;
     setSelectedFile(file);
     setFeedback("");
+  };
+
+  const handleDelete = async (documentId: string, fileName: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) {
+      return;
+    }
+
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("User not authenticated.");
+      }
+
+      // Delete from storage
+      const filePath = `${user.id}/${fileName}`;
+      const { error: storageError } = await supabase.storage
+        .from("documents")
+        .remove([filePath]);
+
+      if (storageError) {
+        console.warn('Failed to delete from storage:', storageError);
+      }
+
+      // Delete from database
+      const { error: deleteError } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", documentId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
+      setFeedback("Document deleted successfully.");
+    } catch (error: unknown) {
+      setFeedback(
+        `Delete failed: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+    }
   };
 
   const handleUpload = async () => {
@@ -217,7 +260,50 @@ export default function Documents(): React.JSX.Element {
       {feedback && <p className="documents-page__feedback">{feedback}</p>}
 
       <div className="documents-layout">
-        
+        {documents.length > 0 ? (
+          <div className="documents-list">
+            {DOCUMENT_TYPES.map((type) => {
+              const docs = groupedDocuments[type.key];
+              const currentDoc = docs[0];
+              const previousDocs = docs.slice(1);
+
+              // Only show document card if there are documents of this type
+              if (docs.length === 0) return null;
+
+              return (
+                <DocumentCard
+                  key={type.key}
+                  title={type.label}
+                  currentFileName={currentDoc ? stripTypePrefix(currentDoc.file_name) : undefined}
+                  uploadedAt={currentDoc ? new Date(currentDoc.created_at).toLocaleDateString() : undefined}
+                  thumbnailLabel={type.label}
+                  onCurrentClick={currentDoc ? () => window.open(currentDoc.file_url, '_blank') : undefined}
+                  onDeleteCurrent={currentDoc ? () => handleDelete(currentDoc.id, currentDoc.file_name) : undefined}
+                  showPreviousToggle={previousDocs.length > 0}
+                  defaultExpanded={false}
+                >
+                  {previousDocs.map((doc) => (
+                    <DocumentCard
+                      key={doc.id}
+                      title={`${type.label} (Previous)`}
+                      currentFileName={stripTypePrefix(doc.file_name)}
+                      uploadedAt={new Date(doc.created_at).toLocaleDateString()}
+                      thumbnailLabel={type.label}
+                      onCurrentClick={() => window.open(doc.file_url, '_blank')}
+                      onDeleteCurrent={() => handleDelete(doc.id, doc.file_name)}
+                      showPreviousToggle={false}
+                    />
+                  ))}
+                </DocumentCard>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="no-documents-message">
+            <h3>No documents uploaded yet</h3>
+            <p>Use the upload panel to add your first document.</p>
+          </div>
+        )}
 
         <aside className="upload-panel-wrap">
           <Card className="upload-panel">

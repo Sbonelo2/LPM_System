@@ -70,7 +70,7 @@ const Dashboard: React.FC = () => {
     { key: "status", header: "Status" },
   ];
 
-  // Empty data for TableComponent
+  // Empty data for TableComponent..will be filled once user has data in the future
   const placementData: PlacementData[] = [];
 
   return (
@@ -80,7 +80,6 @@ const Dashboard: React.FC = () => {
         <div className="dashboard-header">
           <h2>Dashboard</h2>
           {message && <p>{message}</p>}
-          {/* Buttons removed as per user request */}
         </div>
 
         <div className="dashboard-stats-container">

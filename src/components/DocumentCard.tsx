@@ -11,6 +11,8 @@ type Props = {
   defaultExpanded?: boolean;
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
+  onDeleteCurrent?: () => void;
+  onDeletePrevious?: (documentId: string) => void;
   children?: React.ReactNode;
 };
 
@@ -24,6 +26,8 @@ export default function DocumentCard({
   defaultExpanded,
   expanded,
   onExpandedChange,
+  onDeleteCurrent,
+  onDeletePrevious,
   children,
 }: Props) {
   const contentId = useId();
@@ -67,6 +71,17 @@ export default function DocumentCard({
             </div>
           </div>
         </button>
+
+        {onDeleteCurrent && currentFileName && (
+          <button
+            type="button"
+            className="document-card__delete-btn"
+            onClick={onDeleteCurrent}
+            title="Delete current document"
+          >
+            🗑️
+          </button>
+        )}
       </div>
 
       {canShowPreviousToggle && (
