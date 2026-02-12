@@ -79,6 +79,7 @@ export default function DocumentCard({
             onClick={onDeleteCurrent}
             title="Delete current document"
           >
+<<<<<<< HEAD
             <svg
               width="16"
               height="16"
@@ -94,6 +95,9 @@ export default function DocumentCard({
               <line x1="10" y1="11" x2="10" y2="17"></line>
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
+=======
+            🗑️
+>>>>>>> feat/notificationsScreen
           </button>
         )}
       </div>

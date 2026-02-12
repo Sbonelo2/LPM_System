@@ -5,6 +5,8 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
+import Documents from "./pages/Documents";
+import Notifications from "./pages/Notifications";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
@@ -99,7 +101,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex" }}>
       <SideBar />
       <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
     </div>
@@ -109,41 +111,63 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Dashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Profile />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/myDocuments"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <MyDocuments/>
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/" element={<Login />} />
-      </Routes>
+      <div style={{ flex: 1 }}> {/* Main content area */}
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Notifications />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Login />} />
+        </Routes>
+      </div>
       <Footer />
     </AuthProvider>
   );
