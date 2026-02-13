@@ -11,7 +11,7 @@ interface Notification {
   message: string;
   timestamp: string;
   read: boolean;
-  details?: string; // Add a details field for modal content
+  details?: string; 
 }
 
 const Notifications: React.FC = () => {
@@ -43,7 +43,7 @@ const Notifications: React.FC = () => {
       setLoading(false);
     });
   }, []);
-
+// comment for testing git
   const markAsRead = (id: string) => {
     setNotifications(prevNotifications =>
       prevNotifications.map(notification =>
