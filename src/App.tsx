@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { supabase } from "./services/supabaseClient";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
-import SignUp from "./pages/SignUp";
-import Documents from "./pages/Documents";
-import Notifications from "./pages/Notifications";
-import Placements from "./pages/Placements";
-import { AuthContext } from "./contexts/AuthContext";
-import { useAuth } from "./hooks/useAuth";
-import SideBar from "./components/SideBar";
-import Footer from "./components/Footer";
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { supabase } from './services/supabaseClient';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
+import AdminProfile from './pages/AdminProfile';
+import SignUp from './pages/SignUp';
+import { AuthContext } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import SideBar from './components/SideBar';
+import Footer from './components/Footer';
 import "./App.css";
 import LandingPage from "./pages/LandingPage";
+import Notifications from './pages/Notifications';
+import Placements from './pages/Placements';
+import Documents from './pages/Documents';
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -104,7 +105,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div style={{ display: "flex" }}>
       <SideBar />
-      <main style={{ flex: 1, overflow: "auto", paddingBottom: "80px" }}>
+      <main style={{ flex: 1, overflow: "auto" }}>
         {children}
       </main>
     </div>
@@ -132,15 +133,15 @@ function App() {
             }
           />
           <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Profile />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
+          path="/admin-profile"
+          element={
+            <ProtectedRoute>
+              <MainLayout>
+                <AdminProfile />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
           <Route
             path="/myDocuments"
             element={
