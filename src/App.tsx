@@ -12,6 +12,7 @@ import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
+import LandingPage from "./pages/LandingPage";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -138,17 +139,7 @@ function App() {
             }
           />
           <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Documents />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/my-documents"
+            path="/myDocuments"
             element={
               <ProtectedRoute>
                 <MainLayout>
