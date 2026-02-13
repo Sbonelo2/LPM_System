@@ -5,6 +5,7 @@ import DashboardStats from '../components/DashboardStats';
 import ProfileImageUpload from '../components/ProfileImageUpload';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import TableComponent from '../components/TableComponent'; // Import TableComponent
 import './Dashboard.css'; // Reusing the Dashboard CSS for consistent styling
 import './AdminDashboard.css'; // Import AdminDashboard specific styles
 
@@ -22,6 +23,21 @@ const AdminDashboard: React.FC = () => {
         { label: 'ACTIVE PLACEMENTS', value: 75 },
         { label: 'PENDING ISSUES', value: 12 },
         { label: 'COMPLIANCE STATUS', value: '95%' },
+    ];
+
+    // Placeholder data for Users Table
+    const userColumns = [
+        { key: 'fullName', header: 'Full Name' },
+        { key: 'email', header: 'Email' },
+        { key: 'role', header: 'Role' },
+        { key: 'createdDate', header: 'Created Date' },
+    ];
+
+    const userData = [
+        { fullName: 'Sine Mathebula', email: 'sine@example.com', role: 'Learner', createdDate: '2023-01-15' },
+        { fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'QA Officer', createdDate: '2022-11-01' },
+        { fullName: 'John Smith', email: 'john.smith@example.com', role: 'Programme Coordinator', createdDate: '2023-03-20' },
+        { fullName: 'Admin User', email: 'test@admin.com', role: 'Admin', createdDate: '2023-02-10' },
     ];
 
     return (
@@ -47,11 +63,18 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="dashboard-my-placements-container">
-                    <h3>Admin Specific Content</h3>
+                    <h3>USERS</h3>
                     <Card>
-                        <p>This area can be used for managing users, system settings, etc.</p>
-                        <Button text="Sign Out" onClick={handleSignOut} />
+                        <TableComponent
+                            columns={userColumns}
+                            data={userData}
+                            caption="System Users"
+                        />
                     </Card>
+                </div>
+
+                <div style={{ marginTop: '20px', textAlign: 'center' }}>
+                    <Button text="Sign Out" onClick={handleSignOut} />
                 </div>
             </div>
         </div>
