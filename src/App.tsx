@@ -103,7 +103,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div style={{ display: "flex" }}>
       <SideBar />
-      <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
+      <main style={{ flex: 1, overflow: "auto", paddingBottom: "80px" }}>{children}</main>
     </div>
   );
 };
