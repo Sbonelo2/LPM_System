@@ -19,30 +19,34 @@ const Notifications: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [sortKey, setSortKey] = useState<'timestamp' | 'read'>('timestamp');
+  const [sortKey, ] = useState<'timestamp' | 'read'>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterReadStatus, setFilterReadStatus] = useState<'all' | 'read' | 'unread'>('all');
 
-  useEffect(() => {
-    // Simulate fetching notifications from an API
-    const fetchNotifications = async () => {
-      setLoading(true);
-      return new Promise<Notification[]>(resolve => {
-        setTimeout(() => {
-          resolve([
-            { id: '1', message: 'Your document "Project Plan" has been approved.', details: 'The project plan for Q3 has been reviewed and approved by the management team. You can now proceed with the implementation phase.', timestamp: '2026-02-10T10:00:00Z', read: false },
-            { id: '2', message: 'New policy update: "Data Privacy Policy v2.0".', details: 'The company\'s Data Privacy Policy has been updated to version 2.0. Please review the new policy located in the "Compliance" section of the document repository.', timestamp: '2026-02-09T15:30:00Z', read: true },
-            { id: '3', message: 'Reminder: Complete your quarterly report by EOD.', details: 'This is a friendly reminder to complete and submit your quarterly performance report by the end of today. Access the report template from the "Reports" section.', timestamp: '2026-02-08T09:00:00Z', read: false },
-          ]);
-        }, 1000);
-      });
-    };
+  const fetchNotifications = async () => {
+    setLoading(true);
+    return new Promise<Notification[]>(resolve => {
+      setTimeout(() => {
+        resolve([
+          { id: '1', message: 'Your document "Project Plan" has been approved.', details: 'The project plan for Q3 has been reviewed and approved by the management team. You can now proceed with the implementation phase.', timestamp: '2026-02-10T10:00:00Z', read: false },
+          { id: '2', message: 'New policy update: "Data Privacy Policy v2.0".', details: 'The company\'s Data Privacy Policy has been updated to version 2.0. Please review the new policy located in the "Compliance" section of the document repository.', timestamp: '2026-02-09T15:30:00Z', read: true },
+          { id: '3', message: 'Reminder: Complete your quarterly report by EOD.', details: 'This is a friendly reminder to complete and submit your quarterly performance report by the end of today. Access the report template from the "Reports" section.', timestamp: '2026-02-08T09:00:00Z', read: false },
+        ]);
+      }, 1000);
+    });
+  };
 
-    fetchNotifications().then(data => {
+  useEffect(() => {
+    fetchNotifications().then((data: Notification[]) => {
       setNotifications(data);
       setLoading(false);
     });
   }, []);
+
+  const openNotificationModal = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setShowModal(true);
+  };
 // comment for testing git
   const markAsRead = (id: string) => {
     setNotifications(prevNotifications =>
@@ -62,23 +66,7 @@ const Notifications: React.FC = () => {
     // Re-fetch notifications or update state
     setLoading(true);
     // Simulate re-fetching
-    useEffect(() => {
-      // Simulate fetching notifications from an API
-      const fetchNotifications = async () => {
-        setLoading(true);
-        return new Promise<Notification[]>(resolve => {
-          setTimeout(() => {
-            resolve([
-              { id: '1', message: 'Your document "Project Plan" has been approved.', details: 'The project plan for Q3 has been reviewed and approved by the management team. You can now proceed with the implementation phase.', timestamp: '2026-02-10T10:00:00Z', read: false },
-              { id: '2', message: 'New policy update: "Data Privacy Policy v2.0".', details: 'The company\'s Data Privacy Policy has been updated to version 2.0. Please review the new policy located in the "Compliance" section of the document repository.', timestamp: '2026-02-09T15:30:00Z', read: true },
-              { id: '3', message: 'Reminder: Complete your quarterly report by EOD.', details: 'This is a friendly reminder to complete and submit your quarterly performance report by the end of today. Access the report template from the "Reports" section.', timestamp: '2026-02-08T09:00:00Z', read: false },
-            ]);
-          }, 1000);
-        });
-      };
-    }, []);
-
-    fetchNotifications().then(data => {
+    fetchNotifications().then((data: Notification[]) => {
       setNotifications(data);
       setLoading(false);
     });

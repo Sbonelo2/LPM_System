@@ -14,6 +14,8 @@ import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
 import LandingPage from "./pages/LandingPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -182,6 +184,9 @@ function App() {
             }
           />
           <Route path="/" element={<Login />} />
+          <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
         </Routes>
       </div>
       <Footer />

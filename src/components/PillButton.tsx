@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import "./PillButton.css";
 
@@ -52,7 +51,7 @@ export default function PillButton(props: PillButtonProps) {
     </span>
   );
 
-  if ("to" in props) {
+  if ("to" in props && props.to) {
     return (
       <Link
         to={props.to}

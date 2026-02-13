@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "../services/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import DashboardStats from "../components/DashboardStats";
@@ -8,20 +7,10 @@ import TableComponent from "../components/TableComponent";
 import Card from "../components/Card"; // Import Card component
 import "./Dashboard.css"; // Import Dashboard CSS
 
-// Placeholder for table data structure
-interface PlacementData {
-  id: string;
-  student: string;
-  host: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-}
-
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [message, setMessage] = useState("");
+  const [message, ] = useState("");
   const [addHostOpen, setAddHostOpen] = useState(false);
 
   useEffect(() => {
@@ -30,20 +19,6 @@ const Dashboard: React.FC = () => {
     }
   }, [user, loading, navigate]);
   // addded a comment for debugging purposes
-  const handleLogout = async () => {
-    setMessage("");
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setMessage("Logged out successfully!");
-      navigate("/login");
-    } catch (error: unknown) {
-      setMessage(
-        `Logout failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      console.error("Logout error:", error);
-    }
-  };
 
   if (loading) {
     return <div>Loading dashboard...</div>;
@@ -60,18 +35,6 @@ const Dashboard: React.FC = () => {
     { label: "PENDING PLACEMENTS", value: 0 },
     { label: "PROFILE STATUS", value: "Incomplete" },
   ];
-
-  // Placeholder columns for TableComponent
-  const placementColumns = [
-    { key: "student", header: "Student" },
-    { key: "host", header: "Host" },
-    { key: "startDate", header: "Start Date" },
-    { key: "endDate", header: "End Date" },
-    { key: "status", header: "Status" },
-  ];
-
-  // Empty data for TableComponent..will be filled once user has data in the future
-  const placementData: PlacementData[] = [];
 
   return (
     <div className="dashboard-layout">

@@ -12,7 +12,6 @@ type Props = {
   expanded?: boolean;
   onExpandedChange?: (expanded: boolean) => void;
   onDeleteCurrent?: () => void;
-  onDeletePrevious?: (documentId: string) => void;
   children?: React.ReactNode;
 };
 
@@ -27,7 +26,6 @@ export default function DocumentCard({
   expanded,
   onExpandedChange,
   onDeleteCurrent,
-  onDeletePrevious,
   children,
 }: Props) {
   const contentId = useId();
