@@ -1,0 +1,15 @@
+.placements-page {
+  padding: 24px;
+}
+
+.placements-header {
+  margin-bottom: 16px;
+}
+
+.placements-header h2 {
+  margin: 0;
+}
+
+.placements-table {
+  width: 100%;
+}

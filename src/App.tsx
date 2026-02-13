@@ -7,6 +7,7 @@ import Profile from "./pages/Profile";
 import SignUp from "./pages/SignUp";
 import Documents from "./pages/Documents";
 import Notifications from "./pages/Notifications";
+import Placements from "./pages/Placements";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
@@ -103,7 +104,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div style={{ display: "flex" }}>
       <SideBar />
-      <main style={{ flex: 1, overflow: "auto", paddingBottom: "80px" }}>{children}</main>
+      <main style={{ flex: 1, overflow: "auto", paddingBottom: "80px" }}>
+        {children}
+      </main>
     </div>
   );
 };
@@ -144,6 +147,26 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Placements />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Placements />
                 </MainLayout>
               </ProtectedRoute>
             }
