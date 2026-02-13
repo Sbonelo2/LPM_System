@@ -11,6 +11,7 @@ type Props = {
   disabled?: boolean;
   name?: string;
   autoComplete?: string;
+  error?: string; // Added error prop
 };
 
 const InputField: React.FC<Props> = ({
@@ -23,6 +24,7 @@ const InputField: React.FC<Props> = ({
   disabled,
   name,
   autoComplete,
+  error, // Destructure error prop
 }) => {
   const id = useId();
 
@@ -34,7 +36,7 @@ const InputField: React.FC<Props> = ({
       <input
         id={id}
         name={name}
-        className="input-field__control"
+        className={`input-field__control ${error ? 'input-field__control--error' : ''}`} // Add error class
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -43,6 +45,7 @@ const InputField: React.FC<Props> = ({
         disabled={disabled}
         autoComplete={autoComplete}
       />
+      {error && <p className="input-field__error-message">{error}</p>} {/* Display error message */}
     </div>
   );
 };

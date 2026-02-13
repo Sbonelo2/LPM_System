@@ -1,49 +1,46 @@
 .input-field {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px; /* Reduced gap */
   width: 100%;
 }
 
 .input-field__label {
-  font-size: 24px;
-  font-weight: 800;
-  color: #111;
+  font-size: 14px; /* Reduced font size */
+  font-weight: 600; /* Adjusted font weight */
+  color: #333; /* Adjusted color */
   text-align: left;
 }
 
 .input-field__control {
   width: 100%;
   box-sizing: border-box;
-  height: 96px;
-  padding: 0 28px;
+  height: 40px; /* Reduced height */
+  padding: 0 12px; /* Reduced padding */
 
-  font-size: 30px;
+  font-size: 16px; /* Reduced font size */
   line-height: 1;
-  color: #111;
+  color: #333; /* Adjusted color */
 
   background: #fff;
-  border: 2px solid #e6e9ef;
-  border-radius: 20px;
+  border: 1px solid #ccc; /* Adjusted border */
+  border-radius: 8px; /* Reduced border-radius */
 
-  box-shadow:
-    0 18px 0 rgba(0, 0, 0, 0.1),
-    0 12px 26px rgba(0, 0, 0, 0.12);
+  box-shadow: none; /* Removed box-shadow for a cleaner look */
   outline: none;
 }
 
 .input-field__control::placeholder {
-  color: #9aa3af;
+  color: #999; /* Adjusted placeholder color */
 }
 
 .input-field__control:focus {
-  border-color: #94c73d;
-  box-shadow:
-    0 18px 0 rgba(148, 199, 61, 0.18),
-    0 12px 26px rgba(0, 0, 0, 0.14);
+  border-color: #007bff; /* Adjusted focus border color */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Adjusted focus box-shadow */
 }
 
 .input-field__control:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  background-color: #f0f0f0; /* Added disabled background color */
 }

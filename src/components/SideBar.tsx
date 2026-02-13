@@ -18,14 +18,20 @@ const SideBar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const isAdminLoggedIn = localStorage.getItem('admin-token') === 'dummy-admin-token'; // Check for admin token
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    if (isAdminLoggedIn) {
+      localStorage.removeItem('admin-token');
+      navigate('/login');
+    } else {
+      await supabase.auth.signOut();
+      navigate('/login');
+    }
   };
 
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
@@ -33,15 +39,17 @@ const SideBar: React.FC = () => {
       { label: 'DASHBOARD', path: '/dashboard' }
     ];
 
+    const adminMenuItems = [
+      { label: 'DASHBOARD', path: '/admin/dashboard' },
+      { label: 'USER MANAGEMENT', path: '/admin/users' },
+      { label: 'SYSTEM SETTINGS', path: '/admin/settings' },
+      { label: 'SYSTEM MONITORING', path: '/admin/monitoring' },
+      { label: 'MAINTENANCE', path: '/admin/maintenance' },
+      // Other admin specific items if needed
+    ];
+
     const roleSpecificItems: Record<UserRole, MenuItem[]> = {
-      admin: [
-        { label: 'PLACEMENTS', path: '/placements' },
-        { label: 'DOCUMENTS', path: '/documents' },
-        { label: 'Hosts', path: '/hosts' },
-        { label: 'REPORTS', path: '/reports' },
-        { label: 'Users', path: '/users' },
-        { label: 'Registrations', path: '/registrations' }
-      ],
+      admin: adminMenuItems, // Use specific admin menu for admin role
       learner: [
         { label: 'MY PLACEMENTS', path: '/my-placements' },
         { label: 'MY DOCUMENTS', path: '/myDocuments' },
@@ -64,14 +72,13 @@ const SideBar: React.FC = () => {
     };
 
     return [
-      ...baseItems,
+      ...(role === 'admin' ? [] : baseItems), // Exclude base dashboard for admin as they have their own
       ...roleSpecificItems[role],
       { label: 'SIGN OUT', action: handleSignOut, isSignOut: true }
     ];
   };
 
-  // Get user role from user metadata, default to 'learner' if not set
-  const userRole: UserRole = (user?.user_metadata?.role as UserRole) || 'learner';
+  const userRole: UserRole = isAdminLoggedIn ? 'admin' : (user?.user_metadata?.role as UserRole) || 'learner';
   
   const menuItems = getMenuItemsByRole(userRole);
 
@@ -138,7 +145,8 @@ const SideBar: React.FC = () => {
         ))}
       </nav>
       
-      {user && (
+      
+      {isAdminLoggedIn ? (
         <div style={{
           marginTop: 'auto',
           padding: '15px',
@@ -148,29 +156,49 @@ const SideBar: React.FC = () => {
           textAlign: 'center'
         }}>
           <p style={{
-            margin: 0,
-            fontSize: '12px',
-            color: '#6c757d'
-          }}>
-            Logged in as:
-          </p>
-          <p style={{
             margin: '5px 0 0 0',
             fontSize: '14px',
             fontWeight: '500',
             color: '#2c3e50'
           }}>
-            {user.email}
-          </p>
-          <p style={{
-            margin: '5px 0 0 0',
-            fontSize: '11px',
-            color: '#007bff',
-            fontWeight: '500'
-          }}>
-            Role: {userRole.replace('_', ' ').toUpperCase()}
+            Logged in as ADMIN
           </p>
         </div>
+      ) : (
+        user && (
+          <div style={{
+            marginTop: 'auto',
+            padding: '15px',
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <p style={{
+              margin: 0,
+              fontSize: '12px',
+              color: '#6c757d'
+            }}>
+              Logged in as:
+            </p>
+            <p style={{
+              margin: '5px 0 0 0',
+              fontSize: '14px',
+              fontWeight: '500',
+              color: '#2c3e50'
+            }}>
+              {user.email}
+            </p>
+            <p style={{
+              margin: '5px 0 0 0',
+              fontSize: '11px',
+              color: '#007bff',
+              fontWeight: '500'
+            }}>
+              Role: {userRole.replace('_', ' ').toUpperCase()}
+            </p>
+          </div>
+        )
       )}
     </div>
   );

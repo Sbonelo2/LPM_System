@@ -5,12 +5,14 @@ interface ProfileImageUploadProps {
   currentImage?: string;
   onImageChange?: (imageUrl: string) => void;
   editable?: boolean;
+  size?: number; // New size prop
 }
 
 const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
   currentImage,
   onImageChange,
   editable = true,
+  size = 80, // Default size
 }) => {
   const [imageUrl, setImageUrl] = useState<string>(currentImage || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,7 +38,10 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
 
   return (
     <div className="profile-image-upload">
-      <div className="profile-image-container">
+      <div 
+        className="profile-image-container" 
+        style={{ width: size, height: size }} // Apply size to container
+      >
         {imageUrl ? (
           <img 
             src={imageUrl} 
@@ -46,8 +51,8 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
         ) : (
           <div className="profile-placeholder">
             <svg 
-              width="80" 
-              height="80" 
+              width={size * 0.75} // Adjust SVG size relative to container
+              height={size * 0.75} // Adjust SVG size relative to container
               viewBox="0 0 24 24" 
               fill="none" 
               stroke="currentColor" 

@@ -186,7 +186,9 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          </Route>
+            </Route>
+            <Route path="/admin/profile" element={<AdminProtectedRoute />}>
+            </Route>
         </Routes>
       </div>
       <Footer />

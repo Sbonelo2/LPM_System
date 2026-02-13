@@ -17,7 +17,7 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    if (email === 'test@admin.com' && password === 'Admin123') {
+    if (email.endsWith('@admin.com') && password === 'Admin123') {
       localStorage.setItem('admin-token', 'dummy-admin-token');
       navigate('/admin/dashboard');
       return;
