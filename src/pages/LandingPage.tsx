@@ -280,15 +280,38 @@ const LandingPage: React.FC = () => {
       >
         {/* SLIDE 1 - Hero */}
         <section className="slide hero-slide">
-          <div className="parallax-bg"></div>
-          <h1 className="slide-title">LPM System</h1>
-          <p className="slide-subtitle">Learner Placement & Workplace Host Management System</p>
-          <p className="slide-description">
-            QCTO & SETA Aligned Digital Solution for Modern Technical Education
-          </p>
-          <button onClick={() => navigate("/signup")} className="cta-btn">
-            Get Started
-          </button>
+          <div className="parallax-bg">
+            <div className="animated-bg-elements">
+              <div className="floating-element element-1"></div>
+              <div className="floating-element element-2"></div>
+              <div className="floating-element element-3"></div>
+              <div className="floating-element element-4"></div>
+            </div>
+          </div>
+          
+          <div className="hero-content">
+            <div className="org-header">
+              <h1 className="org-title">MLAB</h1>
+              <p className="org-subtitle">CREATING TECHNOLOGY FOR THE PEOPLE</p>
+              <p className="org-description">
+                Registered Non-Profit (Mobile Applications Laboratory NPC) & Level 1 B-BBEE Skills & ESD Provider
+              </p>
+            </div>
+            
+            <div className="mission-section">
+              <h2 className="mission-title">UPSKILLING THE NEXT GENERATION OF CODERS</h2>
+              <p className="mission-description">
+                Registered Non-Profit (Mobile Applications Laboratory NPC) & Level 1 B-BBEE Skills & ESD Provider
+              </p>
+            </div>
+            
+            <button onClick={() => navigate("/signup")} className="cta-btn">
+              Get Started
+            </button>
+            
+           
+          </div>
+          
           <div className="social-share">
             <span>Share:</span>
             <button onClick={() => shareOnSocial('twitter')}>𝕏</button>
