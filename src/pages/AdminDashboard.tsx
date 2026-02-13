@@ -26,14 +26,21 @@ const AdminDashboard: React.FC = () => {
     ];
 
     // Placeholder data for Users Table
-    const userColumns = [
+    interface UserData {
+        fullName: string;
+        email: string;
+        role: string;
+        createdDate: string;
+    }
+
+    const userColumns: TableColumn<UserData>[] = [
         { key: 'fullName', header: 'Full Name' },
         { key: 'email', header: 'Email' },
         { key: 'role', header: 'Role' },
         { key: 'createdDate', header: 'Created Date' },
     ];
 
-    const userData = [
+    const userData: UserData[] = [
         { fullName: 'Sine Mathebula', email: 'sine@example.com', role: 'Learner', createdDate: '2023-01-15' },
         { fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'QA Officer', createdDate: '2022-11-01' },
         { fullName: 'John Smith', email: 'john.smith@example.com', role: 'Programme Coordinator', createdDate: '2023-03-20' },
@@ -68,13 +75,12 @@ const AdminDashboard: React.FC = () => {
                         <TableComponent
                             columns={userColumns}
                             data={userData}
-                            caption="System Users"
+                            caption=" Active System Users"
                         />
                     </Card>
                 </div>
 
                 <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                    <Button text="Sign Out" onClick={handleSignOut} />
                 </div>
             </div>
         </div>
