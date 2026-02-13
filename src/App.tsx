@@ -135,16 +135,6 @@ function App() {
             }
           />
           <Route
-          path="/admin-profile"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AdminProfile />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-          <Route
             path="/myDocuments"
             element={
               <ProtectedRoute>
@@ -188,7 +178,8 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             </Route>
-            <Route path="/admin/profile" element={<AdminProtectedRoute />}>
+          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
+            <Route path="/admin/profile" element={<AdminProfile />} />
             </Route>
         </Routes>
       </div>
