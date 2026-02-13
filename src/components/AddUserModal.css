@@ -1,0 +1,122 @@
+        /* ==============================
+   MODAL OVERLAY
+============================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 63, 78, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ==============================
+   MODAL CONTAINER
+============================== */
+
+.modal-content {
+  background: #ffffff;
+  width: 420px;
+  max-width: 90%;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-content h2 {
+  margin: 0 0 0.5rem 0;
+  color: #073f4e;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* ==============================
+   INPUTS
+============================== */
+
+.modal-content input {
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #dfe5e8;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.modal-content input:focus {
+  border-color: #94c73d;
+  box-shadow: 0 0 0 3px rgba(148, 199, 61, 0.2);
+}
+
+/* ==============================
+   ACTION BUTTONS
+============================== */
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Cancel Button */
+.modal-actions button:first-child {
+  background: #f1f4f6;
+  color: #073f4e;
+}
+
+.modal-actions button:first-child:hover {
+  background: #e2e7ea;
+}
+
+/* Add User Button */
+.modal-actions button:last-child {
+  background: linear-gradient(135deg, #94c73d, #7eb52f);
+  color: white;
+}
+
+.modal-actions button:last-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(148, 199, 61, 0.4);
+}
+
+/* ==============================
+   ANIMATIONS
+============================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
