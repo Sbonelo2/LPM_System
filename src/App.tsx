@@ -12,8 +12,6 @@ import { useAuth } from "./hooks/useAuth";
 import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
-import MyDocuments from "./pages/MyDocuments";
-import LandingPage from "./pages/LandingPage";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -112,42 +110,65 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Dashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Profile />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/myDocuments"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <MyDocuments />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/login" element={<Login />} />
-      </Routes>
+      <div style={{ flex: 1 }}>
+        {" "}
+        {/* Main content area */}
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Notifications />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Login />} />
+        </Routes>
+      </div>
       <Footer />
     </AuthProvider>
   );
