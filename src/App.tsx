@@ -119,7 +119,7 @@ function App() {
     <AuthProvider>
       <div style={{ flex: 1 }}>
         {" "}
-        {/* Main content area */}
+        {/* Main content areaa */}
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
