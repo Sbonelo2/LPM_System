@@ -3,8 +3,6 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { supabase } from './services/supabaseClient';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import AdminProfile from './pages/AdminProfile';
 import SignUp from './pages/SignUp';
 import { AuthContext } from './contexts/AuthContext';
 import { useAuth } from './hooks/useAuth';
@@ -14,6 +12,8 @@ import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminProfile from "./pages/AdminProfile"; // Updated import
+import AdminUserManagement from './pages/AdminUserManagement'; // Added import
 import Notifications from './pages/Notifications';
 import Placements from './pages/Placements';
 import Documents from './pages/Documents';
@@ -181,6 +181,9 @@ function App() {
           <Route path="/admin/profile" element={<AdminProtectedRoute />}>
             <Route path="/admin/profile" element={<AdminProfile />} />
             </Route>
+          <Route path="/admin/users" element={<AdminProtectedRoute />}>
+            <Route path="/admin/users" element={<AdminUserManagement />} />
+          </Route>
         </Routes>
       </div>
       <Footer />

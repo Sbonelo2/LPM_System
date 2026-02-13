@@ -4,18 +4,12 @@ import SideBar from '../components/SideBar';
 import DashboardStats from '../components/DashboardStats';
 import ProfileImageUpload from '../components/ProfileImageUpload';
 import Card from '../components/Card';
-import Button from '../components/Button';
-import TableComponent from '../components/TableComponent'; // Import TableComponent
+import TableComponent, { type TableColumn } from '../components/TableComponent'; // Import TableComponent and TableColumn type
 import './Dashboard.css'; // Reusing the Dashboard CSS for consistent styling
 import './AdminDashboard.css'; // Import AdminDashboard specific styles
 
 const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
-
-    const handleSignOut = () => {
-        localStorage.removeItem('admin-token');
-        navigate('/login');
-    };
 
     // Placeholder data for Admin DashboardStats
     const adminDashboardStats = [

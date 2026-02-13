@@ -3,8 +3,8 @@ import React from 'react';
 import './TableComponent.css'; // Import the dedicated CSS file
 
 // Define the shape of a column
-interface TableColumn<T> {
-  key: keyof T; 
+export interface TableColumn<T> {
+  key?: keyof T | string; 
   header: string | number; 
   render?: (item: T) => React.ReactNode; 
 }
@@ -54,7 +54,7 @@ function TableComponent<T extends { [key: string]: any }>({
               >
                 {columns.map((column, colIndex) => (
                   <td key={String(column.key) + colIndex}>
-                    {column.render ? column.render(item) : item[column.key]}
+                    {column.render ? column.render(item) : (column.key ? (item as any)[column.key] : null)}
                   </td>
                 ))}
               </tr>
