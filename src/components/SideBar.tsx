@@ -64,7 +64,7 @@ const SideBar: React.FC = () => {
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
         { label: "PLACEMENTS", path: "/placements" },
         { label: "DOCUMENTS", path: "/documents" },
-        { label: "HOSTS", path: "/hosts" },
+        { label: "HOSTS", path: "/coordinator/hosts" },
         { label: "REPORTS", path: "/reports" },
       ],
     };

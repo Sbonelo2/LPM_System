@@ -1,4 +1,5 @@
 import React, { useId, useMemo, useState } from "react";
+import "./AddHostModal.css";
 
 export type NewHostPayload = {
   hostName: string;
@@ -19,9 +20,9 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
 
   const [hostName, setHostName] = useState("");
   const [location, setLocation] = useState("");
-  const [contactPerson, setContactPerson] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  const [contactPerson, setContactPerson] = useState("Shantela Silindile Noyila");
+  const [contactEmail, setContactEmail] = useState("shantelaslie@gmail.com");
+  const [contactPhone, setContactPhone] = useState("0638998411");
   const [submitting, setSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => {
@@ -34,8 +35,7 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
     );
   }, [hostName, location, contactPerson, contactEmail, contactPhone]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!canSubmit || submitting) return;
 
     const payload: NewHostPayload = {
@@ -65,202 +65,109 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
 
   return (
     <div
+      className="add-host-modal-overlay"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(255, 255, 255, 0.92)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-        padding: "24px",
-      }}
     >
-      <div
-        style={{
-          width: "min(720px, 100%)",
-          background: "#fff",
-          borderRadius: 10,
-          boxSizing: "border-box",
-          padding: "clamp(22px, 4vw, 40px)",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
-        }}
-      >
-        <h1
-          id={titleId}
-          style={{
-            margin: 0,
-            fontSize: 44,
-            lineHeight: 1.05,
-            letterSpacing: "-0.02em",
-            fontWeight: 800,
-            color: "#111",
-          }}
-        >
-          Add New Host
-        </h1>
+      <div className="add-host-modal-content">
+        <div className="modal-header">
+          <h2 id={titleId}>Add New Host</h2>
+        </div>
 
-        <form onSubmit={handleCreate}>
-          <div style={{ marginTop: 56, display: "grid", gap: 40 }}>
-            <Field
-              label="Host Name"
-              placeholder="Enter host name"
+        <div className="modal-body">
+          <div className="form-group">
+            <label className="form-label" htmlFor="hostName">
+              Host Name <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="hostName"
+              className="form-input"
+              placeholder="Enter host company name"
               value={hostName}
-              onChange={setHostName}
-              autoFocus
+              onChange={(e) => setHostName(e.target.value)}
+              disabled={submitting}
             />
-            <Field
-              label="location"
-              placeholder="Enter location"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="location">
+              Location <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="location"
+              className="form-input"
+              placeholder="Enter host location"
               value={location}
-              onChange={setLocation}
+              onChange={(e) => setLocation(e.target.value)}
+              disabled={submitting}
             />
-            <Field
-              label="Contact Person"
-              placeholder="Enter contact person"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="contactPerson">
+              Contact Person <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="contactPerson"
+              className="form-input"
+              placeholder="Enter contact person name"
               value={contactPerson}
-              onChange={setContactPerson}
+              onChange={(e) => setContactPerson(e.target.value)}
+              disabled={submitting}
             />
-            <Field
-              label="Contact Email"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="contactEmail">
+              Contact Email <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="contactEmail"
+              className="form-input"
               type="email"
               placeholder="Enter contact email"
               value={contactEmail}
-              onChange={setContactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              disabled={submitting}
             />
-            <Field
-              label="Contact Phone"
-              placeholder="Enter contact phone"
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="contactPhone">
+              Contact Phone <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="contactPhone"
+              className="form-input"
+              placeholder="Enter contact phone number"
               value={contactPhone}
-              onChange={setContactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              disabled={submitting}
             />
           </div>
+        </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 24,
-              marginTop: 34,
-            }}
+        <div className="modal-footer">
+          <button
+            className="modal-btn modal-btn-cancel"
+            onClick={onClose}
+            disabled={submitting}
           >
-            <button
-              type="submit"
-              disabled={!canSubmit || submitting}
-              style={{
-                flex: 1,
-                height: 86,
-                background: "linear-gradient(180deg, #A3D94E 0%, #7FB828 100%)",
-                border: "2px solid #2f2f2f",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: 42,
-                fontWeight: 800,
-                letterSpacing: "0.04em",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                boxShadow:
-                  "0 12px 0 rgba(0,0,0,0.22), 0 16px 22px rgba(0,0,0,0.22)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                cursor: !canSubmit || submitting ? "not-allowed" : "pointer",
-                opacity: !canSubmit || submitting ? 0.6 : 1,
-              }}
-            >
-              CREATE
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                height: 86,
-                background: "linear-gradient(180deg, #FF5A1F 0%, #E63E00 100%)",
-                border: "2px solid #2f2f2f",
-                borderRadius: 8,
-                color: "#fff",
-                fontSize: 42,
-                fontWeight: 800,
-                letterSpacing: "0.04em",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                textAlign: "center",
-                boxShadow:
-                  "0 12px 0 rgba(0,0,0,0.22), 0 16px 22px rgba(0,0,0,0.22)",
-                transition: "transform 0.15s ease, box-shadow 0.15s ease",
-                cursor: "pointer",
-              }}
-            >
-              CANCEL
-            </button>
-          </div>
-        </form>
+            Cancel
+          </button>
+          <button
+            className="modal-btn modal-btn-submit"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
+            {submitting ? "Adding..." : "Add Host"}
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  type?: React.HTMLInputTypeAttribute;
-  autoFocus?: boolean;
-};
-
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  type = "text",
-  autoFocus,
-}: FieldProps) {
-  const inputId = useId();
-
-  return (
-    <div style={{ display: "grid", gap: 10, textAlign: "left" }}>
-      <label
-        htmlFor={inputId}
-        style={{
-          fontSize: 20,
-          fontWeight: 700,
-          color: "#cfcfcf",
-          letterSpacing: "0.01em",
-        }}
-      >
-        {label}
-      </label>
-      <input
-        id={inputId}
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        autoFocus={autoFocus}
-        style={{
-          width: "100%",
-          boxSizing: "border-box",
-          height: 58,
-          borderRadius: 18,
-          border: "1px solid rgba(0, 0, 0, 0.06)",
-          padding: "0 22px",
-          fontSize: 18,
-          backgroundColor: "#fff",
-          boxShadow: "0 14px 0 rgba(0,0,0,0.12), 0 14px 18px rgba(0,0,0,0.12)",
-          outline: "none",
-        }}
-      />
     </div>
   );
 }

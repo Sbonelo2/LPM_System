@@ -5,13 +5,14 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 
-import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
-import SignUp from "./pages/SignUp";
-import { AuthContext } from "./contexts/AuthContext";
-import { useAuth } from "./hooks/useAuth";
-import SideBar from "./components/SideBar";
-import Footer from "./components/Footer";
-import "./App.css";
+import ProgrammeCoordinatorPlacements from './pages/ProgrammeCoordinatorPlacements';
+import SignUp from './pages/SignUp';
+import CoordinatorHosts from './pages/CoordinatorHosts';
+import { AuthContext } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import SideBar from './components/SideBar';
+import Footer from './components/Footer';
+import './App.css';
 import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -42,15 +43,31 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       async (_event, session) => {
         setUser(session?.user || null);
         setLoading(false);
+        
+        // Check if user is on coordinator pages
+        const isCoordinatorPage = window.location.pathname.startsWith('/coordinator');
+        const isAdminPage = window.location.pathname.startsWith('/admin');
+        
         if (
           session?.user &&
           (window.location.pathname === "/" ||
             window.location.pathname === "/login")
         ) {
-          navigate("/dashboard");
+          // Redirect based on user role or path
+          if (isCoordinatorPage || localStorage.getItem('coordinator-token')) {
+            navigate("/coordinator/dashboard");
+          } else if (isAdminPage || localStorage.getItem('admin-token')) {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/dashboard");
+          }
         } else if (
           !session?.user &&
-          window.location.pathname === "/dashboard"
+          !localStorage.getItem('coordinator-token') &&
+          !localStorage.getItem('admin-token') &&
+          (window.location.pathname === "/dashboard" ||
+           window.location.pathname === "/coordinator/dashboard" ||
+           window.location.pathname === "/admin/dashboard")
         ) {
           navigate("/login");
         }
@@ -63,13 +80,32 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } = await supabase.auth.getSession();
       setUser(session?.user || null);
       setLoading(false);
+      
+      // Check if user is on coordinator pages
+      const isCoordinatorPage = window.location.pathname.startsWith('/coordinator');
+      const isAdminPage = window.location.pathname.startsWith('/admin');
+      
       if (
         session?.user &&
         (window.location.pathname === "/" ||
           window.location.pathname === "/login")
       ) {
-        navigate("/dashboard");
-      } else if (!session?.user && window.location.pathname === "/dashboard") {
+        // Redirect based on user role or path
+        if (isCoordinatorPage || localStorage.getItem('coordinator-token')) {
+          navigate("/coordinator/dashboard");
+        } else if (isAdminPage || localStorage.getItem('admin-token')) {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } else if (
+        !session?.user &&
+        !localStorage.getItem('coordinator-token') &&
+        !localStorage.getItem('admin-token') &&
+        (window.location.pathname === "/dashboard" ||
+         window.location.pathname === "/coordinator/dashboard" ||
+         window.location.pathname === "/admin/dashboard")
+      ) {
         navigate("/login");
       }
     };
@@ -93,12 +129,17 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   const { user, loading } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [user, loading, navigate]);
+
   if (loading) {
     return <div>Loading authentication...</div>;
   }
 
   if (!user) {
-    navigate("/login");
     return null;
   }
 
@@ -174,7 +215,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/my-placements"
             element={
@@ -229,8 +269,16 @@ function App() {
           </Route>
           <Route path="/" element={<Login />} />
           <Route
-            path="coordinator/dashboard"
+            path="/coordinator/dashboard"
             element={<CoordinatorDashboard />}
+          />
+          <Route
+            path="/coordinator/hosts"
+            element={
+              <MainLayout>
+                <CoordinatorHosts />
+              </MainLayout>
+            }
           />
         </Routes>
       </div>
