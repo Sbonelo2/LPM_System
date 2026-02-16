@@ -18,11 +18,15 @@ const SideBar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Get role directly from Supabase metadata
-  const userRole: UserRole =
-    location.pathname === "/coordinator/dashboard"
-      ? "programme_coordinator"
-      : (user?.user_metadata?.role as UserRole) || "learner";
+  // Get role from user metadata, with fallback to path-based detection
+  const userRole: UserRole = (user?.user_metadata?.role as UserRole) || 
+    (() => {
+      // Fallback to path-based detection if metadata is missing
+      if (location.pathname.startsWith("/admin")) return "admin";
+      if (location.pathname.startsWith("/coordinator")) return "programme_coordinator";
+      if (location.pathname.startsWith("/qa")) return "qa_officer";
+      return "learner";
+    })();
 
   const handleNavigation = (path: string) => {
     navigate(path);

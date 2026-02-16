@@ -212,6 +212,10 @@ function App() {
             <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
 
+          <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
+            <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
+          </Route>
+
           <Route path="/" element={<Login />} />
           <Route
             path="coordinator/dashboard"
