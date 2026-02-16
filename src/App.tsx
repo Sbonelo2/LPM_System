@@ -18,6 +18,9 @@ import AdminSystemMonitor from "./pages/AdminSystemMonitor";
 import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
+import EditUserAdmin from "./pages/EditUserAdmin";
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -109,6 +112,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div style={{ display: "flex" }}>
       <SideBar />
       <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
+      <main style={{ flex: 1, overflow: "auto" }}>
+      {children}
+      </main>
     </div>
   );
 };
@@ -123,6 +129,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+
+          <Route
+            path="/admin/users/edit/:userId`"
+            element={<EditUserAdmin />}
+          />
           <Route
             path="/dashboard"
             element={
@@ -163,6 +174,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/notifications"
             element={
@@ -177,15 +189,20 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
+
           <Route path="/admin/profile" element={<AdminProtectedRoute />}>
             <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
+
           <Route path="/admin/users" element={<AdminProtectedRoute />}>
             <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
-          <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
-            <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
-          </Route>
+
+          <Route path="/" element={<Login />} />
+          <Route
+            path="coordinator/dashboard"
+            element={<CoordinatorDashboard />}
+          />
         </Routes>
       </div>
       <Footer />

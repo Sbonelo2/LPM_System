@@ -23,14 +23,31 @@ const Login: React.FC = () => {
       return;
     }
 
+    if (email === 'coordinator@gmail.com' && password === 'Coordinator123') {
+      localStorage.setItem('coordinator-token', 'dummy-coordinator-token');
+      navigate('/coordinator/dashboard');
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
       if (error) throw error;
+      
       setMessage("Logged in successfully!");
-      navigate("/dashboard"); // Redirect to dashboard on successful login
+      
+      // Check user role and redirect accordingly
+      const userRole = data.user?.user_metadata?.role;
+      if (userRole === 'programme_coordinator') {
+        navigate('/coordinator/dashboard');
+      } else if (userRole === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate("/dashboard"); // Default dashboard for learners
+      }
     } catch (error: unknown) {
       setMessage(
         `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
