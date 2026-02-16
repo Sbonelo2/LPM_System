@@ -18,6 +18,7 @@ import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
 import EditUserAdmin from "./pages/EditUserAdmin";
+import CoordinatorDashboard from "./pages/CoordinatorDashBoard";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -108,14 +109,10 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div style={{ display: "flex" }}>
-            
       <SideBar />
-            
       <main style={{ flex: 1, overflow: "auto" }}>
-                {children}
-              
+      {children}
       </main>
-          
     </div>
   );
 };
@@ -123,128 +120,86 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-            
       <div style={{ flex: 1 }}>
-                         {/* Main content areaa */}
-                
+        {/* Main content areaa */}
         <Routes>
-                    
           <Route path="/" element={<LandingPage />} />
-                    
           <Route path="/login" element={<Login />} />
-                    
           <Route path="/signup" element={<SignUp />} />
 
           <Route
-              path="/admin/users/edit/:userId`"
-              element={
-                <EditUserAdmin />
-              }
-            />
-                    
+            path="/admin/users/edit/:userId`"
+            element={<EditUserAdmin />}
+          />
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Dashboard />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/myDocuments"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Documents />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/placements"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Placements />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/my-placements"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Placements />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
+
           <Route
             path="/notifications"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Notifications />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route path="/" element={<Login />} />
-                    
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
-                        
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        
-          </Route>
-                    
-          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
-                        
-            <Route path="/admin/profile" element={<AdminProfile />} />
-                        
           </Route>
 
-          
-                    
-          <Route path="/admin/users" element={<AdminProtectedRoute />}>
-                        
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-                      
+          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
+            <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
-                  
+
+          <Route path="/admin/users" element={<AdminProtectedRoute />}>
+            <Route path="/admin/users" element={<AdminUserManagement />} />
+          </Route>
+
+          <Route path="/" element={<Login />} />
+          <Route path="/coordinator/dashboard" element={<CoordinatorDashboard />} />
         </Routes>
-              
       </div>
-            
       <Footer />
-          
     </AuthProvider>
   );
 }
