@@ -13,11 +13,11 @@ import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AdminProfile from "./pages/AdminProfile"; // Updated import
-import AdminUserManagement from './pages/AdminUserManagement'; // Added import
-import AdminSystemMonitor from './pages/AdminSystemMonitor';
-import Notifications from './pages/Notifications';
-import Placements from './pages/Placements';
-import Documents from './pages/Documents';
+import AdminUserManagement from "./pages/AdminUserManagement"; // Added import
+import AdminSystemMonitor from "./pages/AdminSystemMonitor";
+import Notifications from "./pages/Notifications";
+import Placements from "./pages/Placements";
+import Documents from "./pages/Documents";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -75,8 +75,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-            {children}
-          
+      {children}
     </AuthContext.Provider>
   );
 };
@@ -108,14 +107,8 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div style={{ display: "flex" }}>
-            
       <SideBar />
-            
-      <main style={{ flex: 1, overflow: "auto" }}>
-                {children}
-              
-      </main>
-          
+      <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
     </div>
   );
 };
@@ -123,110 +116,79 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 function App() {
   return (
     <AuthProvider>
-            
       <div style={{ flex: 1 }}>
-                         {/* Main content areaa */}
-                
+        {" "}
+        {/* Main content areaa */}
         <Routes>
-                    
           <Route path="/" element={<LandingPage />} />
-                    
           <Route path="/login" element={<Login />} />
-                    
           <Route path="/signup" element={<SignUp />} />
-
-                    
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Dashboard />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/myDocuments"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Documents />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/placements"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Placements />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/my-placements"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Placements />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/notifications"
             element={
               <ProtectedRoute>
-                                
                 <MainLayout>
-                                    
                   <Notifications />
-                                  
                 </MainLayout>
-                              
               </ProtectedRoute>
             }
           />
-                    
           <Route path="/" element={<Login />} />
-                    
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
-                        
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                        
+          </Route>
+          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
+            <Route path="/admin/profile" element={<AdminProfile />} />
+          </Route>
+          <Route path="/admin/users" element={<AdminProtectedRoute />}>
+            <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
           <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
             <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
         </Routes>
-              
       </div>
-            
       <Footer />
-          
     </AuthProvider>
   );
 }
