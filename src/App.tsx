@@ -18,7 +18,8 @@ import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
 import EditUserAdmin from "./pages/EditUserAdmin";
-import CoordinatorDashboard from "./pages/CoordinatorDashBoard";
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -196,7 +197,10 @@ function App() {
           </Route>
 
           <Route path="/" element={<Login />} />
-          <Route path="/coordinator/dashboard" element={<CoordinatorDashboard />} />
+          <Route
+            path="coordinator/dashboard"
+            element={<CoordinatorDashboard />}
+          />
         </Routes>
       </div>
       <Footer />

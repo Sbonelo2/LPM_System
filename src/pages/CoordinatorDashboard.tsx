@@ -1,10 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./CoordinatorDashboard.css";
 import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
+import { useAuth } from "../hooks/useAuth";
 
 const CoordinatorDashboard: React.FC = () => {
+  const { user } = useAuth();
+  
+  // Set user role to programme_coordinator when accessing coordinator dashboard
+  useEffect(() => {
+    if (user) {
+      // Update user metadata to reflect coordinator role
+      user.user_metadata = {
+        ...user.user_metadata,
+        role: 'programme_coordinator'
+      };
+    }
+  }, [user]);
+
   const [showLearnerModal, setShowLearnerModal] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState<any>(null);
   const [tableData, setTableData] = useState([
