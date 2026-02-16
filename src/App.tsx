@@ -135,12 +135,6 @@ function App() {
                     
           <Route path="/signup" element={<SignUp />} />
 
-          <Route
-              path="/admin/users/edit/:userId`"
-              element={
-                <EditUserAdmin />
-              }
-            />
                     
           <Route
             path="/dashboard"
