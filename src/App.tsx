@@ -23,6 +23,7 @@ import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
 import EditUserAdmin from "./pages/EditUserAdmin";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+import CoordinatorDocuments from "./pages/CoordinatorDocuments";
 
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -174,7 +175,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-                    
           <Route
             path="/my-placements"
             element={
@@ -228,6 +228,10 @@ function App() {
           <Route
             path="coordinator/dashboard"
             element={<CoordinatorDashboard />}
+          />
+          <Route
+            path="/coordinator/documents"
+            element={<CoordinatorDocuments />}
           />
         </Routes>
       </div>

@@ -160,10 +160,55 @@
   font-size: 14px;
 }
 
-.document-card__delete-btn {
+.document-card__icon-actions {
   position: absolute;
   top: 16px;
   right: 16px;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.document-card__action-icon {
+  display: inline-flex;
+  color: black;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+  opacity: 0.95;
+}
+
+.document-card__action-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+}
+
+.document-card__action-icon--view {
+  color: var(--primary-color, #16a34a);
+}
+
+.document-card__action-icon--view:hover {
+  color: #15803d;
+  opacity: 1;
+}
+
+.document-card__action-icon--delete {
+  color: var(--secondary-color, #e85d04);
+}
+
+.document-card__action-icon--delete:hover {
+  color: #c2410c;
+  opacity: 1;
+}
+
+.document-card__action-icon:focus-visible {
+  outline: 2px solid #111827;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.document-card__delete-btn {
   background: none;
   border: none;
   font-size: 18px;
@@ -234,6 +279,11 @@
     right: 12px;
   }
 
+  .document-card__icon-actions {
+    top: 12px;
+    right: 12px;
+  }
+
   .previous-document-link {
     font-size: 14px;
   }
@@ -282,6 +332,17 @@
     font-size: 14px;
     top: 8px;
     right: 8px;
+  }
+
+  .document-card__icon-actions {
+    top: 8px;
+    right: 8px;
+    gap: 8px;
+  }
+
+  .document-card__action-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .previous-document-item {
