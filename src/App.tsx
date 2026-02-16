@@ -21,10 +21,10 @@ import AdminSystemMonitor from "./pages/AdminSystemMonitor";
 import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
+import SystemSettings from "./pages/SystemSettings";
 import EditUserAdmin from "./pages/EditUserAdmin";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 
-import SystemSettings from "./pages/SystemSettings";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -220,10 +220,10 @@ function App() {
           <Route path="/admin/users" element={<AdminProtectedRoute />}>
             <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
-
           <Route path="/admin/settings" element={<AdminProtectedRoute />}>
             <Route path="/admin/settings" element={<SystemSettings />} />
           </Route>
+
           <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
             <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
