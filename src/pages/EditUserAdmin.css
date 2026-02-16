@@ -1,0 +1,66 @@
+.edit-user-admin {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.edit-user-admin__content {
+  padding: 28px 24px 48px;
+  box-sizing: border-box;
+}
+
+.edit-user-admin__card {
+  max-width: 760px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  padding: 46px 54px;
+  box-sizing: border-box;
+}
+
+.edit-user-admin__form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.edit-user-admin__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.edit-user-admin__edit-btn {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 120px;
+}
+
+.edit-user-admin__edit-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary-color) 85%, black);
+}
+
+.edit-user-admin__edit-icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .edit-user-admin__card {
+    padding: 28px 20px;
+  }
+}
