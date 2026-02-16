@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AdminProfile from "./pages/AdminProfile"; // Updated import
 import AdminUserManagement from './pages/AdminUserManagement'; // Added import
+import AdminSystemMonitor from './pages/AdminSystemMonitor';
 import Notifications from './pages/Notifications';
 import Placements from './pages/Placements';
 import Documents from './pages/Documents';
@@ -183,6 +184,9 @@ function App() {
             </Route>
           <Route path="/admin/users" element={<AdminProtectedRoute />}>
             <Route path="/admin/users" element={<AdminUserManagement />} />
+          </Route>
+          <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
+            <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
         </Routes>
       </div>
