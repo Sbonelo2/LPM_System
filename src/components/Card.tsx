@@ -1,6 +1,6 @@
 // src/components/Card.tsx
 import React from 'react';
-import './card.css'; // Import the dedicated CSS file
+import './Card.css'; // Import the dedicated CSS file
 
 interface CardProps {
   title?: string; // Made optional
@@ -57,3 +57,4 @@ const Card: React.FC<CardProps> = ({
 };
 
 export default Card;
+
