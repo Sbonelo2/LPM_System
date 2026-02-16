@@ -47,6 +47,7 @@ const SideBar: React.FC = () => {
         { label: "MAINTENANCE", path: "/admin/maintenance" },
       ],
       learner: [
+        { label: "DASHBOARD", path: "/dashboard" },
         { label: "MY PLACEMENTS", path: "/my-placements" },
         { label: "MY DOCUMENTS", path: "/myDocuments" },
         { label: "PROFILE", path: "/profile" },

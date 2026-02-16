@@ -115,9 +115,6 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div style={{ display: "flex" }}>
       <SideBar />
       <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
-      <main style={{ flex: 1, overflow: "auto" }}>
-      {children}
-      </main>
     </div>
   );
 };
@@ -184,6 +181,17 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Placements />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
                 </MainLayout>
               </ProtectedRoute>
             }
