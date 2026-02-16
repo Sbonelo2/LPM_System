@@ -5,12 +5,12 @@ import DashboardStats from "../components/DashboardStats";
 import AddHostModal from "../components/AddHostModal";
 import TableComponent from "../components/TableComponent";
 import Card from "../components/Card"; // Import Card component
+import AdminTopBar from "../components/AdminTopBar";
 import "./Dashboard.css"; // Import Dashboard CSS
 
 const Dashboard: React.FC = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [message, ] = useState("");
   const [addHostOpen, setAddHostOpen] = useState(false);
 
   useEffect(() => {
@@ -40,9 +40,11 @@ const Dashboard: React.FC = () => {
     <div className="dashboard-layout">
       {/* SideBar is provided by MainLayout in App.tsx */}
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <h2>Dashboard</h2>
-          {message && <p>{message}</p>}
+        <div className="dashboard-topbar">
+          <AdminTopBar
+            userName={user.email?.split("@")[0] || "User"}
+            profilePath="/profile"
+          />
         </div>
 
         <div className="dashboard-stats-container">

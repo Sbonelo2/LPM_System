@@ -25,6 +25,10 @@
   color: #333;
 }
 
+.dashboard-topbar {
+  margin: -20px -20px 20px;
+}
+
 .dashboard-stats-container {
   margin-bottom: 20px;
 }

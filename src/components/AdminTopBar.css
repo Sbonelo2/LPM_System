@@ -1,0 +1,59 @@
+.admin-topbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 24px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+.admin-topbar--flush {
+  border-radius: 0;
+}
+
+.admin-topbar__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-topbar__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.admin-topbar__subtitle {
+  font-size: 32px;
+  font-weight: 800;
+  color: #111827;
+  line-height: 1.05;
+}
+
+.admin-topbar__user {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.admin-topbar__user:disabled {
+  cursor: default;
+}
+
+.admin-topbar__user:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.admin-topbar__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}

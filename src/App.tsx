@@ -1,22 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
-import { supabase } from './services/supabaseClient';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Profile from './pages/Profile';
-import AdminProfile from './pages/AdminProfile';
-import SignUp from './pages/SignUp';
-import { AuthContext } from './contexts/AuthContext';
-import { useAuth } from './hooks/useAuth';
-import SideBar from './components/SideBar';
-import Footer from './components/Footer';
+import React, { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { supabase } from "./services/supabaseClient";
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Profile from "./pages/Profile";
+import AdminProfile from "./pages/AdminProfile";
+import SignUp from "./pages/SignUp";
+import { AuthContext } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
+import SideBar from "./components/SideBar";
+import Footer from "./components/Footer";
 import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
-import Notifications from './pages/Notifications';
-import Placements from './pages/Placements';
-import Documents from './pages/Documents';
+import Notifications from "./pages/Notifications";
+import Placements from "./pages/Placements";
+import Documents from "./pages/Documents";
+import EditUserAdmin from "./pages/EditUserAdmin";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -99,17 +100,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const isAdminLoggedIn = Boolean(localStorage.getItem("admin-token"));
 
-  if (!user) {
+  if (!user && !isAdminLoggedIn) {
     return <>{children}</>;
   }
 
   return (
     <div style={{ display: "flex" }}>
       <SideBar />
-      <main style={{ flex: 1, overflow: "auto" }}>
-        {children}
-      </main>
+      <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
     </div>
   );
 };
@@ -130,6 +130,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -175,12 +185,32 @@ function App() {
             }
           />
           <Route path="/" element={<Login />} />
-          <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            </Route>
-          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
-            <Route path="/admin/profile" element={<AdminProfile />} />
-            </Route>
+          <Route element={<AdminProtectedRoute />}>
+            <Route
+              path="/admin/dashboard"
+              element={
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/admin/profile"
+              element={
+                <MainLayout>
+                  <AdminProfile />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/admin/users/:userId/edit"
+              element={
+                <MainLayout>
+                  <EditUserAdmin />
+                </MainLayout>
+              }
+            />
+          </Route>
         </Routes>
       </div>
       <Footer />
