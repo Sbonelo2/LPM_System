@@ -13,11 +13,11 @@ import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AdminProfile from "./pages/AdminProfile"; // Updated import
-import AdminUserManagement from "./pages/AdminUserManagement"; // Added import
-import Notifications from "./pages/Notifications";
-import Placements from "./pages/Placements";
-import Documents from "./pages/Documents";
-import EditUserAdmin from "./pages/EditUserAdmin";
+import AdminUserManagement from './pages/AdminUserManagement'; // Added import
+import AdminSystemMonitor from './pages/AdminSystemMonitor';
+import Notifications from './pages/Notifications';
+import Placements from './pages/Placements';
+import Documents from './pages/Documents';
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -224,21 +224,9 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
                         
           </Route>
-                    
-          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
-                        
-            <Route path="/admin/profile" element={<AdminProfile />} />
-                        
+          <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
+            <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
-
-          
-                    
-          <Route path="/admin/users" element={<AdminProtectedRoute />}>
-                        
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-                      
-          </Route>
-                  
         </Routes>
               
       </div>
