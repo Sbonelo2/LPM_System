@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import SideBar from '../components/SideBar';
 import Button from '../components/Button';
 import TableComponent from '../components/TableComponent';
@@ -6,6 +6,7 @@ import Card from '../components/Card';
 import Modal from '../components/Modal'; // Import Modal
 import Snackbar from '../components/Snackbar'; // Import Snackbar
 import InputField from '../components/InputField'; // Import InputField
+import Dropdown, { type DropdownOption } from '../components/Dropdown';
 import { type TableColumn } from '../components/TableComponent';
 
 
@@ -17,13 +18,72 @@ interface User {
     createdDate: string;
 }
 
+const DEFAULT_USERS: User[] = [
+    { id: '1', fullName: 'Sine Mathebula', email: 'sine@example.com', role: 'Learner', createdDate: '2023-01-15' },
+    { id: '2', fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'QA Officer', createdDate: '2022-11-01' },
+    { id: '3', fullName: 'John Smith', email: 'john.smith@example.com', role: 'Programme Coordinator', createdDate: '2023-03-20' },
+    { id: '4', fullName: 'Admin User', email: 'test@admin.com', role: 'Admin', createdDate: '2023-02-10' },
+];
+
+const USERS_STORAGE_KEY = 'admin_user_management_users';
+const PRIVILEGED_ROLES = new Set([
+    'Admin',
+    'Coordinator',
+    'Facilitator',
+    'Quality Assurance Officer',
+]);
+
+const ROLE_OPTIONS: DropdownOption[] = [
+    { label: 'Admin', value: 'Admin' },
+    { label: 'Coordinator', value: 'Coordinator' },
+    { label: 'Facilitator', value: 'Facilitator' },
+    { label: 'Quality Assurance Officer', value: 'Quality Assurance Officer' },
+    { label: 'Learner', value: 'Learner' },
+];
+
+const generateSystemPassword = (): string => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+    let result = '';
+
+    for (let i = 0; i < 12; i += 1) {
+        const randomIndex = Math.floor(Math.random() * chars.length);
+        result += chars[randomIndex];
+    }
+
+    return result;
+};
+
+type GeneratedCredentials = {
+    fullName: string;
+    email: string;
+    role: string;
+    password: string;
+};
+
 const AdminUserManagement: React.FC = () => {
-    const [users, setUsers] = useState<User[]>([
-        { id: '1', fullName: 'Sine Mathebula', email: 'sine@example.com', role: 'Learner', createdDate: '2023-01-15' },
-        { id: '2', fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'QA Officer', createdDate: '2022-11-01' },
-        { id: '3', fullName: 'John Smith', email: 'john.smith@example.com', role: 'Programme Coordinator', createdDate: '2023-03-20' },
-        { id: '4', fullName: 'Admin User', email: 'test@admin.com', role: 'Admin', createdDate: '2023-02-10' },
-    ]);
+    const [users, setUsers] = useState<User[]>(() => {
+        try {
+            const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+            if (!storedUsers) {
+                return DEFAULT_USERS;
+            }
+
+            const parsedUsers: unknown = JSON.parse(storedUsers);
+            if (Array.isArray(parsedUsers)) {
+                return parsedUsers as User[];
+            }
+        } catch (error) {
+            console.error('Failed to load users from local storage:', error);
+        }
+
+        return DEFAULT_USERS;
+    });
+    const [showAddModal, setShowAddModal] = useState<boolean>(false);
+    const [newFullName, setNewFullName] = useState<string>('');
+    const [newEmail, setNewEmail] = useState<string>('');
+    const [newRole, setNewRole] = useState<string>('');
+    const [addUserError, setAddUserError] = useState<string>('');
+    const [generatedCredentials, setGeneratedCredentials] = useState<GeneratedCredentials | null>(null);
     const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [showEditModal, setShowEditModal] = useState<boolean>(false); // State for edit modal
@@ -42,8 +102,114 @@ const AdminUserManagement: React.FC = () => {
     };
 
     const handleAddUser = () => {
-        showSnackbar('Add User functionality coming soon!');
-        // In a real application, this would open a modal or navigate to a user creation form
+        setAddUserError('');
+        setNewFullName('');
+        setNewEmail('');
+        setNewRole('');
+        setGeneratedCredentials(null);
+        setShowAddModal(true);
+    };
+
+    const closeAddModal = () => {
+        setShowAddModal(false);
+        setAddUserError('');
+        setGeneratedCredentials(null);
+    };
+
+    const handleSaveNewUser = () => {
+        const trimmedFullName = newFullName.trim();
+        const trimmedEmail = newEmail.trim();
+        const trimmedRole = newRole.trim();
+
+        if (!trimmedFullName || !trimmedEmail || !trimmedRole) {
+            setAddUserError('Please fill in Full Name, Email, and Role.');
+            return;
+        }
+
+        const emailExists = users.some(
+            (user) => user.email.toLowerCase() === trimmedEmail.toLowerCase(),
+        );
+        if (emailExists) {
+            setAddUserError('A user with this email already exists.');
+            return;
+        }
+
+        const newUser: User = {
+            id: Date.now().toString(),
+            fullName: trimmedFullName,
+            email: trimmedEmail,
+            role: trimmedRole,
+            createdDate: new Date().toISOString().split('T')[0],
+        };
+
+        setUsers(prevUsers => [newUser, ...prevUsers]);
+        if (PRIVILEGED_ROLES.has(trimmedRole)) {
+            const password = generateSystemPassword();
+            setGeneratedCredentials({
+                fullName: newUser.fullName,
+                email: newUser.email,
+                role: newUser.role,
+                password,
+            });
+            showSnackbar(`User ${newUser.fullName} added. Share generated credentials.`);
+            setNewFullName('');
+            setNewEmail('');
+            setNewRole('');
+            setAddUserError('');
+            return;
+        }
+
+        showSnackbar(`User ${newUser.fullName} added successfully!`);
+        closeAddModal();
+    };
+
+    const formatCredentialsForSharing = (credentials: GeneratedCredentials): string => {
+        return `Name: ${credentials.fullName}\nEmail: ${credentials.email}\nRole: ${credentials.role}\nTemporary Password: ${credentials.password}`;
+    };
+
+    const copyGeneratedCredentials = async () => {
+        if (!generatedCredentials) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(formatCredentialsForSharing(generatedCredentials));
+            showSnackbar('Credentials copied to clipboard.');
+        } catch (error) {
+            console.error('Failed to copy credentials:', error);
+            showSnackbar('Unable to copy credentials.');
+        }
+    };
+
+    const shareGeneratedCredentials = async () => {
+        if (!generatedCredentials) {
+            return;
+        }
+
+        const message = formatCredentialsForSharing(generatedCredentials);
+
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'New User Credentials',
+                    text: message,
+                });
+                showSnackbar('Credentials shared.');
+                return;
+            }
+        } catch (error) {
+            console.error('Failed to share credentials:', error);
+            showSnackbar('Unable to share credentials directly.');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(message);
+            showSnackbar('Share is not available. Credentials copied instead.');
+        } catch (error) {
+            console.error('Fallback copy failed:', error);
+            showSnackbar('Unable to share or copy credentials.');
+        }
     };
 
     const handleEditUser = (user: User) => {
@@ -92,6 +258,10 @@ const AdminUserManagement: React.FC = () => {
         setUserToDelete(null);
         setShowDeleteModal(false);
     };
+
+    useEffect(() => {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    }, [users]);
 
     const userColumns: TableColumn<User>[] = [
         { key: 'fullName', header: 'Full Name' },
@@ -154,6 +324,74 @@ const AdminUserManagement: React.FC = () => {
                     </Modal>
                 )}
 
+                {showAddModal && (
+                    <Modal
+                        isOpen={showAddModal}
+                        onClose={closeAddModal}
+                        title="Add New User"
+                    >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <InputField
+                                label="Full Name"
+                                value={newFullName}
+                                onChange={setNewFullName}
+                                required
+                            />
+                            <InputField
+                                label="Email"
+                                value={newEmail}
+                                onChange={setNewEmail}
+                                type="email"
+                                required
+                            />
+                            <Dropdown
+                                label="Role"
+                                value={newRole}
+                                onChange={setNewRole}
+                                options={ROLE_OPTIONS}
+                                placeholder="Select role"
+                                required
+                            />
+                            {addUserError && (
+                                <p style={{ margin: 0, color: 'var(--secondary-color)' }}>
+                                    {addUserError}
+                                </p>
+                            )}
+                            {generatedCredentials && (
+                                <div
+                                    style={{
+                                        border: '1px solid #d6d6d6',
+                                        borderRadius: '8px',
+                                        padding: '12px',
+                                        background: '#f8f8f8',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '8px',
+                                    }}
+                                >
+                                    <strong>System generated credentials</strong>
+                                    <span><strong>Email:</strong> {generatedCredentials.email}</span>
+                                    <span><strong>Role:</strong> {generatedCredentials.role}</span>
+                                    <span style={{ fontFamily: 'monospace' }}>
+                                        <strong>Temporary Password:</strong> {generatedCredentials.password}
+                                    </span>
+                                    <span style={{ fontSize: '0.9rem' }}>
+                                        Save and share these credentials now. The password is only shown here.
+                                    </span>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                                        <Button text="Copy Credentials" onClick={copyGeneratedCredentials} variant="secondary" />
+                                        <Button text="Share Credentials" onClick={shareGeneratedCredentials} variant="primary" />
+                                    </div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                                <Button text="Cancel" onClick={closeAddModal} variant="secondary" />
+                                <Button text="Save User" onClick={handleSaveNewUser} variant="primary" />
+                            </div>
+                        </div>
+                    </Modal>
+                )}
+
                 {showEditModal && userToEdit && (
                     <Modal
                         isOpen={showEditModal}
@@ -172,10 +410,12 @@ const AdminUserManagement: React.FC = () => {
                                 onChange={setEditedEmail}
                                 type="email"
                             />
-                            <InputField
+                            <Dropdown
                                 label="Role"
                                 value={editedRole}
                                 onChange={setEditedRole}
+                                options={ROLE_OPTIONS}
+                                placeholder="Select role"
                             />
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
                                 <Button text="Cancel" onClick={cancelEdit} variant="secondary" />
