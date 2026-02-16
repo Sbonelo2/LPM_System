@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { supabase } from "./services/supabaseClient";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import SignUp from "./pages/SignUp";
-import { AuthContext } from "./contexts/AuthContext";
-import { useAuth } from "./hooks/useAuth";
-import SideBar from "./components/SideBar";
-import Footer from "./components/Footer";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { supabase } from './services/supabaseClient';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profile';
+
+import ProgrammeCoordinatorPlacements from './pages/ProgrammeCoordinatorPlacements';
+import SignUp from './pages/SignUp';
+import { AuthContext } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import SideBar from './components/SideBar';
+import Footer from './components/Footer';
+import './App.css';
 import LandingPage from "./pages/LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -19,6 +22,9 @@ import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
 import SystemSettings from "./pages/SystemSettings";
+import EditUserAdmin from "./pages/EditUserAdmin";
+import CoordinatorDashboard from "./pages/CoordinatorDashboard";
+
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -124,6 +130,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+
+          <Route
+            path="/admin/users/edit/:userId`"
+            element={<EditUserAdmin />}
+          />
           <Route
             path="/dashboard"
             element={
@@ -155,6 +166,17 @@ function App() {
             }
           />
           <Route
+            path="/programme-coordinator-placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProgrammeCoordinatorPlacements />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+                    
+          <Route
             path="/my-placements"
             element={
               <ProtectedRoute>
@@ -164,6 +186,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/notifications"
             element={
@@ -178,18 +212,27 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
+
           <Route path="/admin/profile" element={<AdminProtectedRoute />}>
             <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
+
           <Route path="/admin/users" element={<AdminProtectedRoute />}>
             <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
           <Route path="/admin/settings" element={<AdminProtectedRoute />}>
             <Route path="/admin/settings" element={<SystemSettings />} />
           </Route>
+
           <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
             <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
+
+          <Route path="/" element={<Login />} />
+          <Route
+            path="coordinator/dashboard"
+            element={<CoordinatorDashboard />}
+          />
         </Routes>
       </div>
       <Footer />
@@ -198,4 +241,4 @@ function App() {
 }
 //
 export default App;
-// comment
+// commenting for debigging purposes
