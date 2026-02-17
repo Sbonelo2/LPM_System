@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Button from "../components/Button";
 import "./ProgrammeCoordinatorPlacements.css";
 
 interface Placement {
@@ -13,7 +12,7 @@ interface Placement {
 }
 
 const ProgrammeCoordinatorPlacements: React.FC = () => {
-  const [placements, setPlacements] = useState<Placement[]>([
+  const [placements] = useState<Placement[]>([
     {
       id: "1",
       learner: "John Smith",

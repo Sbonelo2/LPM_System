@@ -63,8 +63,8 @@ const SideBar: React.FC = () => {
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
         { label: "PLACEMENTS", path: "/placements" },
-        { label: "DOCUMENTS", path: "/documents" },
-        { label: "HOSTS", path: "/coordinator/hosts" },
+        { label: "DOCUMENTS", path: "/coordinator/documents" },
+        { label: "HOSTS", path: "/hosts" },
         { label: "REPORTS", path: "/reports" },
       ],
     };

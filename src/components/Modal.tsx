@@ -6,14 +6,24 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  contentClassName?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  contentClassName,
+}) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+      <div
+        className={`modal-content${contentClassName ? ` ${contentClassName}` : ""}`}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="modal-header">
           <h2>{title}</h2>
           <button className="modal-close-button" onClick={onClose}>
