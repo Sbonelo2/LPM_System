@@ -17,43 +17,41 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    if (email.endsWith('@admin.com') && password === 'Admin123') {
-      localStorage.setItem('admin-token', 'dummy-admin-token');
-      navigate('/admin/dashboard');
+    if (email.endsWith("@admin.com") && password === "Admin123") {
+      localStorage.removeItem("coordinator-token");
+      localStorage.setItem("admin-token", "dummy-admin-token");
+      navigate("/admin/dashboard");
+      setLoading(false);
       return;
     }
 
-    if (email === 'coordinator@gmail.com' && password === 'Coordinator123') {
-      localStorage.setItem('coordinator-token', 'dummy-coordinator-token');
-      // Create a dummy user object for the auth context
-      const dummyUser = {
-        id: 'coordinator-123',
-        email: 'coordinator@gmail.com',
-        user_metadata: { role: 'programme_coordinator' }
-      };
-      
-      // Manually set the user in the auth context (this is a workaround for dummy auth)
-      // We'll need to update the AuthProvider to handle this
-      navigate('/coordinator/dashboard');
+    if (email === "coordinator@gmail.com" && password === "Coordinator123") {
+      localStorage.removeItem("admin-token");
+      localStorage.setItem("coordinator-token", "dummy-coordinator-token");
+      navigate("/coordinator/dashboard");
+      setLoading(false);
       return;
     }
+
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("coordinator-token");
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) throw error;
-      
+
       setMessage("Logged in successfully!");
-      
+
       // Check user role and redirect accordingly
       const userRole = data.user?.user_metadata?.role;
-      if (userRole === 'programme_coordinator') {
-        navigate('/coordinator/dashboard');
-      } else if (userRole === 'admin') {
-        navigate('/admin/dashboard');
+      if (userRole === "programme_coordinator") {
+        navigate("/coordinator/dashboard");
+      } else if (userRole === "admin") {
+        navigate("/admin/dashboard");
       } else {
         navigate("/dashboard"); // Default dashboard for learners
       }

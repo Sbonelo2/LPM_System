@@ -27,6 +27,7 @@ import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
 import CoordinatorDocuments from "./pages/CoordinatorDocuments";
+import MaintenanceSettings from "./pages/MaintenanceSettings";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -39,6 +40,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
+  const getDefaultPathForRole = (role?: string) => {
+    if (role === "admin") return "/admin/dashboard";
+    if (role === "programme_coordinator") return "/coordinator/dashboard";
+    if (role === "qa_officer") return "/qa/dashboard";
+    return "/dashboard";
+  };
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -48,7 +56,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const coordinatorToken = localStorage.getItem("coordinator-token");
         const adminToken = localStorage.getItem("admin-token");
 
-        if (coordinatorToken || adminToken) {
+        if (session?.user) {
+          localStorage.removeItem("admin-token");
+          localStorage.removeItem("coordinator-token");
+        } else if (coordinatorToken || adminToken) {
           console.log(
             "Dummy token exists, ignoring Supabase auth state change",
           );
@@ -62,7 +73,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           (window.location.pathname === "/" ||
             window.location.pathname === "/login")
         ) {
-          navigate("/dashboard");
+          navigate(getDefaultPathForRole(session.user.user_metadata?.role));
         } else if (
           !session?.user &&
           window.location.pathname === "/dashboard"
@@ -77,16 +88,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const coordinatorToken = localStorage.getItem("coordinator-token");
       const adminToken = localStorage.getItem("admin-token");
 
-      if (coordinatorToken) {
-        console.log("Found coordinator token, creating dummy user");
-        const dummyUser = {
-          id: "coordinator-123",
-          email: "coordinator@gmail.com",
-          user_metadata: { role: "programme_coordinator" },
-        };
-        setUser(dummyUser);
-        setLoading(false);
-        return;
+      if (adminToken && coordinatorToken) {
+        localStorage.removeItem("coordinator-token");
       }
 
       if (adminToken) {
@@ -98,6 +101,32 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         };
         setUser(dummyUser);
         setLoading(false);
+
+        if (
+          window.location.pathname === "/" ||
+          window.location.pathname === "/login"
+        ) {
+          navigate(getDefaultPathForRole("admin"));
+        }
+        return;
+      }
+
+      if (coordinatorToken) {
+        console.log("Found coordinator token, creating dummy user");
+        const dummyUser = {
+          id: "coordinator-123",
+          email: "coordinator@gmail.com",
+          user_metadata: { role: "programme_coordinator" },
+        };
+        setUser(dummyUser);
+        setLoading(false);
+
+        if (
+          window.location.pathname === "/" ||
+          window.location.pathname === "/login"
+        ) {
+          navigate(getDefaultPathForRole("programme_coordinator"));
+        }
         return;
       }
 
@@ -113,7 +142,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         (window.location.pathname === "/" ||
           window.location.pathname === "/login")
       ) {
-        navigate("/dashboard");
+        navigate(getDefaultPathForRole(session.user.user_metadata?.role));
       } else if (!session?.user && window.location.pathname === "/dashboard") {
         navigate("/login");
       }
@@ -194,10 +223,6 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route
-            path="/admin/users/edit/:userId`"
-            element={<EditUserAdmin />}
-          />
           <Route
             path="/dashboard"
             element={
@@ -294,6 +319,12 @@ function App() {
           </Route>
           <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
             <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
+          </Route>
+          <Route path="/admin/maintenance" element={<AdminProtectedRoute />}>
+            <Route
+              path="/admin/maintenance"
+              element={<MaintenanceSettings />}
+            />
           </Route>
           <Route path="/" element={<Login />} />
           <Route

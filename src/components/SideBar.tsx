@@ -19,11 +19,13 @@ const SideBar: React.FC = () => {
   const { user } = useAuth();
 
   // Get role from user metadata, with fallback to path-based detection
-  const userRole: UserRole = (user?.user_metadata?.role as UserRole) || 
+  const userRole: UserRole =
+    (user?.user_metadata?.role as UserRole) ||
     (() => {
       // Fallback to path-based detection if metadata is missing
       if (location.pathname.startsWith("/admin")) return "admin";
-      if (location.pathname.startsWith("/coordinator")) return "programme_coordinator";
+      if (location.pathname.startsWith("/coordinator"))
+        return "programme_coordinator";
       if (location.pathname.startsWith("/qa")) return "qa_officer";
       return "learner";
     })();
@@ -34,6 +36,8 @@ const SideBar: React.FC = () => {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("coordinator-token");
     navigate("/login");
   };
 
@@ -192,4 +196,3 @@ const SideBar: React.FC = () => {
 };
 
 export default SideBar;
- 
