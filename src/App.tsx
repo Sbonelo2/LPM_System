@@ -33,6 +33,7 @@ import CoordinatorReports from "./pages/CoordinatorReports";
 import QAPlacements from "./pages/QAPlacements";
 import QAHosts from "./pages/QAHosts";
 import MaintenanceSettings from "./pages/MaintenanceSettings";
+import QAReports from "./pages/QAReports";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -342,6 +343,17 @@ function App() {
             }
           />
           <Route
+            path="/qa/reports"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QAReports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
             path="/my-placements"
             element={
               <ProtectedRoute>
@@ -406,11 +418,14 @@ function App() {
               </MainLayout>
             }
           />
-          <Route path="/coordinator/reports" element={
-            <MainLayout>
-              <CoordinatorReports />
-            </MainLayout>
-          } />
+          <Route
+            path="/coordinator/reports"
+            element={
+              <MainLayout>
+                <CoordinatorReports />
+              </MainLayout>
+            }
+          />
         </Routes>
       </div>
       <Footer />

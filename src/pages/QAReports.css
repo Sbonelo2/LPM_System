@@ -1,4 +1,4 @@
-/* Coordinator Reports Page Styles */
+/* QA Reports Page Styles */
 
 /* ===== MAIN CONTAINER ===== */
 .reports-container {
@@ -82,9 +82,21 @@
   gap: 12px;
 }
 
-/* ===== AUDIT TRAILS ===== */
-.audit-stats {
-  margin-bottom: 32px;
+/* ===== REPORTS GRID ===== */
+.reports-grid {
+  margin-bottom: 24px;
+}
+
+/* ===== TABLE SECTION ===== */
+.reports-table-section {
+  margin-top: 24px;
+}
+
+.reports-table-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 16px 0;
 }
 
 /* ===== TABLE SPECIFIC STYLING ===== */
@@ -103,7 +115,7 @@
 
 .reports-table-section .table-header th {
   background: #f8fafc;
-  padding: 6px 12px;
+  padding: 8px 12px;
   font-weight: 600;
   color: #495057;
   border-bottom: 1px solid #e5e7eb;
@@ -119,7 +131,7 @@
 }
 
 .reports-table-section .table-row td {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid #f1f5f9;
   border-right: 1px solid #f1f5f9;
   color: #374151;
@@ -143,9 +155,10 @@
   background: #f1f5f9;
 }
 
-/* ===== ACTION BADGES ===== */
+/* ===== STATUS BADGES ===== */
 .status-badge,
-.action-badge {
+.severity-badge,
+.score-badge {
   padding: 3px 6px;
   border-radius: 3px;
   font-size: 11px;
@@ -156,61 +169,64 @@
   letter-spacing: 0.5px;
 }
 
-.status-badge.active,
-.action-badge.create {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.status-badge.completed,
-.action-badge.update {
-  background: #e0f2fe;
-  color: #075985;
-}
-
-.status-badge.pending {
+.status-badge.open {
   background: #fef3c7;
   color: #92400e;
 }
 
-.action-badge.delete {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.action-badge.login {
-  background: #f3e8ff;
-  color: #6b21a8;
-}
-
-.action-badge.export {
+.status-badge.inprogress {
   background: #dbeafe;
   color: #1e40af;
 }
 
-.action-badge.import {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.action-badge.approve {
+.status-badge.resolved {
   background: #dcfce7;
   color: #166534;
 }
 
-.action-badge.reject {
+.status-badge.passed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.needsreview {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.failed {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.action-badge.archive {
-  background: #f1f5f9;
-  color: #475569;
+.severity-badge.high {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
-.action-badge.restore {
-  background: #ecfdf5;
-  color: #065f46;
+.severity-badge.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.severity-badge.low {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.score-badge.excellent {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.score-badge.good {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.score-badge.needs-improvement {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 /* ===== PAGINATION CONTROLS ===== */
