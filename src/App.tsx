@@ -25,7 +25,7 @@ import EditUserAdmin from "./pages/EditUserAdmin";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 
 import SystemSettings from "./pages/SystemSettings";
-import MaintenanceSettings from "./pages/MaintenanceSettings";
+import CoordinatorHosts from './pages/CoordinatorHosts';
 
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -190,7 +190,6 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-
           <Route
             path="/admin/users/edit/:userId`"
             element={<EditUserAdmin />}
@@ -235,7 +234,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-       
                     
           <Route
             path="/my-placements"
@@ -247,7 +245,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/profile"
             element={
@@ -258,7 +255,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/notifications"
             element={
@@ -273,11 +269,9 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
-
           <Route path="/admin/profile" element={<AdminProtectedRoute />}>
             <Route path="/admin/profile" element={<AdminProfile />} />
           </Route>
-
           <Route path="/admin/users" element={<AdminProtectedRoute />}>
             <Route path="/admin/users" element={<AdminUserManagement />} />
           </Route>
@@ -287,11 +281,18 @@ function App() {
           <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
             <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
           </Route>
-
           <Route path="/" element={<Login />} />
           <Route
             path="coordinator/dashboard"
             element={<CoordinatorDashboard />}
+          />
+          <Route
+            path="/coordinator/hosts"
+            element={
+              <MainLayout>
+                <CoordinatorHosts/>
+              </MainLayout>
+            }
           />
         </Routes>
       </div>

@@ -122,7 +122,6 @@ const CoordinatorHosts: React.FC = () => {
 
   return (
     <div className="hosts-container">
-      <SideBar />
       <div className="hosts-content">
         <div className="hosts-header">
           <h2 className="hosts-title">Coordinator Hosts</h2>
