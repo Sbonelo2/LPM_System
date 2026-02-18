@@ -23,7 +23,6 @@ import AdminSystemMonitor from "./pages/AdminSystemMonitor";
 import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
-import EditUserAdmin from "./pages/EditUserAdmin";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 
 import SystemSettings from "./pages/SystemSettings";

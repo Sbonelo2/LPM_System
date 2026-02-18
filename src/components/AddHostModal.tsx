@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import "./AddHostModal.css";
 
 export type NewHostPayload = {
