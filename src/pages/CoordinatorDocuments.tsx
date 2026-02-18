@@ -823,7 +823,6 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <SideBar />
       <div style={{ flex: 1 }}>
         <div className="coordinator-documents-page">
           <div className="coordinator-documents-header">
