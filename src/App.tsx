@@ -56,11 +56,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Check if we have a dummy token - if so, don't overwrite with Supabase session
         const coordinatorToken = localStorage.getItem("coordinator-token");
         const adminToken = localStorage.getItem("admin-token");
+        const qaToken = localStorage.getItem("qa-token");
 
         if (session?.user) {
           localStorage.removeItem("admin-token");
           localStorage.removeItem("coordinator-token");
-        } else if (coordinatorToken || adminToken) {
+          localStorage.removeItem("qa-token");
+        } else if (coordinatorToken || adminToken || qaToken) {
           console.log(
             "Dummy token exists, ignoring Supabase auth state change",
           );
@@ -88,9 +90,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // Check for dummy tokens first
       const coordinatorToken = localStorage.getItem("coordinator-token");
       const adminToken = localStorage.getItem("admin-token");
+      const qaToken = localStorage.getItem("qa-token");
 
-      if (adminToken && coordinatorToken) {
+      if (adminToken && (coordinatorToken || qaToken)) {
         localStorage.removeItem("coordinator-token");
+        localStorage.removeItem("qa-token");
       }
 
       if (adminToken) {
@@ -127,6 +131,25 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/login"
         ) {
           navigate(getDefaultPathForRole("programme_coordinator"));
+        }
+        return;
+      }
+
+      if (qaToken) {
+        console.log("Found QA token, creating dummy user");
+        const dummyUser = {
+          id: "qa-123",
+          email: "test@qa.com",
+          user_metadata: { role: "qa_officer" },
+        };
+        setUser(dummyUser);
+        setLoading(false);
+
+        if (
+          window.location.pathname === "/" ||
+          window.location.pathname === "/login"
+        ) {
+          navigate(getDefaultPathForRole("qa_officer"));
         }
         return;
       }
