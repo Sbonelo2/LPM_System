@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "./QADashboard.css";
-import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
 import { useAuth } from "../hooks/useAuth";
@@ -91,8 +90,6 @@ const QADashboard: React.FC = () => {
 
   return (
     <div className="qa-dashboard-container">
-      <SideBar />
-
       <div className="dashboard-content">
         <h1 className="dashboard-title">QA Officer Dashboard</h1>
 
