@@ -61,10 +61,10 @@ const SideBar: React.FC = () => {
       qa_officer: [
         { label: "DASHBOARD", path: "/qa/dashboard" },
         { label: "PLACEMENTS", path: "/qa/placements" },
-        { label: "DOCUMENTS", path: "/documents" },
-        { label: "HOSTS", path: "/hosts" },
-        { label: "REPORTS", path: "/reports" },
-        { label: "COMPLIANCE", path: "/compliance" },
+        { label: "DOCUMENTS", path: "/qa/documents" },
+        { label: "HOSTS", path: "/qa/hosts" },
+        { label: "REPORTS", path: "/qa/reports" },
+        { label: "COMPLIANCE", path: "/qa/compliance" },
       ],
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
