@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 
 import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
+import QADashboard from "./pages/QADashboard";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -264,7 +265,7 @@ function App() {
             }
           />
           <Route
-            path="/coordinator/placements"
+            path="/programme-coordinator-placements"
             element={
               <ProtectedRoute>
                 <MainLayout>
@@ -273,7 +274,16 @@ function App() {
               </ProtectedRoute>
             }
           />
-                    
+          <Route
+            path="/qa/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/my-placements"
             element={
