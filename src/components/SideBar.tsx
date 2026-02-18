@@ -36,10 +36,20 @@ const SideBar: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    // Clear local dummy-session tokens first so UI state resets immediately.
     localStorage.removeItem("admin-token");
     localStorage.removeItem("coordinator-token");
-    navigate("/login");
+    localStorage.removeItem("qa-token");
+
+    try {
+      // Local scope avoids depending on a network round-trip to sign out.
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.error("Sign out error:", error);
+    } finally {
+      navigate("/login", { replace: true });
+      window.location.assign("/login");
+    }
   };
 
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
@@ -65,12 +75,6 @@ const SideBar: React.FC = () => {
         { label: "HOSTS", path: "/qa/hosts" },
         { label: "REPORTS", path: "/qa/reports" },
         { label: "COMPLIANCE", path: "/qa/compliance" },
-        { label: "QA-DASHBOARD", path: "/qa/dashboard" },
-        { label: "PLACEMENTS", path: "/placements" },
-        { label: "DOCUMENTS", path: "/qa/documents" },
-        { label: "HOSTS", path: "/hosts" },
-        { label: "REPORTS", path: "/reports" },
-        { label: "COMPLIANCE", path: "/compliance" },
       ],
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
