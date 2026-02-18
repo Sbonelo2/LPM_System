@@ -36,10 +36,20 @@ const SideBar: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    // Clear local dummy-session tokens first so UI state resets immediately.
     localStorage.removeItem("admin-token");
     localStorage.removeItem("coordinator-token");
-    navigate("/login");
+    localStorage.removeItem("qa-token");
+
+    try {
+      // Local scope avoids depending on a network round-trip to sign out.
+      await supabase.auth.signOut({ scope: "local" });
+    } catch (error) {
+      console.error("Sign out error:", error);
+    } finally {
+      navigate("/login", { replace: true });
+      window.location.assign("/login");
+    }
   };
 
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
