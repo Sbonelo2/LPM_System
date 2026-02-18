@@ -29,6 +29,8 @@ import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
 import CoordinatorDocuments from "./pages/CoordinatorDocuments";
 import CoordinatorReports from "./pages/CoordinatorReports";
+import QAPlacements from "./pages/QAPlacements";
+import MaintenanceSettings from "./pages/MaintenanceSettings";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
