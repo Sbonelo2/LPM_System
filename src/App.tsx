@@ -31,6 +31,7 @@ import CoordinatorHosts from "./pages/CoordinatorHosts";
 import CoordinatorDocuments from "./pages/CoordinatorDocuments";
 import CoordinatorReports from "./pages/CoordinatorReports";
 import QAPlacements from "./pages/QAPlacements";
+import QAHosts from "./pages/QAHosts";
 import MaintenanceSettings from "./pages/MaintenanceSettings";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -326,6 +327,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <QADocuments />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/qa/hosts"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QAHosts />
                 </MainLayout>
               </ProtectedRoute>
             }
