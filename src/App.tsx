@@ -28,8 +28,7 @@ import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
 import CoordinatorDocuments from "./pages/CoordinatorDocuments";
-import MaintenanceSettings from "./pages/MaintenanceSettings";
-import QAPlacements from "./pages/QAPlacements";
+import CoordinatorReports from "./pages/CoordinatorReports";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -383,6 +382,11 @@ function App() {
               </MainLayout>
             }
           />
+          <Route path="/coordinator/reports" element={
+            <MainLayout>
+              <CoordinatorReports />
+            </MainLayout>
+          } />
         </Routes>
       </div>
       <Footer />
