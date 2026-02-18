@@ -60,17 +60,17 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active":
-        return "#16a34a";
+        return "#16A34A";
       case "Inactive":
-        return "#6b7280";
+        return "#6B7280";
       case "Pending":
-        return "#f59e0b";
+        return "#F59E0B";
       case "Suspended":
-        return "#ef4444";
+        return "#EF4444";
       case "Cancelled":
-        return "#dc2626";
+        return "#DC2626";
       default:
-        return "#6b7280";
+        return "#6B7280";
     }
   };
 
@@ -101,7 +101,7 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
                 <td>{placement.host}</td>
                 <td>{placement.program}</td>
                 <td>
-                  <span 
+                  <span
                     className="status-badge"
                     style={{ backgroundColor: getStatusColor(placement.status) }}
                   >
@@ -111,7 +111,7 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
                 <td>{placement.startDate}</td>
                 <td>{placement.endDate}</td>
                 <td>
-                  <select 
+                  <select
                     className="action-select"
                     onChange={(e) => handleAction(placement.id, e.target.value)}
                     defaultValue=""

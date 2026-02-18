@@ -25,6 +25,15 @@ const Login: React.FC = () => {
 
     if (email === 'coordinator@gmail.com' && password === 'Coordinator123') {
       localStorage.setItem('coordinator-token', 'dummy-coordinator-token');
+      // Create a dummy user object for the auth context
+      const dummyUser = {
+        id: 'coordinator-123',
+        email: 'coordinator@gmail.com',
+        user_metadata: { role: 'programme_coordinator' }
+      };
+      
+      // Manually set the user in the auth context (this is a workaround for dummy auth)
+      // We'll need to update the AuthProvider to handle this
       navigate('/coordinator/dashboard');
       return;
     }

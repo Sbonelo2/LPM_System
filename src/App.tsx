@@ -5,7 +5,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 
-import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -25,6 +24,7 @@ import SystemSettings from "./pages/SystemSettings";
 import EditUserAdmin from "./pages/EditUserAdmin";
 import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 import MaintenanceSettings from "./pages/MaintenanceSettings";
+import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -40,6 +40,17 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        console.log('Auth state changed:', session?.user);
+        
+        // Check if we have a dummy token - if so, don't overwrite with Supabase session
+        const coordinatorToken = localStorage.getItem('coordinator-token');
+        const adminToken = localStorage.getItem('admin-token');
+        
+        if (coordinatorToken || adminToken) {
+          console.log('Dummy token exists, ignoring Supabase auth state change');
+          return; // Don't overwrite dummy user
+        }
+        
         setUser(session?.user || null);
         setLoading(false);
         if (
@@ -58,9 +69,39 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     const getUserSession = async () => {
+      // Check for dummy tokens first
+      const coordinatorToken = localStorage.getItem('coordinator-token');
+      const adminToken = localStorage.getItem('admin-token');
+      
+      if (coordinatorToken) {
+        console.log('Found coordinator token, creating dummy user');
+        const dummyUser = {
+          id: 'coordinator-123',
+          email: 'coordinator@gmail.com',
+          user_metadata: { role: 'programme_coordinator' }
+        };
+        setUser(dummyUser);
+        setLoading(false);
+        return;
+      }
+      
+      if (adminToken) {
+        console.log('Found admin token, creating dummy user');
+        const dummyUser = {
+          id: 'admin-123',
+          email: 'admin@admin.com',
+          user_metadata: { role: 'admin' }
+        };
+        setUser(dummyUser);
+        setLoading(false);
+        return;
+      }
+      
+      // If no dummy tokens, check Supabase session
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      console.log('Current session:', session?.user);
       setUser(session?.user || null);
       setLoading(false);
       if (
@@ -91,17 +132,34 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
 
+  // Debug: Log the current state
+  console.log('ProtectedRoute - user:', user);
+  console.log('ProtectedRoute - loading:', loading);
+
+  // Show loading while checking authentication
   if (loading) {
     return <div>Loading authentication...</div>;
   }
 
+  // If no user, show message (no automatic redirect)
   if (!user) {
-    navigate("/login");
-    return null;
+    return (
+      <div style={{ 
+        padding: '20px', 
+        textAlign: 'center',
+        fontSize: '16px',
+        color: '#666'
+      }}>
+        Please log in to access this page.
+        <div style={{ marginTop: '10px', fontSize: '12px' }}>
+          Debug: User state is null or undefined
+        </div>
+      </div>
+    );
   }
 
+  // User is authenticated, render children
   return <>{children}</>;
 };
 
@@ -174,6 +232,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+       
                     
           <Route
             path="/my-placements"

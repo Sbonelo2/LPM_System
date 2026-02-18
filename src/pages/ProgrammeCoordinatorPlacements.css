@@ -1,61 +1,8 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .programme-coordinator-page {
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  background-color: #f8fafc;
+  background-color: #F8FAFC;
   min-height: 100vh;
 }
 
@@ -65,18 +12,18 @@
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #E5E7EB;
 }
 
 .page-title {
   font-size: 24px;
   font-weight: 700;
-  color: #1f2937;
+  color: #1F2937;
   margin: 0;
 }
 
 .design-badge {
-  background-color: #2563eb;
+  background-color: #2563EB;
   color: white;
   padding: 4px 12px;
   border-radius: 4px;
@@ -89,7 +36,7 @@
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #E2E8F0;
   overflow-x: auto;
 }
 
@@ -100,23 +47,23 @@
 }
 
 .placements-table th {
-  background-color: #f8fafc;
+  background-color: #F8FAFC;
   padding: 12px;
   text-align: left;
   font-weight: 600;
   color: #374151;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #E5E7EB;
   white-space: nowrap;
 }
 
 .placements-table td {
   padding: 12px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #F3F4F6;
   text-align: left;
 }
 
 .placements-table tr:hover {
-  background-color: #f9fafb;
+  background-color: #F9FAFB;
 }
 
 .status-badge {
@@ -130,7 +77,7 @@
 
 .action-select {
   padding: 6px 8px;
-  border: 1px solid #d1d5db;
+  border: 1px solid #D1D5DB;
   border-radius: 4px;
   font-size: 12px;
   background-color: white;
@@ -140,6 +87,6 @@
 
 .action-select:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #2563EB;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
