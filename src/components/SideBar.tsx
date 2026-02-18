@@ -18,17 +18,18 @@ const SideBar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Get role from user metadata, with fallback to path-based detection
-  const userRole: UserRole =
-    (user?.user_metadata?.role as UserRole) ||
-    (() => {
-      // Fallback to path-based detection if metadata is missing
-      if (location.pathname.startsWith("/admin")) return "admin";
-      if (location.pathname.startsWith("/coordinator"))
-        return "programme_coordinator";
-      if (location.pathname.startsWith("/qa")) return "qa_officer";
-      return "learner";
-    })();
+  const roleFromPath: UserRole | null = (() => {
+    if (location.pathname.startsWith("/admin")) return "admin";
+    if (location.pathname.startsWith("/coordinator"))
+      return "programme_coordinator";
+    if (location.pathname.startsWith("/qa")) return "qa_officer";
+    return null;
+  })();
+
+  const roleFromMetadata = user?.user_metadata?.role as UserRole | undefined;
+
+  // Prefer path-scoped role so navigation to /qa/* always shows QA menu, etc.
+  const userRole: UserRole = roleFromPath ?? roleFromMetadata ?? "learner";
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -58,11 +59,12 @@ const SideBar: React.FC = () => {
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       qa_officer: [
-        { label: "PLACEMENTS", path: "/placements" },
-        { label: "DOCUMENTS", path: "/documents" },
-        { label: "HOSTS", path: "/hosts" },
-        { label: "REPORTS", path: "/reports" },
-        { label: "COMPLIANCE", path: "/compliance" },
+        { label: "DASHBOARD", path: "/qa/dashboard" },
+        { label: "PLACEMENTS", path: "/qa/placements" },
+        { label: "DOCUMENTS", path: "/qa/documents" },
+        { label: "HOSTS", path: "/qa/hosts" },
+        { label: "REPORTS", path: "/qa/reports" },
+        { label: "COMPLIANCE", path: "/qa/compliance" },
       ],
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },

@@ -29,6 +29,7 @@ import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
 import CoordinatorDocuments from "./pages/CoordinatorDocuments";
 import MaintenanceSettings from "./pages/MaintenanceSettings";
+import QAPlacements from "./pages/QAPlacements";
 
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -265,7 +266,17 @@ function App() {
             }
           />
           <Route
-            path="/programme-coordinator-placements"
+            path="/qa/placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QAPlacements />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/placements"
             element={
               <ProtectedRoute>
                 <MainLayout>
