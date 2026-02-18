@@ -7,6 +7,7 @@ import Profile from "./pages/Profile";
 
 import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
 import QADashboard from "./pages/QADashboard";
+import QADocuments from "./pages/QADocuments";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -280,6 +281,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/qa/documents"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADocuments />
                 </MainLayout>
               </ProtectedRoute>
             }

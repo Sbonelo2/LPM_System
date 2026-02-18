@@ -59,7 +59,7 @@ const SideBar: React.FC = () => {
       ],
       qa_officer: [
         { label: "PLACEMENTS", path: "/placements" },
-        { label: "DOCUMENTS", path: "/documents" },
+        { label: "DOCUMENTS", path: "/qa/documents" },
         { label: "HOSTS", path: "/hosts" },
         { label: "REPORTS", path: "/reports" },
         { label: "COMPLIANCE", path: "/compliance" },
@@ -196,3 +196,4 @@ const SideBar: React.FC = () => {
 };
 
 export default SideBar;
+
