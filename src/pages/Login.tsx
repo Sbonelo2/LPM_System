@@ -68,6 +68,7 @@ const Login: React.FC = () => {
         navigate("/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {
+      alert(`Login failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       setMessage(
         `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
