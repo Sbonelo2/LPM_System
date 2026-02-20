@@ -11,8 +11,8 @@
   z-index: 1000;
 }
 
-.modal-content {
-  background: var(--background-color-card);
+.modal-overlay .modal-content {
+  background: #ffffff;
   padding: 20px;
   border-radius: var(--border-radius);
   max-width: 500px;

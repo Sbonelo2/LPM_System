@@ -33,8 +33,8 @@ const SignUp: React.FC = () => {
       setMessage("Sign up successful! Check your email for confirmation.");
       navigate("/login");
     } catch (error: unknown) {
-      setMessage(
-        `Sign up failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      alert(
+        `Sign up failed: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setLoading(false);
