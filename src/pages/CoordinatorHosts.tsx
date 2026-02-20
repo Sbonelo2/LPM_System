@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./CoordinatorHosts.css";
 import Button from "../components/Button";
-import SideBar from "../components/SideBar";
 import AddHostModal from "../components/AddHostModal";
 import Card from "../components/Card";
 import type { NewHostPayload } from "../components/AddHostModal";

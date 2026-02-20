@@ -6,7 +6,6 @@ import Modal from "../components/Modal";
 import Snackbar from "../components/Snackbar";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
-import SideBar from "../components/SideBar";
 import { supabase } from "../services/supabaseClient";
 import "./CoordinatorDocuments.css";
 
