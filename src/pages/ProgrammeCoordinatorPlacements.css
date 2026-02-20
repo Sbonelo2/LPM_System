@@ -1,9 +1,7 @@
 .programme-coordinator-page {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background-color: #F8FAFC;
   min-height: 100vh;
+  background-color: #f8fafc;
 }
 
 .page-header {
@@ -12,32 +10,32 @@
   align-items: center;
   margin-bottom: 30px;
   padding-bottom: 20px;
-  border-bottom: 2px solid #E5E7EB;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .page-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #1F2937;
+  color: #1e293b;
   margin: 0;
 }
 
 .design-badge {
-  background-color: #2563EB;
+  background-color: #3b82f6;
   color: white;
-  padding: 4px 12px;
-  border-radius: 4px;
+  padding: 6px 16px;
+  border-radius: 20px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .placements-table-container {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #E2E8F0;
-  overflow-x: auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
 }
 
 .placements-table {
@@ -47,46 +45,91 @@
 }
 
 .placements-table th {
-  background-color: #F8FAFC;
-  padding: 12px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 16px;
   text-align: left;
   font-weight: 600;
   color: #374151;
-  border-bottom: 2px solid #E5E7EB;
+  border-bottom: 2px solid #e2e8f0;
   white-space: nowrap;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .placements-table td {
-  padding: 12px;
-  border-bottom: 1px solid #F3F4F6;
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
   text-align: left;
+  color: #374151;
 }
 
-.placements-table tr:hover {
-  background-color: #F9FAFB;
+.placements-table tbody tr:hover {
+  background-color: #f8fafc;
+  transition: background-color 0.2s ease;
+}
+
+.placements-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .status-badge {
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
   color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-select {
-  padding: 6px 8px;
-  border: 1px solid #D1D5DB;
-  border-radius: 4px;
-  font-size: 12px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
   background-color: white;
   color: #374151;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.action-select:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .action-select:focus {
   outline: none;
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .programme-coordinator-page {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .placements-table-container {
+    border-radius: 8px;
+  }
+  
+  .placements-table th,
+  .placements-table td {
+    padding: 12px 8px;
+  }
 }
