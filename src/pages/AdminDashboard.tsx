@@ -1,25 +1,36 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent"; // Import TableComponent and TableColumn type
+import LoadingSpinner from "../components/LoadingSpinner";
+import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
 import "./AdminDashboard.css"; // Import AdminDashboard specific styles
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  // Placeholder data for Admin DashboardStats
-  const adminDashboardStats = [
-    { label: "ACTIVE LEARNERS", value: 150 },
-    { label: "ACTIVE PLACEMENTS", value: 75 },
-    { label: "PENDING ISSUES", value: 12 },
-    { label: "COMPLIANCE STATUS", value: "95%" },
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Placeholder data for Users Table
+  const [activeLearnersCount, setActiveLearnersCount] = useState<number>(0);
+  const [activePlacementsCount, setActivePlacementsCount] = useState<number>(0);
+  const [pendingIssuesCount, setPendingIssuesCount] = useState<number>(0);
+  const [complianceStatus, setComplianceStatus] = useState<string>("N/A");
+
+  interface ProfileRow {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    role: string;
+    created_at: string;
+  }
+
+  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+
   interface UserData {
     fullName: string;
     email: string;
@@ -34,32 +45,124 @@ const AdminDashboard: React.FC = () => {
     { key: "createdDate", header: "Created Date" },
   ];
 
-  const userData: UserData[] = [
-    {
-      fullName: "Sine Mathebula",
-      email: "sine@example.com",
-      role: "Learner",
-      createdDate: "2023-01-15",
-    },
-    {
-      fullName: "Jane Doe",
-      email: "jane.doe@example.com",
-      role: "QA Officer",
-      createdDate: "2022-11-01",
-    },
-    {
-      fullName: "John Smith",
-      email: "john.smith@example.com",
-      role: "Programme Coordinator",
-      createdDate: "2023-03-20",
-    },
-    {
-      fullName: "Admin User",
-      email: "test@admin.com",
-      role: "Admin",
-      createdDate: "2023-02-10",
-    },
-  ];
+  const userData: UserData[] = useMemo(() => {
+    return profiles.map((p) => ({
+      fullName: p.full_name ?? "",
+      email: p.email ?? "",
+      role: p.role,
+      createdDate: p.created_at ? p.created_at.slice(0, 10) : "",
+    }));
+  }, [profiles]);
+
+  const adminDashboardStats = useMemo(
+    () => [
+      { label: "ACTIVE LEARNERS", value: activeLearnersCount },
+      { label: "ACTIVE PLACEMENTS", value: activePlacementsCount },
+      { label: "PENDING ISSUES", value: pendingIssuesCount },
+      { label: "COMPLIANCE STATUS", value: complianceStatus },
+    ],
+    [
+      activeLearnersCount,
+      activePlacementsCount,
+      pendingIssuesCount,
+      complianceStatus,
+    ],
+  );
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const results = await Promise.allSettled([
+          supabase
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("role", "learner")
+            .eq("is_active", true),
+          supabase
+            .from("profiles")
+            .select("id, full_name, email, role, created_at")
+            .order("created_at", { ascending: false })
+            .limit(10),
+          supabase
+            .from("placements")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "Active"),
+          supabase
+            .from("qa_issues")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "Open"),
+          supabase
+            .from("document_verifications")
+            .select("id", { count: "exact", head: true }),
+          supabase
+            .from("document_verifications")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "Approved"),
+        ]);
+
+        const learnerCountRes = results[0];
+        if (learnerCountRes.status === "fulfilled") {
+          const { count, error: countError } = learnerCountRes.value;
+          if (!countError) {
+            setActiveLearnersCount(count ?? 0);
+          }
+        }
+
+        const profilesRes = results[1];
+        if (profilesRes.status === "fulfilled") {
+          const { data, error: profilesError } = profilesRes.value;
+          if (!profilesError) {
+            setProfiles((data ?? []) as ProfileRow[]);
+          }
+        }
+
+        const placementsRes = results[2];
+        if (placementsRes.status === "fulfilled") {
+          const { count, error: placementsError } = placementsRes.value;
+          if (!placementsError) {
+            setActivePlacementsCount(count ?? 0);
+          }
+        }
+
+        const issuesRes = results[3];
+        if (issuesRes.status === "fulfilled") {
+          const { count, error: issuesError } = issuesRes.value;
+          if (!issuesError) {
+            setPendingIssuesCount(count ?? 0);
+          }
+        }
+
+        const totalVerRes = results[4];
+        const approvedVerRes = results[5];
+        if (
+          totalVerRes.status === "fulfilled" &&
+          approvedVerRes.status === "fulfilled"
+        ) {
+          const { count: totalCount, error: totalError } = totalVerRes.value;
+          const { count: approvedCount, error: approvedError } =
+            approvedVerRes.value;
+
+          if (!totalError && !approvedError && (totalCount ?? 0) > 0) {
+            const pct = Math.round(
+              ((approvedCount ?? 0) / (totalCount ?? 1)) * 100,
+            );
+            setComplianceStatus(`${pct}%`);
+          } else {
+            setComplianceStatus("N/A");
+          }
+        }
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
 
   return (
     <div className="dashboard-layout">
@@ -79,20 +182,33 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="dashboard-stats-container">
-          <DashboardStats stats={adminDashboardStats} />
-        </div>
+        {loading ? (
+          <LoadingSpinner message="Loading dashboard..." />
+        ) : (
+          <>
+            {error && (
+              <p style={{ marginTop: 12, color: "var(--secondary-color)" }}>
+                {error}
+              </p>
+            )}
 
-        <div className="dashboard-my-placements-container">
-          <h3>USERS</h3>
-          <Card>
-            <TableComponent
-              columns={userColumns}
-              data={userData}
-              caption=" Active System Users"
-            />
-          </Card>
-        </div>
+            <div className="dashboard-stats-container">
+              <DashboardStats stats={adminDashboardStats} />
+            </div>
+
+            <div className="dashboard-my-placements-container">
+              <h3>USERS</h3>
+              <Card>
+                <TableComponent
+                  columns={userColumns}
+                  data={userData}
+                  caption=" Active System Users"
+                  onRowClick={() => navigate("/admin/users")}
+                />
+              </Card>
+            </div>
+          </>
+        )}
 
         <div style={{ marginTop: "20px", textAlign: "center" }}></div>
       </div>

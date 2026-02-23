@@ -17,33 +17,6 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    if (email.endsWith("@admin.com") && password === "Admin123") {
-      localStorage.removeItem("coordinator-token");
-      localStorage.removeItem("qa-token");
-      localStorage.setItem("admin-token", "dummy-admin-token");
-      navigate("/admin/dashboard");
-      setLoading(false);
-      return;
-    }
-
-    if (email === "coordinator@gmail.com" && password === "Coordinator123") {
-      localStorage.removeItem("admin-token");
-      localStorage.removeItem("qa-token");
-      localStorage.setItem("coordinator-token", "dummy-coordinator-token");
-      navigate("/coordinator/dashboard");
-      setLoading(false);
-      return;
-    }
-
-    if (email === "test@qa.com" && password === "Qa123") {
-      localStorage.removeItem("admin-token");
-      localStorage.removeItem("coordinator-token");
-      localStorage.setItem("qa-token", "dummy-qa-token");
-      navigate("/qa/dashboard");
-      setLoading(false);
-      return;
-    }
-
     localStorage.removeItem("admin-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
@@ -68,7 +41,9 @@ const Login: React.FC = () => {
         navigate("/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {
-      alert(`Login failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      alert(
+        `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       setMessage(
         `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
