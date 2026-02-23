@@ -59,22 +59,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       async (_event, session) => {
         console.log("Auth state changed:", session?.user);
 
-        // Check if we have a dummy token - if so, don't overwrite with Supabase session
-        const coordinatorToken = localStorage.getItem("coordinator-token");
-        const adminToken = localStorage.getItem("admin-token");
-        const qaToken = localStorage.getItem("qa-token");
-
-        if (session?.user) {
-          localStorage.removeItem("admin-token");
-          localStorage.removeItem("coordinator-token");
-          localStorage.removeItem("qa-token");
-        } else if (coordinatorToken || adminToken || qaToken) {
-          console.log(
-            "Dummy token exists, ignoring Supabase auth state change",
-          );
-          return; // Don't overwrite dummy user
-        }
-
         setUser(session?.user || null);
         setLoading(false);
         if (
@@ -93,74 +77,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     const getUserSession = async () => {
-      // Check for dummy tokens first
-      const coordinatorToken = localStorage.getItem("coordinator-token");
-      const adminToken = localStorage.getItem("admin-token");
-      const qaToken = localStorage.getItem("qa-token");
-
-      if (adminToken && (coordinatorToken || qaToken)) {
-        localStorage.removeItem("coordinator-token");
-        localStorage.removeItem("qa-token");
-      }
-
-      if (adminToken) {
-        console.log("Found admin token, creating dummy user");
-        const dummyUser = {
-          id: "admin-123",
-          email: "admin@admin.com",
-          user_metadata: { role: "admin" },
-        };
-        setUser(dummyUser);
-        setLoading(false);
-
-        if (
-          window.location.pathname === "/" ||
-          window.location.pathname === "/login"
-        ) {
-          navigate(getDefaultPathForRole("admin"));
-        }
-        return;
-      }
-
-      if (coordinatorToken) {
-        console.log("Found coordinator token, creating dummy user");
-        const dummyUser = {
-          id: "coordinator-123",
-          email: "coordinator@gmail.com",
-          user_metadata: { role: "programme_coordinator" },
-        };
-        setUser(dummyUser);
-        setLoading(false);
-
-        if (
-          window.location.pathname === "/" ||
-          window.location.pathname === "/login"
-        ) {
-          navigate(getDefaultPathForRole("programme_coordinator"));
-        }
-        return;
-      }
-
-      if (qaToken) {
-        console.log("Found QA token, creating dummy user");
-        const dummyUser = {
-          id: "qa-123",
-          email: "test@qa.com",
-          user_metadata: { role: "qa_officer" },
-        };
-        setUser(dummyUser);
-        setLoading(false);
-
-        if (
-          window.location.pathname === "/" ||
-          window.location.pathname === "/login"
-        ) {
-          navigate(getDefaultPathForRole("qa_officer"));
-        }
-        return;
-      }
-
-      // If no dummy tokens, check Supabase session
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -196,12 +112,64 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user, loading } = useAuth();
 
+  const [maintenanceLoading, setMaintenanceLoading] = useState<boolean>(true);
+  const [maintenanceActive, setMaintenanceActive] = useState<boolean>(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState<string>(
+    "The system is currently under maintenance.",
+  );
+  const [maintenanceAllowedRoles, setMaintenanceAllowedRoles] = useState<
+    Set<string>
+  >(new Set(["admin"]));
+
+  useEffect(() => {
+    const loadMaintenance = async () => {
+      setMaintenanceLoading(true);
+      const { data } = await supabase
+        .from("maintenance_settings")
+        .select(
+          "status, allow_admins_only, allow_qa_officers, allow_programme_coordinators, allow_learners, subject, message",
+        )
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const status = String(data?.status ?? "inactive").toLowerCase();
+      const active = status === "active";
+      setMaintenanceActive(active);
+
+      const msg = String(data?.message ?? "").trim();
+      if (msg) {
+        setMaintenanceMessage(msg);
+      }
+
+      const allowed = new Set<string>(["admin"]);
+      const adminsOnly = Boolean(data?.allow_admins_only);
+      if (!adminsOnly) {
+        if (Boolean(data?.allow_qa_officers)) {
+          allowed.add("qa_officer");
+        }
+        if (Boolean(data?.allow_programme_coordinators)) {
+          allowed.add("programme_coordinator");
+        }
+        if (
+          Boolean((data as { allow_learners?: boolean } | null)?.allow_learners)
+        ) {
+          allowed.add("learner");
+        }
+      }
+      setMaintenanceAllowedRoles(allowed);
+      setMaintenanceLoading(false);
+    };
+
+    void loadMaintenance();
+  }, []);
+
   // Debug: Log the current state
   console.log("ProtectedRoute - user:", user);
   console.log("ProtectedRoute - loading:", loading);
 
   // Show loading while checking authentication
-  if (loading) {
+  if (loading || maintenanceLoading) {
     return <div>Loading authentication...</div>;
   }
 
@@ -220,6 +188,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
         <div style={{ marginTop: "10px", fontSize: "12px" }}>
           Debug: User state is null or undefined
         </div>
+      </div>
+    );
+  }
+
+  const role = user.user_metadata?.role ?? "learner";
+  if (maintenanceActive && !maintenanceAllowedRoles.has(role)) {
+    return (
+      <div
+        style={{
+          padding: "32px",
+          textAlign: "center",
+          fontSize: "16px",
+          color: "#333",
+          maxWidth: "680px",
+          margin: "0 auto",
+        }}
+      >
+        <h2 style={{ marginBottom: "12px" }}>Maintenance</h2>
+        <div style={{ whiteSpace: "pre-wrap" }}>{maintenanceMessage}</div>
       </div>
     );
   }

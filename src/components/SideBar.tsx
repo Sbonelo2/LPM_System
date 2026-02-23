@@ -42,13 +42,11 @@ const SideBar: React.FC = () => {
     localStorage.removeItem("qa-token");
 
     try {
-      // Local scope avoids depending on a network round-trip to sign out.
-      await supabase.auth.signOut({ scope: "local" });
+      await supabase.auth.signOut();
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
       navigate("/login", { replace: true });
-      window.location.assign("/login");
     }
   };
 
@@ -208,4 +206,3 @@ const SideBar: React.FC = () => {
 };
 
 export default SideBar;
-
