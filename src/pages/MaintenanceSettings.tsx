@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import SideBar from "../components/SideBar";
 import AdminTopBar from "../components/AdminTopBar";
 import Card from "../components/Card";
 import Button from "../components/Button";
@@ -172,7 +171,6 @@ export default function MaintenanceSettings() {
 
   return (
     <div className="dashboard-layout">
-      <SideBar />
       <div className="dashboard-content">
         <div className="dashboard-topbar">
           <AdminTopBar

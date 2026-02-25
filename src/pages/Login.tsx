@@ -12,6 +12,19 @@ const Login: React.FC = () => {
   const [message, setMessage] = useState<string>("");
   const navigate = useNavigate();
 
+  const withTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+      ),
+    ]);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -22,23 +35,50 @@ const Login: React.FC = () => {
     localStorage.removeItem("qa-token");
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await withTimeout(
+        supabase.auth.signInWithPassword({
+          email,
+          password,
+        }),
+        15000,
+        "Sign in",
+      );
 
       if (error) throw error;
 
       setMessage("Logged in successfully!");
 
       // Check user role and redirect accordingly
-      const userRole = data.user?.user_metadata?.role;
-      if (userRole === "programme_coordinator") {
-        navigate("/coordinator/dashboard");
-      } else if (userRole === "admin") {
+      const userId = data.user?.id;
+      const metadataRole = data.user?.user_metadata?.role;
+
+      let effectiveRole: string | undefined = metadataRole;
+      if (userId) {
+        const { data: profileRow, error: profileError } = (await withTimeout(
+          supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", userId)
+            .maybeSingle(),
+          8000,
+          "Load profile role",
+        )) as {
+          data: { role?: string } | null;
+          error: { message: string } | null;
+        };
+        if (!profileError && profileRow?.role) {
+          effectiveRole = profileRow.role;
+        }
+      }
+
+      if (effectiveRole === "programme_coordinator") {
+        navigate("/coordinator/documents");
+      } else if (effectiveRole === "qa_officer") {
+        navigate("/qa/dashboard");
+      } else if (effectiveRole === "admin") {
         navigate("/admin/dashboard");
       } else {
-        navigate("/dashboard"); // Default dashboard for learners
+        navigate("/learner/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {
       alert(

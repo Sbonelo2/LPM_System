@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
@@ -166,7 +165,6 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="dashboard-layout">
-      <SideBar />
       <div className="dashboard-content">
         <div className="dashboard-header">
           <h2>ADMIN DASHBOARD</h2>

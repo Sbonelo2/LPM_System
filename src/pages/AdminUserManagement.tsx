@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import SideBar from "../components/SideBar";
 import Button from "../components/Button";
 import TableComponent from "../components/TableComponent";
 import Card from "../components/Card";
@@ -269,7 +268,6 @@ const AdminUserManagement: React.FC = () => {
 
   return (
     <div className="dashboard-layout">
-      <SideBar />
       <div className="dashboard-content">
         <div className="dashboard-header">
           <h2>USER MANAGEMENT</h2>

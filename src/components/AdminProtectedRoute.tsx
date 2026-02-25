@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import SideBar from "./SideBar";
 
 const AdminProtectedRoute: React.FC = () => {
   const { user, loading } = useAuth();
@@ -14,7 +15,14 @@ const AdminProtectedRoute: React.FC = () => {
     return <Navigate to="/login" />;
   }
 
-  return <Outlet />;
+  return (
+    <div style={{ display: "flex" }}>
+      <SideBar />
+      <main style={{ flex: 1, overflow: "auto" }}>
+        <Outlet />
+      </main>
+    </div>
+  );
 };
 
 export default AdminProtectedRoute;

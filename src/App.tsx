@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { supabase } from "./services/supabaseClient";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -46,11 +52,50 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
+  const withTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+      ),
+    ]);
+  };
+
   const getDefaultPathForRole = (role?: string) => {
     if (role === "admin") return "/admin/dashboard";
-    if (role === "programme_coordinator") return "/coordinator/dashboard";
+    if (role === "programme_coordinator") return "/coordinator/documents";
     if (role === "qa_officer") return "/qa/dashboard";
-    return "/dashboard";
+    return "/learner/dashboard";
+  };
+
+  const getEffectiveRole = async (sessionUser: {
+    id: string;
+    user_metadata?: { role?: string };
+  }) => {
+    const metadataRole = sessionUser.user_metadata?.role;
+    try {
+      const { data, error } = (await withTimeout(
+        supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", sessionUser.id)
+          .maybeSingle(),
+        8000,
+        "Load profile role",
+      )) as {
+        data: { role?: string } | null;
+        error: { message: string } | null;
+      };
+
+      if (!error && data?.role) return String(data.role);
+    } catch {
+      // ignore
+    }
+    return metadataRole;
   };
 
   useEffect(() => {
@@ -58,38 +103,82 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       async (_event, session) => {
         console.log("Auth state changed:", session?.user);
 
-        setUser(session?.user || null);
-        setLoading(false);
-        if (
-          session?.user &&
-          (window.location.pathname === "/" ||
-            window.location.pathname === "/login")
-        ) {
-          navigate(getDefaultPathForRole(session.user.user_metadata?.role));
-        } else if (
-          !session?.user &&
-          window.location.pathname === "/dashboard"
-        ) {
-          navigate("/login");
+        try {
+          if (session?.user) {
+            const effectiveRole = await getEffectiveRole(session.user);
+            setUser({
+              ...session.user,
+              user_metadata: {
+                ...(session.user.user_metadata ?? {}),
+                ...(effectiveRole ? { role: effectiveRole } : {}),
+              },
+            });
+          } else {
+            setUser(null);
+          }
+
+          if (
+            session?.user &&
+            (window.location.pathname === "/" ||
+              window.location.pathname === "/login")
+          ) {
+            const effectiveRole = await getEffectiveRole(session.user);
+            navigate(getDefaultPathForRole(effectiveRole));
+          } else if (
+            !session?.user &&
+            (window.location.pathname === "/learner/dashboard" ||
+              window.location.pathname === "/dashboard")
+          ) {
+            navigate("/login");
+          }
+        } catch (e) {
+          console.error("Auth state change handler error:", e);
+          setUser(session?.user || null);
+        } finally {
+          setLoading(false);
         }
       },
     );
 
     const getUserSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      console.log("Current session:", session?.user);
-      setUser(session?.user || null);
-      setLoading(false);
-      if (
-        session?.user &&
-        (window.location.pathname === "/" ||
-          window.location.pathname === "/login")
-      ) {
-        navigate(getDefaultPathForRole(session.user.user_metadata?.role));
-      } else if (!session?.user && window.location.pathname === "/dashboard") {
-        navigate("/login");
+      try {
+        const {
+          data: { session },
+        } = await withTimeout(supabase.auth.getSession(), 15000, "Get session");
+        console.log("Current session:", session?.user);
+
+        if (session?.user) {
+          const effectiveRole = await getEffectiveRole(session.user);
+          setUser({
+            ...session.user,
+            user_metadata: {
+              ...(session.user.user_metadata ?? {}),
+              ...(effectiveRole ? { role: effectiveRole } : {}),
+            },
+          });
+        } else {
+          setUser(null);
+        }
+
+        if (
+          session?.user &&
+          (window.location.pathname === "/" ||
+            window.location.pathname === "/login")
+        ) {
+          const effectiveRole = await getEffectiveRole(session.user);
+          navigate(getDefaultPathForRole(effectiveRole));
+        } else if (
+          !session?.user &&
+          (window.location.pathname === "/learner/dashboard" ||
+            window.location.pathname === "/dashboard")
+        ) {
+          navigate("/login");
+        }
+      } catch (e) {
+        console.error("getSession bootstrap error:", e);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
     };
     getUserSession();
@@ -110,6 +199,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   const [maintenanceLoading, setMaintenanceLoading] = useState<boolean>(true);
   const [maintenanceActive, setMaintenanceActive] = useState<boolean>(false);
@@ -123,41 +213,77 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const loadMaintenance = async () => {
       setMaintenanceLoading(true);
-      const { data } = await supabase
-        .from("maintenance_settings")
-        .select(
-          "status, allow_admins_only, allow_qa_officers, allow_programme_coordinators, allow_learners, subject, message",
-        )
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
 
-      const status = String(data?.status ?? "inactive").toLowerCase();
-      const active = status === "active";
-      setMaintenanceActive(active);
+      try {
+        const { data, error } = (await Promise.race([
+          supabase
+            .from("maintenance_settings")
+            .select(
+              "status, allow_admins_only, allow_qa_officers, allow_programme_coordinators, allow_learners, subject, message",
+            )
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+          new Promise<never>((_resolve, reject) =>
+            setTimeout(
+              () => reject(new Error("Load maintenance settings timed out")),
+              8000,
+            ),
+          ),
+        ])) as {
+          data: {
+            status?: string;
+            allow_admins_only?: boolean;
+            allow_qa_officers?: boolean;
+            allow_programme_coordinators?: boolean;
+            allow_learners?: boolean;
+            subject?: string;
+            message?: string;
+          } | null;
+          error: { message: string } | null;
+        };
 
-      const msg = String(data?.message ?? "").trim();
-      if (msg) {
-        setMaintenanceMessage(msg);
+        if (error) {
+          console.error("Failed to load maintenance settings:", error);
+          setMaintenanceActive(false);
+          setMaintenanceAllowedRoles(new Set(["admin"]));
+          return;
+        }
+
+        const status = String(data?.status ?? "inactive").toLowerCase();
+        const active = status === "active";
+        setMaintenanceActive(active);
+
+        const msg = String(data?.message ?? "").trim();
+        if (msg) {
+          setMaintenanceMessage(msg);
+        }
+
+        const allowed = new Set<string>(["admin"]);
+        const adminsOnly = Boolean(data?.allow_admins_only);
+        if (!adminsOnly) {
+          if (Boolean(data?.allow_qa_officers)) {
+            allowed.add("qa_officer");
+          }
+          if (Boolean(data?.allow_programme_coordinators)) {
+            allowed.add("programme_coordinator");
+          }
+          if (
+            Boolean(
+              (data as { allow_learners?: boolean } | null)?.allow_learners,
+            )
+          ) {
+            allowed.add("learner");
+          }
+        }
+        setMaintenanceAllowedRoles(allowed);
+      } catch (e) {
+        console.error("Maintenance load error:", e);
+        setMaintenanceActive(false);
+        setMaintenanceAllowedRoles(new Set(["admin"]));
+      } finally {
+        setMaintenanceLoading(false);
       }
-
-      const allowed = new Set<string>(["admin"]);
-      const adminsOnly = Boolean(data?.allow_admins_only);
-      if (!adminsOnly) {
-        if (Boolean(data?.allow_qa_officers)) {
-          allowed.add("qa_officer");
-        }
-        if (Boolean(data?.allow_programme_coordinators)) {
-          allowed.add("programme_coordinator");
-        }
-        if (
-          Boolean((data as { allow_learners?: boolean } | null)?.allow_learners)
-        ) {
-          allowed.add("learner");
-        }
-      }
-      setMaintenanceAllowedRoles(allowed);
-      setMaintenanceLoading(false);
     };
 
     void loadMaintenance();
@@ -192,7 +318,21 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   }
 
   const role = user.user_metadata?.role ?? "learner";
-  if (maintenanceActive && !maintenanceAllowedRoles.has(role)) {
+  const windowPathWithHash = `${window.location.pathname}${window.location.hash}`;
+  const pathWithHash = `${location.pathname}${location.hash}${windowPathWithHash}`;
+  const bypassMaintenance =
+    pathWithHash.includes("coordinator") ||
+    pathWithHash.includes("/qa") ||
+    pathWithHash.includes("/admin");
+
+  console.log("ProtectedRoute - pathWithHash:", pathWithHash);
+  console.log("ProtectedRoute - bypassMaintenance:", bypassMaintenance);
+
+  if (
+    !bypassMaintenance &&
+    maintenanceActive &&
+    !maintenanceAllowedRoles.has(role)
+  ) {
     return (
       <div
         style={{
@@ -216,8 +356,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
 
-  if (!user) {
+  const pathname = `${location.pathname}${location.hash}`;
+  const forceSidebar =
+    pathname.includes("/coordinator") ||
+    pathname.includes("/qa") ||
+    pathname.includes("/admin");
+
+  if (!user && !forceSidebar) {
     return <>{children}</>;
   }
 
@@ -241,6 +388,10 @@ function App() {
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/dashboard"
+            element={<Navigate to="/learner/dashboard" replace />}
+          />
+          <Route
+            path="/learner/dashboard"
             element={
               <ProtectedRoute>
                 <MainLayout>
@@ -252,11 +403,9 @@ function App() {
           <Route
             path="/coordinator/documents"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <CoordinatorDocuments />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <CoordinatorDocuments />
+              </MainLayout>
             }
           />
           <Route
@@ -282,73 +431,59 @@ function App() {
           <Route
             path="/qa/placements"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QAPlacements />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QAPlacements />
+              </MainLayout>
             }
           />
 
           <Route
             path="/qa/dashboard"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QADashboard />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QADashboard />
+              </MainLayout>
             }
           />
 
           <Route
             path="/qa/compliance"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QACompliance />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QACompliance />
+              </MainLayout>
             }
           />
           <Route
             path="/coordinator/placements"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <ProgrammeCoordinatorPlacements />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <ProgrammeCoordinatorPlacements />
+              </MainLayout>
             }
           />
           <Route
             path="/qa/documents"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QADocuments />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QADocuments />
+              </MainLayout>
             }
           />
           <Route
             path="/qa/hosts"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QAHosts />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QAHosts />
+              </MainLayout>
             }
           />
           <Route
             path="/qa/reports"
             element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <QAReports />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <QAReports />
+              </MainLayout>
             }
           />
 
@@ -406,8 +541,12 @@ function App() {
           </Route>
           <Route path="/" element={<Login />} />
           <Route
-            path="coordinator/dashboard"
-            element={<CoordinatorDashboard />}
+            path="/coordinator/dashboard"
+            element={
+              <MainLayout>
+                <CoordinatorDashboard />
+              </MainLayout>
+            }
           />
           <Route
             path="/coordinator/hosts"

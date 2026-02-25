@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
 import "./CoordinatorDashboard.css";
-import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
 import { useAuth } from "../hooks/useAuth";
 
 const CoordinatorDashboard: React.FC = () => {
   const { user } = useAuth();
-  
+
   // Set user role to programme_coordinator when accessing coordinator dashboard
   useEffect(() => {
     if (user) {
       // Update user metadata to reflect coordinator role
       user.user_metadata = {
         ...user.user_metadata,
-        role: 'programme_coordinator'
+        role: "programme_coordinator",
       };
     }
   }, [user]);
@@ -63,20 +62,20 @@ const CoordinatorDashboard: React.FC = () => {
 
   const handleSubmit = () => {
     if (selectedLearner) {
-      setTableData(prev =>
-        prev.map(learner =>
-          learner.id === selectedLearner.id ? selectedLearner : learner
-        )
+      setTableData((prev) =>
+        prev.map((learner) =>
+          learner.id === selectedLearner.id ? selectedLearner : learner,
+        ),
       );
-      alert(`Status updated: ${selectedLearner.name} - ${selectedLearner.status}`);
+      alert(
+        `Status updated: ${selectedLearner.name} - ${selectedLearner.status}`,
+      );
       closeModal();
     }
   };
 
   return (
     <div className="coordinator-dashboard-container">
-      <SideBar />
-
       <div className="dashboard-content">
         <h1 className="dashboard-title">Coordinator Dashboard</h1>
 
@@ -95,7 +94,7 @@ const CoordinatorDashboard: React.FC = () => {
             { header: "SUBMITTED ON", key: "submittedOn" },
             { header: "ACTION", key: "action" },
           ]}
-          data={tableData.map(learner => ({
+          data={tableData.map((learner) => ({
             ...learner,
             action: (
               <button
@@ -113,7 +112,7 @@ const CoordinatorDashboard: React.FC = () => {
           <div className="learner-modal-overlay" onClick={closeModal}>
             <div
               className="learner-modal-content"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
                 <h2>Learner Details</h2>
@@ -145,16 +144,18 @@ const CoordinatorDashboard: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Programme:</span>
-                  <span className="detail-value">{selectedLearner.programme}</span>
+                  <span className="detail-value">
+                    {selectedLearner.programme}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Status:</span>
                   <select
                     className="status-dropdown"
                     value={selectedLearner.status}
-                    onChange={e =>
+                    onChange={(e) =>
                       setSelectedLearner((prev: any) =>
-                        prev ? { ...prev, status: e.target.value } : null
+                        prev ? { ...prev, status: e.target.value } : null,
                       )
                     }
                   >
@@ -165,7 +166,9 @@ const CoordinatorDashboard: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Submitted On:</span>
-                  <span className="detail-value">{selectedLearner.submittedOn}</span>
+                  <span className="detail-value">
+                    {selectedLearner.submittedOn}
+                  </span>
                 </div>
               </div>
 
