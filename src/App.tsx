@@ -23,7 +23,6 @@ import AdminSystemMonitor from "./pages/AdminSystemMonitor";
 import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
-import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 
 import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
@@ -48,8 +47,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getDefaultPathForRole = (role?: string) => {
     if (role === "admin") return "/admin/dashboard";
-    if (role === "programme_coordinator") return "/coordinator/dashboard";
-    if (role === "qa_officer") return "/qa/dashboard";
+    if (
+      role === "super_admin" ||
+      role === "programme_coordinator" ||
+      role === "qa_officer"
+    ) {
+      return "/super-admin/dashboard";
+    }
     return "/dashboard";
   };
 
@@ -59,15 +63,17 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("Auth state changed:", session?.user);
 
         // Check if we have a dummy token - if so, don't overwrite with Supabase session
+        const superAdminToken = localStorage.getItem("super-admin-token");
         const coordinatorToken = localStorage.getItem("coordinator-token");
         const adminToken = localStorage.getItem("admin-token");
         const qaToken = localStorage.getItem("qa-token");
 
         if (session?.user) {
           localStorage.removeItem("admin-token");
+          localStorage.removeItem("super-admin-token");
           localStorage.removeItem("coordinator-token");
           localStorage.removeItem("qa-token");
-        } else if (coordinatorToken || adminToken || qaToken) {
+        } else if (superAdminToken || coordinatorToken || adminToken || qaToken) {
           console.log(
             "Dummy token exists, ignoring Supabase auth state change",
           );
@@ -93,11 +99,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const getUserSession = async () => {
       // Check for dummy tokens first
+      const superAdminToken = localStorage.getItem("super-admin-token");
       const coordinatorToken = localStorage.getItem("coordinator-token");
       const adminToken = localStorage.getItem("admin-token");
       const qaToken = localStorage.getItem("qa-token");
 
-      if (adminToken && (coordinatorToken || qaToken)) {
+      if (adminToken && (superAdminToken || coordinatorToken || qaToken)) {
+        localStorage.removeItem("super-admin-token");
         localStorage.removeItem("coordinator-token");
         localStorage.removeItem("qa-token");
       }
@@ -121,12 +129,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      if (coordinatorToken) {
-        console.log("Found coordinator token, creating dummy user");
+      if (superAdminToken || coordinatorToken || qaToken) {
+        console.log("Found super admin token, creating dummy user");
         const dummyUser = {
-          id: "coordinator-123",
-          email: "coordinator@gmail.com",
-          user_metadata: { role: "programme_coordinator" },
+          id: "super-admin-123",
+          email: "superadmin@lpm.com",
+          user_metadata: { role: "super_admin" },
         };
         setUser(dummyUser);
         setLoading(false);
@@ -135,26 +143,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/" ||
           window.location.pathname === "/login"
         ) {
-          navigate(getDefaultPathForRole("programme_coordinator"));
-        }
-        return;
-      }
-
-      if (qaToken) {
-        console.log("Found QA token, creating dummy user");
-        const dummyUser = {
-          id: "qa-123",
-          email: "test@qa.com",
-          user_metadata: { role: "qa_officer" },
-        };
-        setUser(dummyUser);
-        setLoading(false);
-
-        if (
-          window.location.pathname === "/" ||
-          window.location.pathname === "/login"
-        ) {
-          navigate(getDefaultPathForRole("qa_officer"));
+          navigate(getDefaultPathForRole("super_admin"));
         }
         return;
       }
@@ -263,7 +252,7 @@ function App() {
             }
           />
           <Route
-            path="/coordinator/documents"
+            path="/super-admin/documents"
             element={
               <ProtectedRoute>
                 <MainLayout>
@@ -293,18 +282,18 @@ function App() {
             }
           />
           <Route
-            path="/qa/placements"
+            path="/super-admin/placements"
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <QAPlacements />
+                  <ProgrammeCoordinatorPlacements />
                 </MainLayout>
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/qa/dashboard"
+            path="/super-admin/dashboard"
             element={
               <ProtectedRoute>
                 <MainLayout>
@@ -315,11 +304,21 @@ function App() {
           />
 
           <Route
-            path="/qa/compliance"
+            path="/super-admin/compliance"
             element={
               <ProtectedRoute>
                 <MainLayout>
                   <QACompliance />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/qa/placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QAPlacements />
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -419,23 +418,71 @@ function App() {
           </Route>
           <Route path="/" element={<Login />} />
           <Route
-            path="coordinator/dashboard"
-            element={<CoordinatorDashboard />}
+            path="/qa/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coordinator/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
           />
           <Route
             path="/coordinator/hosts"
             element={
-              <MainLayout>
-                <CoordinatorHosts />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorHosts />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/coordinator/reports"
             element={
-              <MainLayout>
-                <CoordinatorReports />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorReports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/hosts"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorHosts />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/reports"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorReports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUserManagement />
+              </ProtectedRoute>
             }
           />
         </Routes>

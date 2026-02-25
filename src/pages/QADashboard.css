@@ -14,8 +14,16 @@
 .dashboard-title {
   font-size: 28px;
   font-weight: 600;
-  margin-bottom: 30px;
+  margin-bottom: 6px;
   color: #222;
+}
+
+.dashboard-subtitle {
+  margin: 0 0 24px;
+  color: #5f6b7a;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 /* Cards container */

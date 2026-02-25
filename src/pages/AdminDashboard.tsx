@@ -44,13 +44,13 @@ const AdminDashboard: React.FC = () => {
     {
       fullName: "Jane Doe",
       email: "jane.doe@example.com",
-      role: "QA Officer",
+      role: "Super Admin",
       createdDate: "2022-11-01",
     },
     {
       fullName: "John Smith",
       email: "john.smith@example.com",
-      role: "Programme Coordinator",
+      role: "Super Admin",
       createdDate: "2023-03-20",
     },
     {

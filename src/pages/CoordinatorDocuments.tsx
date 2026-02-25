@@ -38,8 +38,7 @@ const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
 const ROLE_OPTIONS: DropdownOption[] = [
   { label: "Admin", value: "Admin" },
   { label: "Learner", value: "Learner" },
-  { label: "Coordinator", value: "Coordinator" },
-  { label: "QA Officer", value: "QA Officer" },
+  { label: "Super Admin", value: "Super Admin" },
 ];
 
 const TYPE_PREFIX = "__DOC_TYPE__";
@@ -75,7 +74,11 @@ function resolveDocumentType(fileName: string): DocumentTypeKey | null {
 }
 
 function isCoordinatorTokenSession(): boolean {
-  return localStorage.getItem("coordinator-token") === "dummy-coordinator-token";
+  return (
+    localStorage.getItem("super-admin-token") === "dummy-super-admin-token" ||
+    localStorage.getItem("coordinator-token") === "dummy-coordinator-token" ||
+    localStorage.getItem("qa-token") === "dummy-qa-token"
+  );
 }
 
 function loadLocalDocuments(): DocumentRecord[] {

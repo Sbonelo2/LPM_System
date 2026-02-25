@@ -20,24 +20,22 @@ interface User {
 
 const DEFAULT_USERS: User[] = [
     { id: '1', fullName: 'Sine Mathebula', email: 'sine@example.com', role: 'Learner', createdDate: '2023-01-15' },
-    { id: '2', fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'QA Officer', createdDate: '2022-11-01' },
-    { id: '3', fullName: 'John Smith', email: 'john.smith@example.com', role: 'Programme Coordinator', createdDate: '2023-03-20' },
+    { id: '2', fullName: 'Jane Doe', email: 'jane.doe@example.com', role: 'Super Admin', createdDate: '2022-11-01' },
+    { id: '3', fullName: 'John Smith', email: 'john.smith@example.com', role: 'Super Admin', createdDate: '2023-03-20' },
     { id: '4', fullName: 'Admin User', email: 'test@admin.com', role: 'Admin', createdDate: '2023-02-10' },
 ];
 
 const USERS_STORAGE_KEY = 'admin_user_management_users';
 const PRIVILEGED_ROLES = new Set([
     'Admin',
-    'Coordinator',
+    'Super Admin',
     'Facilitator',
-    'Quality Assurance Officer',
 ]);
 
 const ROLE_OPTIONS: DropdownOption[] = [
     { label: 'Admin', value: 'Admin' },
-    { label: 'Coordinator', value: 'Coordinator' },
+    { label: 'Super Admin', value: 'Super Admin' },
     { label: 'Facilitator', value: 'Facilitator' },
-    { label: 'Quality Assurance Officer', value: 'Quality Assurance Officer' },
     { label: 'Learner', value: 'Learner' },
 ];
 
@@ -297,7 +295,7 @@ const AdminUserManagement: React.FC = () => {
             <SideBar />
             <div className="dashboard-content">
                 <div className="dashboard-header">
-                    <h2>USER MANAGEMENT</h2>
+                    <h2>USER & ROLE MANAGEMENT</h2>
                     <Button text="Add User" onClick={handleAddUser} variant="primary" />
                 </div>
 
@@ -306,7 +304,7 @@ const AdminUserManagement: React.FC = () => {
                     <TableComponent
                         columns={userColumns}
                         data={users}
-                        caption="Manage System Users"
+                        caption="Manage System Users and Roles"
                     />
                 </Card>
 

@@ -4,7 +4,12 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./NotificationBell";
 
-type UserRole = "admin" | "learner" | "qa_officer" | "programme_coordinator";
+type UserRole =
+  | "admin"
+  | "learner"
+  | "super_admin"
+  | "qa_officer"
+  | "programme_coordinator";
 
 interface MenuItem {
   label: string;
@@ -20,9 +25,13 @@ const SideBar: React.FC = () => {
 
   const roleFromPath: UserRole | null = (() => {
     if (location.pathname.startsWith("/admin")) return "admin";
-    if (location.pathname.startsWith("/coordinator"))
-      return "programme_coordinator";
-    if (location.pathname.startsWith("/qa")) return "qa_officer";
+    if (
+      location.pathname.startsWith("/super-admin") ||
+      location.pathname.startsWith("/coordinator") ||
+      location.pathname.startsWith("/qa")
+    ) {
+      return "super_admin";
+    }
     return null;
   })();
 
@@ -38,6 +47,7 @@ const SideBar: React.FC = () => {
   const handleSignOut = async () => {
     // Clear local dummy-session tokens first so UI state resets immediately.
     localStorage.removeItem("admin-token");
+    localStorage.removeItem("super-admin-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
 
@@ -68,6 +78,15 @@ const SideBar: React.FC = () => {
         { label: "PROFILE", path: "/profile" },
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
+      super_admin: [
+        { label: "DASHBOARD", path: "/super-admin/dashboard" },
+        { label: "PLACEMENTS", path: "/super-admin/placements" },
+        { label: "DOCUMENTS", path: "/super-admin/documents" },
+        { label: "HOSTS", path: "/super-admin/hosts" },
+        { label: "REPORTS", path: "/super-admin/reports" },
+        { label: "COMPLIANCE", path: "/super-admin/compliance" },
+        { label: "USER MANAGEMENT", path: "/super-admin/users" },
+      ],
       qa_officer: [
         { label: "DASHBOARD", path: "/qa/dashboard" },
         { label: "PLACEMENTS", path: "/qa/placements" },
@@ -94,6 +113,9 @@ const SideBar: React.FC = () => {
   const menuItems = getMenuItemsByRole(userRole);
 
   const isActive = (path?: string) => path && location.pathname === path;
+  const formattedRole = userRole === "super_admin"
+    ? "SUPER ADMIN"
+    : userRole.replace("_", " ").toUpperCase();
 
   return (
     <div
@@ -199,7 +221,7 @@ const SideBar: React.FC = () => {
               fontWeight: "500",
             }}
           >
-            Role: {userRole.replace("_", " ").toUpperCase()}
+            Role: {formattedRole}
           </p>
         </div>
       )}
