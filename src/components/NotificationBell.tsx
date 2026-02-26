@@ -12,10 +12,10 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ onClick }) => {
   const { user } = useAuth();
   const [notificationCount, setNotificationCount] = useState(0); // Start at 0, fetch real data
 
-  // Fetch notifications for learners
+  // Fetch notifications for all roles
   useEffect(() => {
-    if (user && user?.user_metadata?.role === 'learner') {
-      // Use real data fetching from Supabase
+    if (user) {
+      // Use real data fetching from Supabase for all authenticated users
       fetchNotifications();
     }
   }, [user]);
