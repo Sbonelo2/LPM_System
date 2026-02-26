@@ -4,7 +4,12 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./NotificationBell";
 
-type UserRole = "admin" | "learner" | "qa_officer" | "programme_coordinator";
+type UserRole =
+  | "admin"
+  | "learner"
+  | "qa_officer"
+  | "programme_coordinator"
+  | "mentor";
 
 interface MenuItem {
   label: string;
@@ -23,6 +28,7 @@ const SideBar: React.FC = () => {
     if (location.pathname.startsWith("/coordinator"))
       return "programme_coordinator";
     if (location.pathname.startsWith("/qa")) return "qa_officer";
+    if (location.pathname.startsWith("/mentor")) return "mentor";
     return null;
   })();
 
@@ -73,6 +79,11 @@ const SideBar: React.FC = () => {
         { label: "HOSTS", path: "/qa/hosts" },
         { label: "REPORTS", path: "/qa/reports" },
         { label: "COMPLIANCE", path: "/qa/compliance" },
+      ],
+      mentor: [
+        { label: "DASHBOARD", path: "/mentor/dashboard" },
+        { label: "HOST", path: "/mentor/host" },
+        { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },

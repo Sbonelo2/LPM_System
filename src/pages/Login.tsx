@@ -75,6 +75,8 @@ const Login: React.FC = () => {
         navigate("/coordinator/documents");
       } else if (effectiveRole === "qa_officer") {
         navigate("/qa/dashboard");
+      } else if (effectiveRole === "mentor") {
+        navigate("/mentor/dashboard");
       } else if (effectiveRole === "admin") {
         navigate("/admin/dashboard");
       } else {

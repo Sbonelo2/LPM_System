@@ -5,7 +5,11 @@ import AddHostModal from "../components/AddHostModal";
 import Card from "../components/Card";
 import type { NewHostPayload } from "../components/AddHostModal";
 
-const CoordinatorHosts: React.FC = () => {
+type CoordinatorHostsProps = {
+  pageTitle?: string;
+};
+
+const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
   const [showAddHostModal, setShowAddHostModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,10 +27,10 @@ const CoordinatorHosts: React.FC = () => {
       phone: "+27 11 234 5678",
       capacity: 10,
       currentLearners: 6,
-      status: "Active"
+      status: "Active",
     },
     {
-      id: "HOST002", 
+      id: "HOST002",
       name: "XYZ Organization",
       industry: "Finance",
       location: "Cape Town, Western Cape",
@@ -35,7 +39,7 @@ const CoordinatorHosts: React.FC = () => {
       phone: "+27 21 345 6789",
       capacity: 8,
       currentLearners: 4,
-      status: "Active"
+      status: "Active",
     },
     {
       id: "HOST003",
@@ -47,17 +51,19 @@ const CoordinatorHosts: React.FC = () => {
       phone: "+27 31 456 7890",
       capacity: 12,
       currentLearners: 9,
-      status: "Pending"
-    }
+      status: "Pending",
+    },
   ]);
 
   // Get unique industries for filter dropdown
-  const industries = ["all", ...new Set(hosts.map(host => host.industry))];
-  
+  const industries = ["all", ...new Set(hosts.map((host) => host.industry))];
+
   // Filter hosts based on filters
-  const filteredHosts = hosts.filter(host => {
-    const matchesStatus = statusFilter === "all" || host.status === statusFilter;
-    const matchesIndustry = industryFilter === "all" || host.industry === industryFilter;
+  const filteredHosts = hosts.filter((host) => {
+    const matchesStatus =
+      statusFilter === "all" || host.status === statusFilter;
+    const matchesIndustry =
+      industryFilter === "all" || host.industry === industryFilter;
     return matchesStatus && matchesIndustry;
   });
 
@@ -65,7 +71,7 @@ const CoordinatorHosts: React.FC = () => {
     console.log("Adding host:", payload);
     // Add the new host to the list with correct capacity and industry
     const newHost = {
-      id: `HOST${String(hosts.length + 1).padStart(3, '0')}`,
+      id: `HOST${String(hosts.length + 1).padStart(3, "0")}`,
       name: payload.hostName,
       industry: "General", // You can make this a field in the form if needed
       location: payload.location,
@@ -74,7 +80,7 @@ const CoordinatorHosts: React.FC = () => {
       phone: payload.contactPhone,
       capacity: 5, // Default capacity, can be made configurable
       currentLearners: 0,
-      status: "Pending"
+      status: "Pending",
     };
     setHosts([...hosts, newHost]);
     setShowAddHostModal(false);
@@ -87,18 +93,18 @@ const CoordinatorHosts: React.FC = () => {
 
   const handleUpdateHost = (payload: NewHostPayload) => {
     if (!selectedHost) return;
-    
-    const updatedHosts = hosts.map(host => 
-      host.id === selectedHost.id 
-        ? { 
-            ...host, 
+
+    const updatedHosts = hosts.map((host) =>
+      host.id === selectedHost.id
+        ? {
+            ...host,
             name: payload.hostName,
             location: payload.location,
             contactPerson: payload.contactPerson,
             email: payload.contactEmail,
-            phone: payload.contactPhone
+            phone: payload.contactPhone,
           }
-        : host
+        : host,
     );
     setHosts(updatedHosts);
     setShowEditModal(false);
@@ -112,8 +118,8 @@ const CoordinatorHosts: React.FC = () => {
 
   const confirmDelete = () => {
     if (!selectedHost) return;
-    
-    const updatedHosts = hosts.filter(host => host.id !== selectedHost.id);
+
+    const updatedHosts = hosts.filter((host) => host.id !== selectedHost.id);
     setHosts(updatedHosts);
     setShowDeleteModal(false);
     setSelectedHost(null);
@@ -123,12 +129,12 @@ const CoordinatorHosts: React.FC = () => {
     <div className="hosts-container">
       <div className="hosts-content">
         <div className="hosts-header">
-          <h2 className="hosts-title">Coordinator Hosts</h2>
+          <h2 className="hosts-title">{pageTitle ?? "Coordinator Hosts"}</h2>
         </div>
         <div className="hosts-main">
           <div className="hosts-controls">
             <div className="hosts-filters">
-              <select 
+              <select
                 className="filter-select"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -138,25 +144,25 @@ const CoordinatorHosts: React.FC = () => {
                 <option value="Pending">Pending</option>
                 <option value="Rejected">Rejected</option>
               </select>
-              <select 
+              <select
                 className="filter-select"
                 value={industryFilter}
                 onChange={(e) => setIndustryFilter(e.target.value)}
               >
-                {industries.map(industry => (
+                {industries.map((industry) => (
                   <option key={industry} value={industry}>
                     {industry === "all" ? "All Industries" : industry}
                   </option>
                 ))}
               </select>
             </div>
-            <Button 
-              text="Add Host" 
-              onClick={() => setShowAddHostModal(true)} 
+            <Button
+              text="Add Host"
+              onClick={() => setShowAddHostModal(true)}
               className="add-host-btn"
             />
           </div>
-          
+
           <div className="hosts-grid">
             {filteredHosts.map((host) => (
               <Card
@@ -166,23 +172,35 @@ const CoordinatorHosts: React.FC = () => {
                 className="host-card"
               >
                 <div className="host-details">
-                  <p><strong>Contact:</strong> {host.contactPerson}</p>
-                  <p><strong>Email:</strong> {host.email}</p>
-                  <p><strong>Phone:</strong> {host.phone}</p>
-                  <p><strong>Capacity:</strong> {host.currentLearners}/{host.capacity} learners</p>
-                  <p><strong>Status:</strong> 
-                    <span className={`status-badge ${host.status.toLowerCase()}`}>
+                  <p>
+                    <strong>Contact:</strong> {host.contactPerson}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {host.email}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {host.phone}
+                  </p>
+                  <p>
+                    <strong>Capacity:</strong> {host.currentLearners}/
+                    {host.capacity} learners
+                  </p>
+                  <p>
+                    <strong>Status:</strong>
+                    <span
+                      className={`status-badge ${host.status.toLowerCase()}`}
+                    >
                       {host.status}
                     </span>
                   </p>
                 </div>
                 <div className="host-actions">
-                  <Button 
+                  <Button
                     text="Edit"
                     onClick={() => handleEditHost(host)}
                     className="host-action-btn edit-btn"
                   />
-                  <Button 
+                  <Button
                     text="Delete"
                     onClick={() => handleDeleteHost(host)}
                     className="host-action-btn delete-btn"
@@ -202,11 +220,17 @@ const CoordinatorHosts: React.FC = () => {
 
       {/* Edit Host Modal */}
       {showEditModal && selectedHost && (
-        <div className="host-modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="host-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="host-modal-overlay"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="host-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Edit Host</h2>
-              <Button 
+              <Button
                 text="×"
                 onClick={() => setShowEditModal(false)}
                 className="modal-close-btn"
@@ -305,11 +329,36 @@ const CoordinatorHosts: React.FC = () => {
                 text="Update Host"
                 onClick={() => {
                   const payload = {
-                    hostName: (document.getElementById('editHostName') as HTMLInputElement)?.value || selectedHost.name,
-                    location: (document.getElementById('editLocation') as HTMLInputElement)?.value || selectedHost.location,
-                    contactPerson: (document.getElementById('editContactPerson') as HTMLInputElement)?.value || selectedHost.contactPerson,
-                    contactEmail: (document.getElementById('editContactEmail') as HTMLInputElement)?.value || selectedHost.email,
-                    contactPhone: (document.getElementById('editContactPhone') as HTMLInputElement)?.value || selectedHost.phone,
+                    hostName:
+                      (
+                        document.getElementById(
+                          "editHostName",
+                        ) as HTMLInputElement
+                      )?.value || selectedHost.name,
+                    location:
+                      (
+                        document.getElementById(
+                          "editLocation",
+                        ) as HTMLInputElement
+                      )?.value || selectedHost.location,
+                    contactPerson:
+                      (
+                        document.getElementById(
+                          "editContactPerson",
+                        ) as HTMLInputElement
+                      )?.value || selectedHost.contactPerson,
+                    contactEmail:
+                      (
+                        document.getElementById(
+                          "editContactEmail",
+                        ) as HTMLInputElement
+                      )?.value || selectedHost.email,
+                    contactPhone:
+                      (
+                        document.getElementById(
+                          "editContactPhone",
+                        ) as HTMLInputElement
+                      )?.value || selectedHost.phone,
                   };
                   handleUpdateHost(payload);
                 }}
@@ -322,11 +371,17 @@ const CoordinatorHosts: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedHost && (
-        <div className="host-modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div className="host-modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="host-modal-overlay"
+          onClick={() => setShowDeleteModal(false)}
+        >
+          <div
+            className="host-modal-content delete-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Delete Host</h2>
-              <Button 
+              <Button
                 text="×"
                 onClick={() => setShowDeleteModal(false)}
                 className="modal-close-btn"
@@ -337,9 +392,15 @@ const CoordinatorHosts: React.FC = () => {
                 <p>Are you sure you want to delete this host?</p>
                 <div className="delete-host-info">
                   <h3>{selectedHost.name}</h3>
-                  <p><strong>Location:</strong> {selectedHost.location}</p>
-                  <p><strong>Contact:</strong> {selectedHost.contactPerson}</p>
-                  <p><strong>Email:</strong> {selectedHost.email}</p>
+                  <p>
+                    <strong>Location:</strong> {selectedHost.location}
+                  </p>
+                  <p>
+                    <strong>Contact:</strong> {selectedHost.contactPerson}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {selectedHost.email}
+                  </p>
                 </div>
               </div>
             </div>

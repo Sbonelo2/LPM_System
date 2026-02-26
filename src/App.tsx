@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacements";
 import QADashboard from "./pages/QADashboard";
 import QADocuments from "./pages/QADocuments";
+import MentorDashboard from "./pages/MentorDashboard";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -69,6 +70,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (role === "admin") return "/admin/dashboard";
     if (role === "programme_coordinator") return "/coordinator/documents";
     if (role === "qa_officer") return "/qa/dashboard";
+    if (role === "mentor") return "/mentor/dashboard";
     return "/learner/dashboard";
   };
 
@@ -362,6 +364,7 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const forceSidebar =
     pathname.includes("/coordinator") ||
     pathname.includes("/qa") ||
+    pathname.includes("/mentor") ||
     pathname.includes("/admin");
 
   if (!user && !forceSidebar) {
@@ -483,6 +486,33 @@ function App() {
             element={
               <MainLayout>
                 <QAReports />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/dashboard"
+            element={
+              <MainLayout>
+                <MentorDashboard />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/host"
+            element={
+              <MainLayout>
+                <CoordinatorHosts pageTitle="Mentor Hosts" />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/notifications"
+            element={
+              <MainLayout>
+                <Notifications />
               </MainLayout>
             }
           />
