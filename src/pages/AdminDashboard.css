@@ -1,3 +1,8 @@
-.admin-profile-icon {
-    /* Additional styling for placement if needed */
+.facilitator-profile-icon {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.facilitator-profile-icon:hover {
+  opacity: 0.8;
 }

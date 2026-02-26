@@ -17,7 +17,7 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    localStorage.removeItem("admin-token");
+    localStorage.removeItem("facilitator-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
 
@@ -33,11 +33,15 @@ const Login: React.FC = () => {
 
       // Check user role and redirect accordingly
       const userRole = data.user?.user_metadata?.role;
+      console.log("Login detected role:", userRole);
       if (userRole === "programme_coordinator") {
+        console.log("Redirecting to coordinator dashboard");
         navigate("/coordinator/dashboard");
-      } else if (userRole === "admin") {
-        navigate("/admin/dashboard");
+      } else if (userRole === "admin" || userRole === "facilitator") {
+        console.log("Redirecting to facilitator dashboard");
+        navigate("/facilitator/dashboard");
       } else {
+        console.log("Redirecting to learner dashboard");
         navigate("/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {

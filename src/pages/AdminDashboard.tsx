@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SideBar from "../components/SideBar";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
@@ -10,8 +9,9 @@ import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
 import "./AdminDashboard.css"; // Import AdminDashboard specific styles
 
-const AdminDashboard: React.FC = () => {
+const FacilitatorDashboard: React.FC = () => {
   const navigate = useNavigate();
+  console.log("FacilitatorDashboard component rendering");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,6 +20,11 @@ const AdminDashboard: React.FC = () => {
   const [activePlacementsCount, setActivePlacementsCount] = useState<number>(0);
   const [pendingIssuesCount, setPendingIssuesCount] = useState<number>(0);
   const [complianceStatus, setComplianceStatus] = useState<string>("N/A");
+
+  // Debug logging
+  useEffect(() => {
+    console.log("FacilitatorDashboard state:", { loading, error });
+  }, [loading, error]);
 
   interface ProfileRow {
     id: string;
@@ -54,7 +59,7 @@ const AdminDashboard: React.FC = () => {
     }));
   }, [profiles]);
 
-  const adminDashboardStats = useMemo(
+  const facilitatorDashboardStats = useMemo(
     () => [
       { label: "ACTIVE LEARNERS", value: activeLearnersCount },
       { label: "ACTIVE PLACEMENTS", value: activePlacementsCount },
@@ -165,18 +170,17 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="dashboard-layout">
-      <SideBar />
+    <>
       <div className="dashboard-content">
-        <div className="dashboard-header">
-          <h2>ADMIN DASHBOARD</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <p style={{ margin: 0, fontWeight: "bold" }}>Logged in as ADMIN</p>
-            <div
-              onClick={() => navigate("/admin/profile")}
-              style={{ cursor: "pointer" }}
-              className="admin-profile-icon"
-            >
+      <div className="dashboard-header">
+        <h2>FACILITATOR DASHBOARD</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <p style={{ margin: 0, fontWeight: "bold" }}>Logged in as FACILITATOR</p>
+          <div
+            onClick={() => navigate("/facilitator/profile")}
+            style={{ cursor: "pointer" }}
+            className="facilitator-profile-icon"
+          >
               <ProfileImageUpload editable={false} size={30} />
             </div>
           </div>
@@ -193,7 +197,7 @@ const AdminDashboard: React.FC = () => {
             )}
 
             <div className="dashboard-stats-container">
-              <DashboardStats stats={adminDashboardStats} />
+              <DashboardStats stats={facilitatorDashboardStats} />
             </div>
 
             <div className="dashboard-my-placements-container">
@@ -203,7 +207,7 @@ const AdminDashboard: React.FC = () => {
                   columns={userColumns}
                   data={userData}
                   caption=" Active System Users"
-                  onRowClick={() => navigate("/admin/users")}
+                  onRowClick={() => navigate("/facilitator/users")}
                 />
               </Card>
             </div>
@@ -212,8 +216,8 @@ const AdminDashboard: React.FC = () => {
 
         <div style={{ marginTop: "20px", textAlign: "center" }}></div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default AdminDashboard;
+export default FacilitatorDashboard;

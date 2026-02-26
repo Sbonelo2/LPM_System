@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./NotificationBell";
 
-type UserRole = "admin" | "learner" | "qa_officer" | "programme_coordinator";
+type UserRole = "admin" | "facilitator" | "learner" | "qa_officer" | "programme_coordinator";
 
 interface MenuItem {
   label: string;
@@ -19,7 +19,7 @@ const SideBar: React.FC = () => {
   const { user } = useAuth();
 
   const roleFromPath: UserRole | null = (() => {
-    if (location.pathname.startsWith("/admin")) return "admin";
+    if (location.pathname.startsWith("/facilitator")) return "facilitator";
     if (location.pathname.startsWith("/coordinator"))
       return "programme_coordinator";
     if (location.pathname.startsWith("/qa")) return "qa_officer";
@@ -37,7 +37,7 @@ const SideBar: React.FC = () => {
 
   const handleSignOut = async () => {
     // Clear local dummy-session tokens first so UI state resets immediately.
-    localStorage.removeItem("admin-token");
+    localStorage.removeItem("facilitator-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
 
@@ -50,14 +50,24 @@ const SideBar: React.FC = () => {
     }
   };
 
+  // Handle legacy admin role by mapping it to facilitator
+  const normalizedRole = userRole === "admin" ? "facilitator" : userRole;
+  
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
     const roleSpecificItems: Record<UserRole, MenuItem[]> = {
       admin: [
-        { label: "DASHBOARD", path: "/admin/dashboard" },
-        { label: "USER MANAGEMENT", path: "/admin/users" },
-        { label: "SYSTEM SETTINGS", path: "/admin/settings" },
-        { label: "SYSTEM MONITORING", path: "/admin/monitoring" },
-        { label: "MAINTENANCE", path: "/admin/maintenance" },
+        { label: "DASHBOARD", path: "/facilitator/dashboard" },
+        { label: "USER MANAGEMENT", path: "/facilitator/users" },
+        { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
+        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
+        { label: "MAINTENANCE", path: "/facilitator/maintenance" },
+      ],
+      facilitator: [
+        { label: "DASHBOARD", path: "/facilitator/dashboard" },
+        { label: "USER MANAGEMENT", path: "/facilitator/users" },
+        { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
+        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
+        { label: "MAINTENANCE", path: "/facilitator/maintenance" },
       ],
       learner: [
         { label: "DASHBOARD", path: "/dashboard" },
@@ -89,7 +99,7 @@ const SideBar: React.FC = () => {
     ];
   };
 
-  const menuItems = getMenuItemsByRole(userRole);
+  const menuItems = getMenuItemsByRole(normalizedRole);
 
   const isActive = (path?: string) => path && location.pathname === path;
 
