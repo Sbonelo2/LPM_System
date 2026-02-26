@@ -61,6 +61,7 @@ const SideBar: React.FC = () => {
         { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
         { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
+        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       facilitator: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
@@ -68,6 +69,7 @@ const SideBar: React.FC = () => {
         { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
         { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
+        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       learner: [
         { label: "DASHBOARD", path: "/dashboard" },
@@ -83,6 +85,7 @@ const SideBar: React.FC = () => {
         { label: "HOSTS", path: "/qa/hosts" },
         { label: "REPORTS", path: "/qa/reports" },
         { label: "COMPLIANCE", path: "/qa/compliance" },
+        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
@@ -90,6 +93,7 @@ const SideBar: React.FC = () => {
         { label: "DOCUMENTS", path: "/coordinator/documents" },
         { label: "HOSTS", path: "/coordinator/hosts" },
         { label: "REPORTS", path: "/coordinator/reports" },
+        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
     };
 
