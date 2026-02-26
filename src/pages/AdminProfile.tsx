@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import ProfileImageUpload from '../components/ProfileImageUpload';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
-import SideBar from '../components/SideBar'; // Import SideBar
 import Card from '../components/Card'; // Import Card
 import './AdminProfile.css'; // Existing CSS
 import '../pages/Dashboard.css'; // Reusing dashboard layout CSS
@@ -63,11 +62,10 @@ const AdminProfile: React.FC = () => {
   };
 
   return (
-    <div className="dashboard-layout"> {/* Use dashboard layout */}
-      <SideBar /> {/* Include SideBar */}
-      <div className="dashboard-content">
-        <div className="dashboard-header">
-          <h2>ADMIN PROFILE</h2>
+    <>
+      <div className="facilitator-dashboard-content">
+      <div className="dashboard-header">
+        <h2>FACILITATOR PROFILE</h2>
         </div>
 
         <div style={{ maxWidth: '600px', margin: 'auto', padding: '20px' }}>
@@ -129,7 +127,7 @@ const AdminProfile: React.FC = () => {
           </Card>
         </div>
       </div>
-    </div>
+      </>
   );
 };
 

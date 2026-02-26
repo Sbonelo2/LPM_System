@@ -1,3 +1,10 @@
+.facilitator-dashboard-content {
+  width: 100%;
+  padding: 20px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
 .facilitator-profile-icon {
   cursor: pointer;
   transition: opacity 0.2s ease;

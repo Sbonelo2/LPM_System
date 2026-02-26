@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import SideBar from "../components/SideBar";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -367,9 +366,8 @@ const AdminSystemMonitor: React.FC = () => {
   );
 
   return (
-    <div className="dashboard-layout">
-      <SideBar />
-      <div className="dashboard-content">
+    <>
+      <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
           <h2>SYSTEM MONITOR</h2>
           <span
@@ -510,7 +508,7 @@ const AdminSystemMonitor: React.FC = () => {
       </div>
 
       <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
-    </div>
+      </>
   );
 };
 

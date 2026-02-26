@@ -171,7 +171,7 @@ const FacilitatorDashboard: React.FC = () => {
 
   return (
     <>
-      <div className="dashboard-content">
+      <div className="facilitator-dashboard-content">
       <div className="dashboard-header">
         <h2>FACILITATOR DASHBOARD</h2>
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>

@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import SideBar from "../components/SideBar";
-import AdminTopBar from "../components/AdminTopBar";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -171,15 +169,10 @@ export default function MaintenanceSettings() {
   }, []);
 
   return (
-    <div className="dashboard-layout">
-      <SideBar />
-      <div className="dashboard-content">
-        <div className="dashboard-topbar">
-          <AdminTopBar
-            subtitle="Admin"
-            userName="Dwayne"
-            profilePath="/admin/profile"
-          />
+    <>
+      <div className="facilitator-dashboard-content">
+        <div className="dashboard-header">
+          <h2>MAINTENANCE</h2>
         </div>
 
         <h2 className="maintenance__page-title">MaintenanceSettings</h2>
@@ -436,6 +429,6 @@ export default function MaintenanceSettings() {
       </div>
 
       <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
-    </div>
+      </>
   );
 }
