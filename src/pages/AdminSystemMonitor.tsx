@@ -366,8 +366,8 @@ const AdminSystemMonitor: React.FC = () => {
   );
 
   return (
-    <div className="dashboard-layout">
-      <div className="dashboard-content">
+    <>
+      <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
           <h2>SYSTEM MONITOR</h2>
           <span
@@ -508,7 +508,7 @@ const AdminSystemMonitor: React.FC = () => {
       </div>
 
       <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
-    </div>
+      </>
   );
 };
 

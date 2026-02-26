@@ -1,3 +1,15 @@
-.admin-profile-icon {
-    /* Additional styling for placement if needed */
+.facilitator-dashboard-content {
+  width: 100%;
+  padding: 20px;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.facilitator-profile-icon {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.facilitator-profile-icon:hover {
+  opacity: 0.8;
 }

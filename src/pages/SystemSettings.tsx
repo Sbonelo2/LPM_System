@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import AdminTopBar from "../components/AdminTopBar";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
@@ -789,14 +788,10 @@ export default function SystemSettings() {
   }, []);
 
   return (
-    <div className="dashboard-layout">
-      <div className="dashboard-content">
-        <div className="dashboard-topbar">
-          <AdminTopBar
-            subtitle="Admin"
-            userName="Dwayne"
-            profilePath="/admin/profile"
-          />
+    <>
+      <div className="facilitator-dashboard-content">
+        <div className="dashboard-header">
+          <h2>SYSTEM SETTINGS</h2>
         </div>
 
         <h2 className="system-settings__page-title">System Settings</h2>
@@ -1406,6 +1401,6 @@ export default function SystemSettings() {
       </div>
 
       <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
-    </div>
+      </>
   );
 }

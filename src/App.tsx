@@ -22,7 +22,7 @@ import SideBar from "./components/SideBar";
 import Footer from "./components/Footer";
 import "./App.css";
 import LandingPage from "./pages/LandingPage";
-import AdminDashboard from "./pages/AdminDashboard";
+import FacilitatorDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AdminProfile from "./pages/AdminProfile"; // Updated import
 import AdminUserManagement from "./pages/AdminUserManagement"; // Added import
@@ -98,6 +98,21 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // ignore
     }
     return metadataRole;
+    console.log("getDefaultPathForRole called with:", role);
+    if (role === "admin" || role === "facilitator") {
+      console.log("Returning facilitator dashboard path");
+      return "/facilitator/dashboard";
+    }
+    if (role === "programme_coordinator") {
+      console.log("Returning coordinator dashboard path");
+      return "/coordinator/dashboard";
+    }
+    if (role === "qa_officer") {
+      console.log("Returning qa dashboard path");
+      return "/qa/dashboard";
+    }
+    console.log("Returning default learner dashboard path");
+    return "/dashboard";
   };
 
   useEffect(() => {
@@ -169,6 +184,9 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         ) {
           const effectiveRole = await getEffectiveRole(session.user);
           navigate(getDefaultPathForRole(effectiveRole));
+          const userRole = session.user.user_metadata?.role;
+          console.log("Auth state change - user role:", userRole);
+          navigate(getDefaultPathForRole(userRole));
         } else if (
           !session?.user &&
           (window.location.pathname === "/learner/dashboard" ||
@@ -210,7 +228,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   );
   const [maintenanceAllowedRoles, setMaintenanceAllowedRoles] = useState<
     Set<string>
-  >(new Set(["admin"]));
+  >(new Set(["facilitator"]));
 
   useEffect(() => {
     const loadMaintenance = async () => {
@@ -250,6 +268,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
           setMaintenanceActive(false);
           setMaintenanceAllowedRoles(new Set(["admin"]));
           return;
+      const allowed = new Set<string>(["facilitator"]);
+      const facilitatorsOnly = Boolean(data?.allow_admins_only);
+      if (!facilitatorsOnly) {
+        if (Boolean(data?.allow_qa_officers)) {
+          allowed.add("qa_officer");
         }
 
         const status = String(data?.status ?? "inactive").toLowerCase();
@@ -548,27 +571,48 @@ function App() {
             }
           />
           <Route path="/" element={<Login />} />
-          <Route path="/admin/dashboard" element={<AdminProtectedRoute />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          </Route>
-          <Route path="/admin/profile" element={<AdminProtectedRoute />}>
-            <Route path="/admin/profile" element={<AdminProfile />} />
-          </Route>
-          <Route path="/admin/users" element={<AdminProtectedRoute />}>
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-          </Route>
-          <Route path="/admin/settings" element={<AdminProtectedRoute />}>
-            <Route path="/admin/settings" element={<SystemSettings />} />
-          </Route>
-          <Route path="/admin/monitoring" element={<AdminProtectedRoute />}>
-            <Route path="/admin/monitoring" element={<AdminSystemMonitor />} />
-          </Route>
-          <Route path="/admin/maintenance" element={<AdminProtectedRoute />}>
-            <Route
-              path="/admin/maintenance"
-              element={<MaintenanceSettings />}
-            />
-          </Route>
+          <Route path="/facilitator/dashboard" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <FacilitatorDashboard />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
+          <Route path="/facilitator/profile" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <AdminProfile />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
+          <Route path="/facilitator/users" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <AdminUserManagement />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
+          <Route path="/facilitator/settings" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <SystemSettings />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
+          <Route path="/facilitator/monitoring" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <AdminSystemMonitor />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
+          <Route path="/facilitator/maintenance" element={
+            <AdminProtectedRoute>
+              <MainLayout>
+                <MaintenanceSettings />
+              </MainLayout>
+            </AdminProtectedRoute>
+          } />
           <Route path="/" element={<Login />} />
           <Route
             path="/coordinator/dashboard"

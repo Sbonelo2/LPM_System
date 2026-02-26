@@ -1,9 +1,11 @@
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import SideBar from "./SideBar";
 
-const AdminProtectedRoute: React.FC = () => {
+const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -11,18 +13,11 @@ const AdminProtectedRoute: React.FC = () => {
   }
 
   const role = user?.user_metadata?.role;
-  if (!user || role !== "admin") {
+  if (!user || (role !== "facilitator" && role !== "admin")) {
     return <Navigate to="/login" />;
   }
 
-  return (
-    <div style={{ display: "flex" }}>
-      <SideBar />
-      <main style={{ flex: 1, overflow: "auto" }}>
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 };
 
 export default AdminProtectedRoute;

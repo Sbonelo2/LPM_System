@@ -30,7 +30,7 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    localStorage.removeItem("admin-token");
+    localStorage.removeItem("facilitator-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
 
@@ -49,38 +49,17 @@ const Login: React.FC = () => {
       setMessage("Logged in successfully!");
 
       // Check user role and redirect accordingly
-      const userId = data.user?.id;
-      const metadataRole = data.user?.user_metadata?.role;
-
-      let effectiveRole: string | undefined = metadataRole;
-      if (userId) {
-        const { data: profileRow, error: profileError } = (await withTimeout(
-          supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", userId)
-            .maybeSingle(),
-          8000,
-          "Load profile role",
-        )) as {
-          data: { role?: string } | null;
-          error: { message: string } | null;
-        };
-        if (!profileError && profileRow?.role) {
-          effectiveRole = profileRow.role;
-        }
-      }
-
-      if (effectiveRole === "programme_coordinator") {
-        navigate("/coordinator/documents");
-      } else if (effectiveRole === "qa_officer") {
-        navigate("/qa/dashboard");
-      } else if (effectiveRole === "mentor") {
-        navigate("/mentor/dashboard");
-      } else if (effectiveRole === "admin") {
-        navigate("/admin/dashboard");
+      const userRole = data.user?.user_metadata?.role;
+      console.log("Login detected role:", userRole);
+      if (userRole === "programme_coordinator") {
+        console.log("Redirecting to coordinator dashboard");
+        navigate("/coordinator/dashboard");
+      } else if (userRole === "admin" || userRole === "facilitator") {
+        console.log("Redirecting to facilitator dashboard");
+        navigate("/facilitator/dashboard");
       } else {
-        navigate("/learner/dashboard"); // Default dashboard for learners
+        console.log("Redirecting to learner dashboard");
+        navigate("/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {
       alert(

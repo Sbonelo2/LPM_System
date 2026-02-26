@@ -267,9 +267,9 @@ const AdminUserManagement: React.FC = () => {
   ];
 
   return (
-    <div className="dashboard-layout">
-      <div className="dashboard-content">
-        <div className="dashboard-header">
+    <>
+      <div className="facilitator-dashboard-content">
+      <div className="dashboard-header">
           <h2>USER MANAGEMENT</h2>
           <Button text="Add User" onClick={handleAddUser} variant="primary" />
         </div>
@@ -446,7 +446,7 @@ const AdminUserManagement: React.FC = () => {
 
         <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
       </div>
-    </div>
+      </>
   );
 };
 
