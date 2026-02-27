@@ -4,7 +4,7 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./NotificationBell";
 
-type UserRole = "admin" | "facilitator" | "learner" | "qa_officer" | "programme_coordinator";
+type UserRole = "admin" | "facilitator" | "learner" | "mentor" | "super_admin";
 
 interface MenuItem {
   label: string;
@@ -20,9 +20,7 @@ const SideBar: React.FC = () => {
 
   const roleFromPath: UserRole | null = (() => {
     if (location.pathname.startsWith("/facilitator")) return "facilitator";
-    if (location.pathname.startsWith("/coordinator"))
-      return "programme_coordinator";
-    if (location.pathname.startsWith("/qa")) return "qa_officer";
+    if (location.pathname.startsWith("/coordinator") || location.pathname.startsWith("/qa")) return "super_admin";
     if (location.pathname.startsWith("/mentor")) return "mentor";
     return null;
   })();
@@ -38,9 +36,12 @@ const SideBar: React.FC = () => {
 
   const handleSignOut = async () => {
     // Clear local dummy-session tokens first so UI state resets immediately.
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("super-admin-token");
     localStorage.removeItem("facilitator-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
+    localStorage.removeItem("mentor-token");
 
     try {
       await supabase.auth.signOut();
@@ -51,17 +52,14 @@ const SideBar: React.FC = () => {
     }
   };
 
-  // Handle legacy admin role by mapping it to facilitator
-  const normalizedRole = userRole === "admin" ? "facilitator" : userRole;
-  
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
     const roleSpecificItems: Record<UserRole, MenuItem[]> = {
       admin: [
-        { label: "DASHBOARD", path: "/facilitator/dashboard" },
-        { label: "USER MANAGEMENT", path: "/facilitator/users" },
-        { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
-        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
-        { label: "MAINTENANCE", path: "/facilitator/maintenance" },
+        { label: "DASHBOARD", path: "/admin/dashboard" },
+        { label: "USER MANAGEMENT", path: "/admin/users" },
+        { label: "SYSTEM SETTINGS", path: "/admin/settings" },
+        { label: "SYSTEM MONITORING", path: "/admin/monitoring" },
+        { label: "MAINTENANCE", path: "/admin/maintenance" },
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       facilitator: [
@@ -73,33 +71,25 @@ const SideBar: React.FC = () => {
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       learner: [
-        { label: "DASHBOARD", path: "/learner/dashboard" },
+        { label: "DASHBOARD", path: "/dashboard" },
         { label: "MY PLACEMENTS", path: "/my-placements" },
         { label: "MY DOCUMENTS", path: "/myDocuments" },
         { label: "PROFILE", path: "/profile" },
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
-      qa_officer: [
-        { label: "DASHBOARD", path: "/qa/dashboard" },
-        { label: "PLACEMENTS", path: "/qa/placements" },
-        { label: "DOCUMENTS", path: "/qa/documents" },
-        { label: "HOSTS", path: "/qa/hosts" },
-        { label: "REPORTS", path: "/qa/reports" },
-        { label: "COMPLIANCE", path: "/qa/compliance" },
+      super_admin: [
+        { label: "DASHBOARD", path: "/coordinator/dashboard" },
+        { label: "PLACEMENTS", path: "/placements" },
+        { label: "DOCUMENTS", path: "/documents" },
+        { label: "HOSTS", path: "/hosts" },
+        { label: "REPORTS", path: "/reports" },
+        { label: "COMPLIANCE", path: "/compliance" },
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
         { label: "HOST", path: "/mentor/host" },
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
-      ],
-      programme_coordinator: [
-        { label: "DASHBOARD", path: "/coordinator/dashboard" },
-        { label: "PLACEMENTS", path: "/coordinator/placements" },
-        { label: "DOCUMENTS", path: "/coordinator/documents" },
-        { label: "HOSTS", path: "/coordinator/hosts" },
-        { label: "REPORTS", path: "/coordinator/reports" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
     };
 
@@ -109,7 +99,7 @@ const SideBar: React.FC = () => {
     ];
   };
 
-  const menuItems = getMenuItemsByRole(normalizedRole);
+  const menuItems = getMenuItemsByRole(userRole);
 
   const isActive = (path?: string) => path && location.pathname === path;
 

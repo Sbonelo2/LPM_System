@@ -68,10 +68,10 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getDefaultPathForRole = (role?: string) => {
     if (role === "admin") return "/admin/dashboard";
-    if (role === "programme_coordinator") return "/coordinator/documents";
-    if (role === "qa_officer") return "/qa/dashboard";
+    if (role === "super_admin") return "/coordinator/dashboard";
+    if (role === "facilitator") return "/facilitator/dashboard";
     if (role === "mentor") return "/mentor/dashboard";
-    return "/learner/dashboard";
+    return "/dashboard";
   };
 
   const getEffectiveRole = async (sessionUser: {
@@ -98,21 +98,6 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // ignore
     }
     return metadataRole;
-    console.log("getDefaultPathForRole called with:", role);
-    if (role === "admin" || role === "facilitator") {
-      console.log("Returning facilitator dashboard path");
-      return "/facilitator/dashboard";
-    }
-    if (role === "programme_coordinator") {
-      console.log("Returning coordinator dashboard path");
-      return "/coordinator/dashboard";
-    }
-    if (role === "qa_officer") {
-      console.log("Returning qa dashboard path");
-      return "/qa/dashboard";
-    }
-    console.log("Returning default learner dashboard path");
-    return "/dashboard";
   };
 
   useEffect(() => {
@@ -268,11 +253,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
           setMaintenanceActive(false);
           setMaintenanceAllowedRoles(new Set(["admin"]));
           return;
-      const allowed = new Set<string>(["facilitator"]);
-      const facilitatorsOnly = Boolean(data?.allow_admins_only);
-      if (!facilitatorsOnly) {
-        if (Boolean(data?.allow_qa_officers)) {
-          allowed.add("qa_officer");
         }
 
         const status = String(data?.status ?? "inactive").toLowerCase();
@@ -287,11 +267,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
         const allowed = new Set<string>(["admin"]);
         const adminsOnly = Boolean(data?.allow_admins_only);
         if (!adminsOnly) {
-          if (Boolean(data?.allow_qa_officers)) {
-            allowed.add("qa_officer");
-          }
-          if (Boolean(data?.allow_programme_coordinators)) {
-            allowed.add("programme_coordinator");
+          if (Boolean(data?.allow_qa_officers) || Boolean(data?.allow_programme_coordinators)) {
+            allowed.add("super_admin");
           }
           if (
             Boolean(
