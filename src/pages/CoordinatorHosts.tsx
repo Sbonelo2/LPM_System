@@ -129,7 +129,7 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
     <div className="hosts-container">
       <div className="hosts-content">
         <div className="hosts-header">
-          <h2 className="hosts-title">{pageTitle ?? "Coordinator Hosts"}</h2>
+          <h2 className="hosts-title">Super Admin Hosts</h2>
         </div>
         <div className="hosts-main">
           <div className="hosts-controls">

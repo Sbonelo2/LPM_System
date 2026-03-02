@@ -4,7 +4,12 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./NotificationBell";
 
-type UserRole = "admin" | "facilitator" | "learner" | "mentor" | "super_admin";
+type UserRole =
+  | "admin"
+  | "learner"
+  | "super_admin"
+  | "qa_officer"
+  | "programme_coordinator";
 
 interface MenuItem {
   label: string;
@@ -19,9 +24,14 @@ const SideBar: React.FC = () => {
   const { user } = useAuth();
 
   const roleFromPath: UserRole | null = (() => {
-    if (location.pathname.startsWith("/facilitator")) return "facilitator";
-    if (location.pathname.startsWith("/coordinator") || location.pathname.startsWith("/qa")) return "super_admin";
-    if (location.pathname.startsWith("/mentor")) return "mentor";
+    if (location.pathname.startsWith("/admin")) return "admin";
+    if (
+      location.pathname.startsWith("/super-admin") ||
+      location.pathname.startsWith("/coordinator") ||
+      location.pathname.startsWith("/qa")
+    ) {
+      return "super_admin";
+    }
     return null;
   })();
 
@@ -38,17 +48,18 @@ const SideBar: React.FC = () => {
     // Clear local dummy-session tokens first so UI state resets immediately.
     localStorage.removeItem("admin-token");
     localStorage.removeItem("super-admin-token");
-    localStorage.removeItem("facilitator-token");
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
     localStorage.removeItem("mentor-token");
 
     try {
-      await supabase.auth.signOut();
+      // Local scope avoids depending on a network round-trip to sign out.
+      await supabase.auth.signOut({ scope: "local" });
     } catch (error) {
       console.error("Sign out error:", error);
     } finally {
       navigate("/login", { replace: true });
+      window.location.assign("/login");
     }
   };
 
@@ -78,6 +89,23 @@ const SideBar: React.FC = () => {
         { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       super_admin: [
+        { label: "DASHBOARD", path: "/super-admin/dashboard" },
+        { label: "PLACEMENTS", path: "/super-admin/placements" },
+        { label: "DOCUMENTS", path: "/super-admin/documents" },
+        { label: "HOSTS", path: "/super-admin/hosts" },
+        { label: "REPORTS", path: "/super-admin/reports" },
+        { label: "COMPLIANCE", path: "/super-admin/compliance" },
+        { label: "USER MANAGEMENT", path: "/super-admin/users" },
+      ],
+      qa_officer: [
+        { label: "DASHBOARD", path: "/qa/dashboard" },
+        { label: "PLACEMENTS", path: "/qa/placements" },
+        { label: "DOCUMENTS", path: "/qa/documents" },
+        { label: "HOSTS", path: "/qa/hosts" },
+        { label: "REPORTS", path: "/qa/reports" },
+        { label: "COMPLIANCE", path: "/qa/compliance" },
+      ],
+      programme_coordinator: [
         { label: "DASHBOARD", path: "/coordinator/dashboard" },
         { label: "PLACEMENTS", path: "/placements" },
         { label: "DOCUMENTS", path: "/documents" },
@@ -102,6 +130,9 @@ const SideBar: React.FC = () => {
   const menuItems = getMenuItemsByRole(userRole);
 
   const isActive = (path?: string) => path && location.pathname === path;
+  const formattedRole = userRole === "super_admin"
+    ? "SUPER ADMIN"
+    : userRole.replace("_", " ").toUpperCase();
 
   return (
     <div
@@ -207,7 +238,7 @@ const SideBar: React.FC = () => {
               fontWeight: "500",
             }}
           >
-            Role: {userRole.replace("_", " ").toUpperCase()}
+            Role: {formattedRole}
           </p>
         </div>
       )}
@@ -216,3 +247,4 @@ const SideBar: React.FC = () => {
 };
 
 export default SideBar;
+

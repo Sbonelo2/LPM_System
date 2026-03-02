@@ -1,13 +1,16 @@
+<<<<<<< HEAD
 import { useEffect, useMemo, useState } from "react";
+=======
+import { useMemo, useState } from "react";
+import SideBar from "../components/SideBar";
+import AdminTopBar from "../components/AdminTopBar";
+>>>>>>> feat/superAdmin
 import Card from "../components/Card";
 import Button from "../components/Button";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Modal from "../components/Modal";
 import InputField from "../components/InputField";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
-import Snackbar from "../components/Snackbar";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css";
 import "./SystemSettings.css";
 
@@ -22,16 +25,6 @@ type NotificationSetting = {
   recipients: Record<RecipientKey, boolean>;
   subject: string;
   message: string;
-};
-
-type NotificationSettingRow = {
-  id: string;
-  title: string;
-  channel: NotificationChannel;
-  recipients: Record<string, boolean>;
-  subject: string;
-  message: string;
-  enabled: boolean;
 };
 
 type RequiredDocumentsRole =
@@ -85,9 +78,6 @@ const DEFAULT_RECIPIENTS: Record<RecipientKey, boolean> = {
 };
 
 export default function SystemSettings() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [activeTab, setActiveTab] = useState<
     | "notification"
     | "required_documents"
@@ -487,306 +477,6 @@ export default function SystemSettings() {
     }));
   };
 
-  const showSnackbar = (message: string) => {
-    setSnackbarMessage(message);
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbarMessage("");
-  };
-
-  const parseMaxSizeMb = (value: string): number => {
-    const trimmed = value.trim();
-    const match = trimmed.match(/(\d+)/);
-    if (!match) return 5;
-    return Number(match[1]);
-  };
-
-  const loadFromSupabase = async () => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const results = await Promise.allSettled([
-        supabase
-          .from("notification_settings")
-          .select("id, title, channel, recipients, subject, message, enabled")
-          .order("id", { ascending: true }),
-        supabase
-          .from("required_document_rules")
-          .select(
-            "id, applies_to_role, document_name, required, allowed_formats, max_size_mb, expiry_required",
-          )
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("compliance_rules")
-          .select("id, area, rule_name, applies_to, doc_type, max_size_mb")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("security_permissions")
-          .select(
-            "role_key, view_learner_data, submit_assessments, approve_documents",
-          ),
-        supabase
-          .from("app_settings")
-          .select("key, value")
-          .eq("key", "auth_method")
-          .maybeSingle(),
-      ]);
-
-      const notificationRes = results[0];
-      if (notificationRes.status === "fulfilled") {
-        const { data, error: notifError } = notificationRes.value;
-        if (!notifError && (data?.length ?? 0) > 0) {
-          const mapped = (data as NotificationSettingRow[]).map((row) => ({
-            id: row.id,
-            title: row.title,
-            channel: row.channel,
-            recipients: {
-              ...DEFAULT_RECIPIENTS,
-              ...row.recipients,
-            } as Record<RecipientKey, boolean>,
-            subject: row.subject,
-            message: row.message,
-          }));
-          setSettings(mapped);
-        }
-      }
-
-      const requiredRes = results[1];
-      if (requiredRes.status === "fulfilled") {
-        const { data, error: requiredError } = requiredRes.value;
-        if (!requiredError && data) {
-          const next: RequiredDocsState = {
-            learners: [],
-            facilitators: [],
-            qa_officers: [],
-            programme_coordinators: [],
-          };
-
-          (
-            data as Array<{
-              applies_to_role: string;
-              document_name: string;
-              required: boolean;
-              allowed_formats: string;
-              max_size_mb: number;
-              expiry_required: boolean;
-            }>
-          ).forEach((row) => {
-            const role = row.applies_to_role as RequiredDocumentsRole;
-            if (!next[role]) return;
-            next[role].push({
-              documentName: row.document_name,
-              required: row.required ? "Yes" : "No",
-              formats: row.allowed_formats,
-              maxSize: `${row.max_size_mb}MB`,
-              expiryDate: row.expiry_required ? "Yes" : "N/A",
-            });
-          });
-
-          setRequiredDocsRulesByRole((prev) => ({
-            ...prev,
-            ...next,
-          }));
-        }
-      }
-
-      const complianceRes = results[2];
-      if (complianceRes.status === "fulfilled") {
-        const { data, error: complianceError } = complianceRes.value;
-        if (!complianceError && data) {
-          const next: ComplianceRulesState = {
-            learner_placements: [],
-            assessments: [],
-            document_submissions: [],
-            host_compliance: [],
-          };
-
-          (
-            data as Array<{
-              area: ComplianceArea;
-              rule_name: string;
-              applies_to: string;
-              doc_type: string | null;
-              max_size_mb: number | null;
-            }>
-          ).forEach((row) => {
-            next[row.area].push({
-              ruleName: row.rule_name,
-              appliesTo: row.applies_to,
-              type: row.doc_type ?? "",
-              size: row.max_size_mb ? `${row.max_size_mb}MB` : "",
-            });
-          });
-
-          setComplianceRulesByArea(next);
-        }
-      }
-
-      const securityRes = results[3];
-      if (securityRes.status === "fulfilled") {
-        const { data, error: securityError } = securityRes.value;
-        if (!securityError && data) {
-          const next = { ...securityPermissions };
-          (
-            data as Array<{
-              role_key: string;
-              view_learner_data: boolean;
-              submit_assessments: boolean;
-              approve_documents: boolean;
-            }>
-          ).forEach((row) => {
-            const key = row.role_key as SecurityRole;
-            if (!next[key]) return;
-            next[key] = {
-              viewLearnerData: row.view_learner_data,
-              submitAssessments: row.submit_assessments,
-              approveDocuments: row.approve_documents,
-            };
-          });
-          setSecurityPermissions(next);
-        }
-      }
-
-      const authMethodRes = results[4];
-      if (authMethodRes.status === "fulfilled") {
-        const { data, error: appError } = authMethodRes.value;
-        if (!appError && data?.value?.method) {
-          const method = data.value.method as AuthMethod;
-          setAuthMethod(method);
-        }
-      }
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load settings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveNotificationSettings = async () => {
-    const rows = settings.map((setting) => ({
-      id: setting.id,
-      title: setting.title,
-      channel: setting.channel,
-      recipients: setting.recipients,
-      subject: setting.subject,
-      message: setting.message,
-      enabled: true,
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { error: upsertError } = await supabase
-      .from("notification_settings")
-      .upsert(rows, { onConflict: "id" });
-
-    if (upsertError) {
-      showSnackbar(`Save failed: ${upsertError.message}`);
-      return;
-    }
-
-    showSnackbar("Notification settings saved.");
-  };
-
-  const saveRequiredDocuments = async () => {
-    const rows = (
-      Object.entries(requiredDocsRulesByRole) as Array<
-        [RequiredDocumentsRole, RequiredDocumentRule[]]
-      >
-    ).flatMap(([role, rules]) =>
-      rules.map((rule) => ({
-        applies_to_role: role,
-        document_name: rule.documentName,
-        required: rule.required === "Yes",
-        allowed_formats: rule.formats,
-        max_size_mb: parseMaxSizeMb(rule.maxSize),
-        expiry_required: rule.expiryDate !== "N/A" && rule.expiryDate !== "No",
-      })),
-    );
-
-    const { error: insertError } = await supabase
-      .from("required_document_rules")
-      .insert(rows);
-
-    if (insertError) {
-      showSnackbar(`Save failed: ${insertError.message}`);
-      return;
-    }
-
-    showSnackbar("Required documents saved (new rules appended).");
-  };
-
-  const saveComplianceRules = async () => {
-    const rows = (
-      Object.entries(complianceRulesByArea) as Array<
-        [ComplianceArea, ComplianceRule[]]
-      >
-    ).flatMap(([area, rules]) =>
-      rules.map((rule) => ({
-        area,
-        rule_name: rule.ruleName,
-        applies_to: rule.appliesTo,
-        doc_type: rule.type,
-        max_size_mb: parseMaxSizeMb(rule.size),
-      })),
-    );
-
-    const { error: insertError } = await supabase
-      .from("compliance_rules")
-      .insert(rows);
-
-    if (insertError) {
-      showSnackbar(`Save failed: ${insertError.message}`);
-      return;
-    }
-
-    showSnackbar("Compliance rules saved (new rules appended).");
-  };
-
-  const saveSecurityParams = async () => {
-    const perms = (
-      Object.entries(securityPermissions) as Array<
-        [SecurityRole, RolePermissions]
-      >
-    ).map(([role, value]) => ({
-      role_key: role,
-      view_learner_data: value.viewLearnerData,
-      submit_assessments: value.submitAssessments,
-      approve_documents: value.approveDocuments,
-      updated_at: new Date().toISOString(),
-    }));
-
-    const { error: permError } = await supabase
-      .from("security_permissions")
-      .upsert(perms, { onConflict: "role_key" });
-
-    if (permError) {
-      showSnackbar(`Save failed: ${permError.message}`);
-      return;
-    }
-
-    const { error: appError } = await supabase.from("app_settings").upsert(
-      {
-        key: "auth_method",
-        value: { method: authMethod },
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" },
-    );
-
-    if (appError) {
-      showSnackbar(`Save failed: ${appError.message}`);
-      return;
-    }
-
-    showSnackbar("Security parameters saved.");
-  };
-
-  useEffect(() => {
-    loadFromSupabase();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <>
       <div className="facilitator-dashboard-content">
@@ -859,13 +549,7 @@ export default function SystemSettings() {
           </button>
         </div>
 
-        {loading ? (
-          <LoadingSpinner message="Loading settings..." />
-        ) : error ? (
-          <p style={{ marginTop: 12, color: "var(--secondary-color)" }}>
-            {error}
-          </p>
-        ) : activeTab === "notification" ? (
+        {activeTab === "notification" ? (
           <div className="system-settings__content">
             {settings.map((setting) => (
               <section key={setting.id} className="system-settings__section">
@@ -997,11 +681,7 @@ export default function SystemSettings() {
             ))}
 
             <div className="system-settings__actions">
-              <Button
-                text="Save"
-                variant="primary"
-                onClick={saveNotificationSettings}
-              />
+              <Button text="Save" variant="primary" />
             </div>
           </div>
         ) : activeTab === "required_documents" ? (
@@ -1065,11 +745,6 @@ export default function SystemSettings() {
                 text="Add a rule"
                 variant="primary"
                 onClick={openAddRuleModal}
-              />
-              <Button
-                text="Save"
-                variant="primary"
-                onClick={saveRequiredDocuments}
               />
             </div>
 
@@ -1192,11 +867,6 @@ export default function SystemSettings() {
                 text="Add a rule"
                 variant="primary"
                 onClick={openAddComplianceModal}
-              />
-              <Button
-                text="Save"
-                variant="primary"
-                onClick={saveComplianceRules}
               />
             </div>
 
@@ -1388,19 +1058,13 @@ export default function SystemSettings() {
             </Card>
 
             <div className="system-settings__actions">
-              <Button
-                text="Save"
-                variant="primary"
-                onClick={saveSecurityParams}
-              />
+              <Button text="Save" variant="primary" />
             </div>
           </div>
         ) : (
           <div className="system-settings__placeholder">Coming soon.</div>
         )}
       </div>
-
-      <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
-      </>
+    </div>
   );
 }

@@ -7,13 +7,12 @@ import { useAuth } from "../hooks/useAuth";
 const QADashboard: React.FC = () => {
   const { user } = useAuth();
   
-  // Set user role to qa_officer when accessing QA dashboard
+  // Keep a merged role for QA + Coordinator capabilities.
   useEffect(() => {
     if (user) {
-      // Update user metadata to reflect QA officer role
       user.user_metadata = {
         ...user.user_metadata,
-        role: 'qa_officer'
+        role: "super_admin",
       };
     }
   }, [user]);
@@ -91,7 +90,8 @@ const QADashboard: React.FC = () => {
   return (
     <div className="qa-dashboard-container">
       <div className="dashboard-content">
-        <h1 className="dashboard-title">QA Officer Dashboard</h1>
+        <h1 className="dashboard-title">Super Admin</h1>
+        <p className="dashboard-subtitle">dashbaord for qa officer & coordinator</p>
 
         <div className="dashboard-cards">
           <DashboardStats stats={stats} />

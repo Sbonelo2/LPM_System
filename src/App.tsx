@@ -30,7 +30,6 @@ import AdminSystemMonitor from "./pages/AdminSystemMonitor";
 import Notifications from "./pages/Notifications";
 import Placements from "./pages/Placements";
 import Documents from "./pages/Documents";
-import CoordinatorDashboard from "./pages/CoordinatorDashboard";
 
 import SystemSettings from "./pages/SystemSettings";
 import CoordinatorHosts from "./pages/CoordinatorHosts";
@@ -68,9 +67,13 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getDefaultPathForRole = (role?: string) => {
     if (role === "admin") return "/admin/dashboard";
-    if (role === "super_admin") return "/coordinator/dashboard";
-    if (role === "facilitator") return "/facilitator/dashboard";
-    if (role === "mentor") return "/mentor/dashboard";
+    if (
+      role === "super_admin" ||
+      role === "programme_coordinator" ||
+      role === "qa_officer"
+    ) {
+      return "/super-admin/dashboard";
+    }
     return "/dashboard";
   };
 
@@ -105,85 +108,107 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       async (_event, session) => {
         console.log("Auth state changed:", session?.user);
 
-        try {
-          if (session?.user) {
-            const effectiveRole = await getEffectiveRole(session.user);
-            setUser({
-              ...session.user,
-              user_metadata: {
-                ...(session.user.user_metadata ?? {}),
-                ...(effectiveRole ? { role: effectiveRole } : {}),
-              },
-            });
-          } else {
-            setUser(null);
-          }
-
-          if (
-            session?.user &&
-            (window.location.pathname === "/" ||
-              window.location.pathname === "/login")
-          ) {
-            const effectiveRole = await getEffectiveRole(session.user);
-            navigate(getDefaultPathForRole(effectiveRole));
-          } else if (
-            !session?.user &&
-            (window.location.pathname === "/learner/dashboard" ||
-              window.location.pathname === "/dashboard")
-          ) {
-            navigate("/login");
-          }
-        } catch (e) {
-          console.error("Auth state change handler error:", e);
-          setUser(session?.user || null);
-        } finally {
-          setLoading(false);
-        }
-      },
-    );
-
-    const getUserSession = async () => {
-      try {
-        const {
-          data: { session },
-        } = await withTimeout(supabase.auth.getSession(), 15000, "Get session");
-        console.log("Current session:", session?.user);
+        // Check if we have a dummy token - if so, don't overwrite with Supabase session
+        const superAdminToken = localStorage.getItem("super-admin-token");
+        const coordinatorToken = localStorage.getItem("coordinator-token");
+        const adminToken = localStorage.getItem("admin-token");
+        const qaToken = localStorage.getItem("qa-token");
 
         if (session?.user) {
-          const effectiveRole = await getEffectiveRole(session.user);
-          setUser({
-            ...session.user,
-            user_metadata: {
-              ...(session.user.user_metadata ?? {}),
-              ...(effectiveRole ? { role: effectiveRole } : {}),
-            },
-          });
-        } else {
-          setUser(null);
+          localStorage.removeItem("admin-token");
+          localStorage.removeItem("super-admin-token");
+          localStorage.removeItem("coordinator-token");
+          localStorage.removeItem("qa-token");
+        } else if (superAdminToken || coordinatorToken || adminToken || qaToken) {
+          console.log(
+            "Dummy token exists, ignoring Supabase auth state change",
+          );
+          return; // Don't overwrite dummy user
         }
 
+        setUser(session?.user || null);
+        setLoading(false);
         if (
           session?.user &&
           (window.location.pathname === "/" ||
             window.location.pathname === "/login")
         ) {
-          const effectiveRole = await getEffectiveRole(session.user);
-          navigate(getDefaultPathForRole(effectiveRole));
-          const userRole = session.user.user_metadata?.role;
-          console.log("Auth state change - user role:", userRole);
-          navigate(getDefaultPathForRole(userRole));
+          navigate(getDefaultPathForRole(session.user.user_metadata?.role));
         } else if (
           !session?.user &&
-          (window.location.pathname === "/learner/dashboard" ||
-            window.location.pathname === "/dashboard")
+          window.location.pathname === "/dashboard"
         ) {
           navigate("/login");
         }
-      } catch (e) {
-        console.error("getSession bootstrap error:", e);
-        setUser(null);
-      } finally {
+      },
+    );
+
+    const getUserSession = async () => {
+      // Check for dummy tokens first
+      const superAdminToken = localStorage.getItem("super-admin-token");
+      const coordinatorToken = localStorage.getItem("coordinator-token");
+      const adminToken = localStorage.getItem("admin-token");
+      const qaToken = localStorage.getItem("qa-token");
+
+      if (adminToken && (superAdminToken || coordinatorToken || qaToken)) {
+        localStorage.removeItem("super-admin-token");
+        localStorage.removeItem("coordinator-token");
+        localStorage.removeItem("qa-token");
+      }
+
+      if (adminToken) {
+        console.log("Found admin token, creating dummy user");
+        const dummyUser = {
+          id: "admin-123",
+          email: "admin@admin.com",
+          user_metadata: { role: "admin" },
+        };
+        setUser(dummyUser);
         setLoading(false);
+
+        if (
+          window.location.pathname === "/" ||
+          window.location.pathname === "/login"
+        ) {
+          navigate(getDefaultPathForRole("admin"));
+        }
+        return;
+      }
+
+      if (superAdminToken || coordinatorToken || qaToken) {
+        console.log("Found super admin token, creating dummy user");
+        const dummyUser = {
+          id: "super-admin-123",
+          email: "superadmin@lpm.com",
+          user_metadata: { role: "super_admin" },
+        };
+        setUser(dummyUser);
+        setLoading(false);
+
+        if (
+          window.location.pathname === "/" ||
+          window.location.pathname === "/login"
+        ) {
+          navigate(getDefaultPathForRole("super_admin"));
+        }
+        return;
+      }
+
+      // If no dummy tokens, check Supabase session
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      console.log("Current session:", session?.user);
+      setUser(session?.user || null);
+      setLoading(false);
+      if (
+        session?.user &&
+        (window.location.pathname === "/" ||
+          window.location.pathname === "/login")
+      ) {
+        navigate(getDefaultPathForRole(session.user.user_metadata?.role));
+      } else if (!session?.user && window.location.pathname === "/dashboard") {
+        navigate("/login");
       }
     };
     getUserSession();
@@ -206,97 +231,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  const [maintenanceLoading, setMaintenanceLoading] = useState<boolean>(true);
-  const [maintenanceActive, setMaintenanceActive] = useState<boolean>(false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState<string>(
-    "The system is currently under maintenance.",
-  );
-  const [maintenanceAllowedRoles, setMaintenanceAllowedRoles] = useState<
-    Set<string>
-  >(new Set(["facilitator"]));
-
-  useEffect(() => {
-    const loadMaintenance = async () => {
-      setMaintenanceLoading(true);
-
-      try {
-        const { data, error } = (await Promise.race([
-          supabase
-            .from("maintenance_settings")
-            .select(
-              "status, allow_admins_only, allow_qa_officers, allow_programme_coordinators, allow_learners, subject, message",
-            )
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          new Promise<never>((_resolve, reject) =>
-            setTimeout(
-              () => reject(new Error("Load maintenance settings timed out")),
-              8000,
-            ),
-          ),
-        ])) as {
-          data: {
-            status?: string;
-            allow_admins_only?: boolean;
-            allow_qa_officers?: boolean;
-            allow_programme_coordinators?: boolean;
-            allow_learners?: boolean;
-            subject?: string;
-            message?: string;
-          } | null;
-          error: { message: string } | null;
-        };
-
-        if (error) {
-          console.error("Failed to load maintenance settings:", error);
-          setMaintenanceActive(false);
-          setMaintenanceAllowedRoles(new Set(["admin"]));
-          return;
-        }
-
-        const status = String(data?.status ?? "inactive").toLowerCase();
-        const active = status === "active";
-        setMaintenanceActive(active);
-
-        const msg = String(data?.message ?? "").trim();
-        if (msg) {
-          setMaintenanceMessage(msg);
-        }
-
-        const allowed = new Set<string>(["admin"]);
-        const adminsOnly = Boolean(data?.allow_admins_only);
-        if (!adminsOnly) {
-          if (Boolean(data?.allow_qa_officers) || Boolean(data?.allow_programme_coordinators)) {
-            allowed.add("super_admin");
-          }
-          if (
-            Boolean(
-              (data as { allow_learners?: boolean } | null)?.allow_learners,
-            )
-          ) {
-            allowed.add("learner");
-          }
-        }
-        setMaintenanceAllowedRoles(allowed);
-      } catch (e) {
-        console.error("Maintenance load error:", e);
-        setMaintenanceActive(false);
-        setMaintenanceAllowedRoles(new Set(["admin"]));
-      } finally {
-        setMaintenanceLoading(false);
-      }
-    };
-
-    void loadMaintenance();
-  }, []);
-
   // Debug: Log the current state
   console.log("ProtectedRoute - user:", user);
   console.log("ProtectedRoute - loading:", loading);
 
   // Show loading while checking authentication
-  if (loading || maintenanceLoading) {
+  if (loading) {
     return <div>Loading authentication...</div>;
   }
 
@@ -315,39 +255,6 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
         <div style={{ marginTop: "10px", fontSize: "12px" }}>
           Debug: User state is null or undefined
         </div>
-      </div>
-    );
-  }
-
-  const role = user.user_metadata?.role ?? "learner";
-  const windowPathWithHash = `${window.location.pathname}${window.location.hash}`;
-  const pathWithHash = `${location.pathname}${location.hash}${windowPathWithHash}`;
-  const bypassMaintenance =
-    pathWithHash.includes("coordinator") ||
-    pathWithHash.includes("/qa") ||
-    pathWithHash.includes("/admin");
-
-  console.log("ProtectedRoute - pathWithHash:", pathWithHash);
-  console.log("ProtectedRoute - bypassMaintenance:", bypassMaintenance);
-
-  if (
-    !bypassMaintenance &&
-    maintenanceActive &&
-    !maintenanceAllowedRoles.has(role)
-  ) {
-    return (
-      <div
-        style={{
-          padding: "32px",
-          textAlign: "center",
-          fontSize: "16px",
-          color: "#333",
-          maxWidth: "680px",
-          margin: "0 auto",
-        }}
-      >
-        <h2 style={{ marginBottom: "12px" }}>Maintenance</h2>
-        <div style={{ whiteSpace: "pre-wrap" }}>{maintenanceMessage}</div>
       </div>
     );
   }
@@ -404,7 +311,7 @@ function App() {
             }
           />
           <Route
-            path="/coordinator/documents"
+            path="/super-admin/documents"
             element={
               <MainLayout>
                 <CoordinatorDocuments />
@@ -432,16 +339,18 @@ function App() {
             }
           />
           <Route
-            path="/qa/placements"
+            path="/super-admin/placements"
             element={
-              <MainLayout>
-                <QAPlacements />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProgrammeCoordinatorPlacements />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
 
           <Route
-            path="/qa/dashboard"
+            path="/super-admin/dashboard"
             element={
               <MainLayout>
                 <QADashboard />
@@ -450,11 +359,21 @@ function App() {
           />
 
           <Route
-            path="/qa/compliance"
+            path="/super-admin/compliance"
             element={
               <MainLayout>
                 <QACompliance />
               </MainLayout>
+            }
+          />
+          <Route
+            path="/qa/placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QAPlacements />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
@@ -592,27 +511,71 @@ function App() {
           } />
           <Route path="/" element={<Login />} />
           <Route
+            path="/qa/dashboard"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/coordinator/dashboard"
             element={
-              <MainLayout>
-                <CoordinatorDashboard />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <QADashboard />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/coordinator/hosts"
             element={
-              <MainLayout>
-                <CoordinatorHosts />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorHosts />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/coordinator/reports"
             element={
-              <MainLayout>
-                <CoordinatorReports />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorReports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/hosts"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorHosts />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/reports"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CoordinatorReports />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminUserManagement />
+              </ProtectedRoute>
             }
           />
         </Routes>

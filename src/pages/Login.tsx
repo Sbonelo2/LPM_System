@@ -30,7 +30,46 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
+<<<<<<< HEAD
     localStorage.removeItem("facilitator-token");
+=======
+    if (email === "office@admin.com" && password === "123456") {
+      localStorage.removeItem("admin-token");
+      localStorage.removeItem("coordinator-token");
+      localStorage.removeItem("qa-token");
+      localStorage.setItem("super-admin-token", "dummy-super-admin-token");
+      navigate("/super-admin/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    if (email.endsWith("@admin.com") && password === "Admin123") {
+      localStorage.removeItem("super-admin-token");
+      localStorage.removeItem("coordinator-token");
+      localStorage.removeItem("qa-token");
+      localStorage.setItem("admin-token", "dummy-admin-token");
+      navigate("/admin/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    if (
+      (email === "superadmin@gmail.com" && password === "SuperAdmin123") ||
+      (email === "coordinator@gmail.com" && password === "Coordinator123") ||
+      (email === "test@qa.com" && password === "Qa123")
+    ) {
+      localStorage.removeItem("admin-token");
+      localStorage.removeItem("coordinator-token");
+      localStorage.removeItem("qa-token");
+      localStorage.setItem("super-admin-token", "dummy-super-admin-token");
+      navigate("/super-admin/dashboard");
+      setLoading(false);
+      return;
+    }
+
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("super-admin-token");
+>>>>>>> feat/superAdmin
     localStorage.removeItem("coordinator-token");
     localStorage.removeItem("qa-token");
 
@@ -50,6 +89,7 @@ const Login: React.FC = () => {
 
       // Check user role and redirect accordingly
       const userRole = data.user?.user_metadata?.role;
+<<<<<<< HEAD
       console.log("Login detected role:", userRole);
       if (userRole === "programme_coordinator") {
         console.log("Redirecting to coordinator dashboard");
@@ -57,14 +97,22 @@ const Login: React.FC = () => {
       } else if (userRole === "admin" || userRole === "facilitator") {
         console.log("Redirecting to facilitator dashboard");
         navigate("/facilitator/dashboard");
+=======
+      if (
+        userRole === "super_admin" ||
+        userRole === "programme_coordinator" ||
+        userRole === "qa_officer"
+      ) {
+        navigate("/super-admin/dashboard");
+      } else if (userRole === "admin") {
+        navigate("/admin/dashboard");
+>>>>>>> feat/superAdmin
       } else {
         console.log("Redirecting to learner dashboard");
         navigate("/dashboard"); // Default dashboard for learners
       }
     } catch (error: unknown) {
-      alert(
-        `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
+      alert(`Login failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       setMessage(
         `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );

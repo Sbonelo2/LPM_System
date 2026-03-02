@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent"; // Import TableComponent and TableColumn type
-import LoadingSpinner from "../components/LoadingSpinner";
-import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
 import "./AdminDashboard.css"; // Import AdminDashboard specific styles
 
@@ -13,6 +11,7 @@ const FacilitatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   console.log("FacilitatorDashboard component rendering");
 
+<<<<<<< HEAD
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,7 +34,17 @@ const FacilitatorDashboard: React.FC = () => {
   }
 
   const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+=======
+  // Placeholder data for Admin DashboardStats
+  const adminDashboardStats = [
+    { label: "ACTIVE LEARNERS", value: 150 },
+    { label: "ACTIVE PLACEMENTS", value: 75 },
+    { label: "PENDING ISSUES", value: 12 },
+    { label: "COMPLIANCE STATUS", value: "95%" },
+  ];
+>>>>>>> feat/superAdmin
 
+  // Placeholder data for Users Table
   interface UserData {
     fullName: string;
     email: string;
@@ -50,6 +59,7 @@ const FacilitatorDashboard: React.FC = () => {
     { key: "createdDate", header: "Created Date" },
   ];
 
+<<<<<<< HEAD
   const userData: UserData[] = useMemo(() => {
     return profiles.map((p) => ({
       fullName: p.full_name ?? "",
@@ -168,6 +178,34 @@ const FacilitatorDashboard: React.FC = () => {
 
     loadDashboard();
   }, []);
+=======
+  const userData: UserData[] = [
+    {
+      fullName: "Sine Mathebula",
+      email: "sine@example.com",
+      role: "Learner",
+      createdDate: "2023-01-15",
+    },
+    {
+      fullName: "Jane Doe",
+      email: "jane.doe@example.com",
+      role: "Super Admin",
+      createdDate: "2022-11-01",
+    },
+    {
+      fullName: "John Smith",
+      email: "john.smith@example.com",
+      role: "Super Admin",
+      createdDate: "2023-03-20",
+    },
+    {
+      fullName: "Admin User",
+      email: "test@admin.com",
+      role: "Admin",
+      createdDate: "2023-02-10",
+    },
+  ];
+>>>>>>> feat/superAdmin
 
   return (
     <>
@@ -186,16 +224,11 @@ const FacilitatorDashboard: React.FC = () => {
           </div>
         </div>
 
-        {loading ? (
-          <LoadingSpinner message="Loading dashboard..." />
-        ) : (
-          <>
-            {error && (
-              <p style={{ marginTop: 12, color: "var(--secondary-color)" }}>
-                {error}
-              </p>
-            )}
+        <div className="dashboard-stats-container">
+          <DashboardStats stats={adminDashboardStats} />
+        </div>
 
+<<<<<<< HEAD
             <div className="dashboard-stats-container">
               <DashboardStats stats={facilitatorDashboardStats} />
             </div>
@@ -213,6 +246,18 @@ const FacilitatorDashboard: React.FC = () => {
             </div>
           </>
         )}
+=======
+        <div className="dashboard-my-placements-container">
+          <h3>USERS</h3>
+          <Card>
+            <TableComponent
+              columns={userColumns}
+              data={userData}
+              caption=" Active System Users"
+            />
+          </Card>
+        </div>
+>>>>>>> feat/superAdmin
 
         <div style={{ marginTop: "20px", textAlign: "center" }}></div>
       </div>

@@ -415,7 +415,7 @@ const CoordinatorReports: React.FC = () => {
     <div className="reports-container">
       <div className="reports-content-wrapper">
         <div className="reports-header-main">
-          <h1>Coordinator Reports</h1>
+          <h1>Super Admin Reports</h1>
           <div className="tabs-container">
             <button
               className={`tab-button ${activeTab === 'placements' ? 'active' : ''}`}

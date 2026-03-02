@@ -76,8 +76,8 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
   return (
     <div className="programme-coordinator-page">
       <div className="page-header">
-        <h1 className="page-title">Programme Coordinator - Placements</h1>
-        <div className="design-badge">Programme Coordinator - Design</div>
+        <h1 className="page-title">Super Admin - Placements</h1>
+        <div className="design-badge">Super Admin - Design</div>
       </div>
 
       <div className="placements-table-container">

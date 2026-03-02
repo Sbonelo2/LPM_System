@@ -1,6 +1,6 @@
 // src/components/Card.tsx
 import React from 'react';
-import './Card.css'; // Fixed: Import the correct CSS file name
+import "./Card.css";
 
 interface CardProps {
   title?: string; // Made optional
