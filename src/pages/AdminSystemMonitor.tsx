@@ -168,7 +168,7 @@ const AdminSystemMonitor: React.FC = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

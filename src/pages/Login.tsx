@@ -45,7 +45,7 @@ const Login: React.FC = () => {
       localStorage.removeItem("coordinator-token");
       localStorage.removeItem("qa-token");
       localStorage.setItem("admin-token", "dummy-admin-token");
-      navigate("/admin/dashboard");
+      navigate("/facilitator/dashboard");
       setLoading(false);
       return;
     }
@@ -83,22 +83,45 @@ const Login: React.FC = () => {
 
       setMessage("Logged in successfully!");
 
-      // Check user role and redirect accordingly
-      const userRole = data.user?.user_metadata?.role;
-      if (
-        userRole === "super_admin" ||
-        userRole === "programme_coordinator" ||
-        userRole === "qa_officer"
-      ) {
-        navigate("/super-admin/dashboard");
-      } else if (userRole === "admin") {
-        navigate("/admin/dashboard");
+      let effectiveRole = data.user?.user_metadata?.role;
+      if (data.user?.id) {
+        try {
+          const { data: profileRow, error: profileError } = (await withTimeout(
+            supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", data.user.id)
+              .maybeSingle(),
+            8000,
+            "Load profile role",
+          )) as {
+            data: { role?: string } | null;
+            error: { message: string } | null;
+          };
+
+          if (!profileError && profileRow?.role) {
+            effectiveRole = profileRow.role;
+          }
+        } catch {
+          // ignore role lookup failures
+        }
+      }
+
+      if (effectiveRole === "admin") {
+        navigate("/facilitator/dashboard");
+      } else if (effectiveRole === "programme_coordinator") {
+        navigate("/coordinator/documents");
+      } else if (effectiveRole === "qa_officer") {
+        navigate("/qa/dashboard");
+      } else if (effectiveRole === "mentor") {
+        navigate("/mentor/dashboard");
       } else {
-        console.log("Redirecting to learner dashboard");
-        navigate("/dashboard"); // Default dashboard for learners
+        navigate("/learner/dashboard");
       }
     } catch (error: unknown) {
-      alert(`Login failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      alert(
+        `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       setMessage(
         `Login failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );

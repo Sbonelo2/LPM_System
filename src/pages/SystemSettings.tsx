@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-import { useEffect, useMemo, useState } from "react";
-=======
 import { useMemo, useState } from "react";
-import SideBar from "../components/SideBar";
-import AdminTopBar from "../components/AdminTopBar";
->>>>>>> feat/superAdmin
 import Card from "../components/Card";
 import Button from "../components/Button";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
@@ -1065,6 +1059,6 @@ export default function SystemSettings() {
           <div className="system-settings__placeholder">Coming soon.</div>
         )}
       </div>
-    </div>
+    </>
   );
 }

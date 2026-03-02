@@ -66,7 +66,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const getDefaultPathForRole = (role?: string) => {
-    if (role === "admin") return "/admin/dashboard";
+    if (role === "admin") return "/facilitator/dashboard";
+    if (role === "mentor") return "/mentor/dashboard";
     if (
       role === "super_admin" ||
       role === "programme_coordinator" ||
@@ -74,7 +75,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     ) {
       return "/super-admin/dashboard";
     }
-    return "/dashboard";
+    return "/learner/dashboard";
   };
 
   const getEffectiveRole = async (sessionUser: {
@@ -119,7 +120,12 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem("super-admin-token");
           localStorage.removeItem("coordinator-token");
           localStorage.removeItem("qa-token");
-        } else if (superAdminToken || coordinatorToken || adminToken || qaToken) {
+        } else if (
+          superAdminToken ||
+          coordinatorToken ||
+          adminToken ||
+          qaToken
+        ) {
           console.log(
             "Dummy token exists, ignoring Supabase auth state change",
           );
@@ -133,7 +139,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           (window.location.pathname === "/" ||
             window.location.pathname === "/login")
         ) {
-          navigate(getDefaultPathForRole(session.user.user_metadata?.role));
+          const effectiveRole = await getEffectiveRole(session.user);
+          navigate(getDefaultPathForRole(effectiveRole));
         } else if (
           !session?.user &&
           window.location.pathname === "/dashboard"
@@ -467,48 +474,71 @@ function App() {
             }
           />
           <Route path="/" element={<Login />} />
-          <Route path="/facilitator/dashboard" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <FacilitatorDashboard />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
-          <Route path="/facilitator/profile" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <AdminProfile />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
-          <Route path="/facilitator/users" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <AdminUserManagement />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
-          <Route path="/facilitator/settings" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <SystemSettings />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
-          <Route path="/facilitator/monitoring" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <AdminSystemMonitor />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
-          <Route path="/facilitator/maintenance" element={
-            <AdminProtectedRoute>
-              <MainLayout>
-                <MaintenanceSettings />
-              </MainLayout>
-            </AdminProtectedRoute>
-          } />
+
+          <Route
+            path="/admin"
+            element={<Navigate to="/facilitator/dashboard" replace />}
+          />
+          <Route
+            path="/facilitator/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <FacilitatorDashboard />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/profile"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminProfile />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/users"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminUserManagement />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/settings"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <SystemSettings />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/monitoring"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminSystemMonitor />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/maintenance"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <MaintenanceSettings />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
           <Route path="/" element={<Login />} />
           <Route
             path="/qa/dashboard"

@@ -1,6 +1,4 @@
 import { useState } from "react";
-import SideBar from "../components/SideBar";
-import AdminTopBar from "../components/AdminTopBar";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import "./Dashboard.css";
@@ -294,6 +292,6 @@ export default function MaintenanceSettings() {
           <Button text="Save Settings" variant="primary" onClick={handleSave} />
         </div>
       </div>
-    </div>
+    </>
   );
 }

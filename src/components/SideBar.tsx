@@ -9,7 +9,8 @@ type UserRole =
   | "learner"
   | "super_admin"
   | "qa_officer"
-  | "programme_coordinator";
+  | "programme_coordinator"
+  | "mentor";
 
 interface MenuItem {
   label: string;
@@ -25,13 +26,11 @@ const SideBar: React.FC = () => {
 
   const roleFromPath: UserRole | null = (() => {
     if (location.pathname.startsWith("/admin")) return "admin";
-    if (
-      location.pathname.startsWith("/super-admin") ||
-      location.pathname.startsWith("/coordinator") ||
-      location.pathname.startsWith("/qa")
-    ) {
-      return "super_admin";
-    }
+    if (location.pathname.startsWith("/facilitator")) return "admin";
+    if (location.pathname.startsWith("/coordinator"))
+      return "programme_coordinator";
+    if (location.pathname.startsWith("/qa")) return "qa_officer";
+    if (location.pathname.startsWith("/mentor")) return "mentor";
     return null;
   })();
 
@@ -66,14 +65,6 @@ const SideBar: React.FC = () => {
   const getMenuItemsByRole = (role: UserRole): MenuItem[] => {
     const roleSpecificItems: Record<UserRole, MenuItem[]> = {
       admin: [
-        { label: "DASHBOARD", path: "/admin/dashboard" },
-        { label: "USER MANAGEMENT", path: "/admin/users" },
-        { label: "SYSTEM SETTINGS", path: "/admin/settings" },
-        { label: "SYSTEM MONITORING", path: "/admin/monitoring" },
-        { label: "MAINTENANCE", path: "/admin/maintenance" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
-      ],
-      facilitator: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
         { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
@@ -130,9 +121,10 @@ const SideBar: React.FC = () => {
   const menuItems = getMenuItemsByRole(userRole);
 
   const isActive = (path?: string) => path && location.pathname === path;
-  const formattedRole = userRole === "super_admin"
-    ? "SUPER ADMIN"
-    : userRole.replace("_", " ").toUpperCase();
+  const formattedRole =
+    userRole === "super_admin"
+      ? "SUPER ADMIN"
+      : userRole.replace("_", " ").toUpperCase();
 
   return (
     <div
@@ -247,4 +239,3 @@ const SideBar: React.FC = () => {
 };
 
 export default SideBar;
-
