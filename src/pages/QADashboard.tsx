@@ -1,72 +1,180 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import "./QADashboard.css";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
-import { useAuth } from "../hooks/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { supabase } from "../services/supabaseClient";
 
 const QADashboard: React.FC = () => {
-  const { user } = useAuth();
-  
-  // Keep a merged role for QA + Coordinator capabilities.
-  useEffect(() => {
-    if (user) {
-      user.user_metadata = {
-        ...user.user_metadata,
-        role: "super_admin",
-      };
-    }
-  }, [user]);
+  type QaIssueStatus =
+    | "Pending QA"
+    | "Under Review"
+    | "QA Approved"
+    | "QA Rejected";
+
+  type QaIssueRow = {
+    id: string;
+    title: string | null;
+    description: string | null;
+    status: QaIssueStatus;
+    created_at: string;
+    severity: string | null;
+  };
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+  const [stats, setStats] = useState<
+    { label: string; value: string | number }[]
+  >([]);
+  const [issues, setIssues] = useState<QaIssueRow[]>([]);
 
   const [showLearnerModal, setShowLearnerModal] = useState(false);
-  const [selectedLearner, setSelectedLearner] = useState<any>(null);
-  const [tableData, setTableData] = useState([
-    {
-      id: "STU001",
-      name: "John Doe",
-      host: "ABC Company",
-      programme: "ICT Training",
-      status: "Under Review",
-      submittedOn: "2026-02-15",
-      email: "john.doe@example.com",
-      phone: "+27 123 456 7890",
-      qaScore: "85%",
-      complianceStatus: "Compliant",
-    },
-    {
-      id: "STU002",
-      name: "Jane Smith",
-      host: "XYZ Organization",
-      programme: "Business Analysis",
-      status: "Pending QA",
-      submittedOn: "2026-02-14",
-      email: "jane.smith@example.com",
-      phone: "+27 987 654 3210",
-      qaScore: "92%",
-      complianceStatus: "Non-Compliant",
-    },
-    {
-      id: "STU003",
-      name: "Mike Johnson",
-      host: "Tech Solutions",
-      programme: "Software Development",
-      status: "QA Approved",
-      submittedOn: "2026-02-13",
-      email: "mike.j@example.com",
-      phone: "+27 555 123 4567",
-      qaScore: "78%",
-      complianceStatus: "Compliant",
-    },
-  ]);
+  const [selectedLearner, setSelectedLearner] = useState<QaIssueRow | null>(
+    null,
+  );
 
-  const stats = [
-    { label: "TOTAL REVIEWS", value: 45 },
-    { label: "PENDING QA", value: 12 },
-    { label: "QA APPROVED", value: 28 },
-    { label: "COMPLIANCE RATE", value: "87%" },
-  ];
+  const withTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+      ),
+    ]);
+  };
 
-  const handleViewLearner = (learner: any) => {
-    setSelectedLearner({ ...learner });
+  useEffect(() => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const results = await Promise.allSettled([
+          withTimeout(
+            supabase
+              .from("qa_issues")
+              .select("id", { count: "exact", head: true }),
+            10000,
+            "Load total issues",
+          ),
+          withTimeout(
+            supabase
+              .from("qa_issues")
+              .select("id", { count: "exact", head: true })
+              .in("status", ["Pending QA", "Under Review"]),
+            10000,
+            "Load pending issues",
+          ),
+          withTimeout(
+            supabase
+              .from("qa_issues")
+              .select("id", { count: "exact", head: true })
+              .eq("status", "QA Approved"),
+            10000,
+            "Load approved issues",
+          ),
+          withTimeout(
+            supabase
+              .from("qa_issues")
+              .select("id, title, description, status, created_at, severity")
+              .in("status", ["Pending QA", "Under Review"])
+              .order("created_at", { ascending: false })
+              .limit(50),
+            10000,
+            "Load latest pending issues",
+          ),
+        ]);
+
+        const totalRes = results[0];
+        const pendingRes = results[1];
+        const approvedRes = results[2];
+        const issuesRes = results[3];
+
+        const errors: string[] = [];
+        if (totalRes.status === "rejected") {
+          errors.push(
+            totalRes.reason instanceof Error
+              ? totalRes.reason.message
+              : "Load total issues failed",
+          );
+        } else if (totalRes.value.error) {
+          errors.push(totalRes.value.error.message);
+        }
+
+        if (pendingRes.status === "rejected") {
+          errors.push(
+            pendingRes.reason instanceof Error
+              ? pendingRes.reason.message
+              : "Load pending issues failed",
+          );
+        } else if (pendingRes.value.error) {
+          errors.push(pendingRes.value.error.message);
+        }
+
+        if (approvedRes.status === "rejected") {
+          errors.push(
+            approvedRes.reason instanceof Error
+              ? approvedRes.reason.message
+              : "Load approved issues failed",
+          );
+        } else if (approvedRes.value.error) {
+          errors.push(approvedRes.value.error.message);
+        }
+
+        const total =
+          totalRes.status === "fulfilled" && !totalRes.value.error
+            ? (totalRes.value.count ?? 0)
+            : 0;
+        const pending =
+          pendingRes.status === "fulfilled" && !pendingRes.value.error
+            ? (pendingRes.value.count ?? 0)
+            : 0;
+        const approved =
+          approvedRes.status === "fulfilled" && !approvedRes.value.error
+            ? (approvedRes.value.count ?? 0)
+            : 0;
+
+        const complianceRate =
+          total > 0 ? `${Math.round((approved / total) * 100)}%` : "N/A";
+
+        if (issuesRes.status === "fulfilled") {
+          if (issuesRes.value.error) {
+            throw new Error(issuesRes.value.error.message);
+          }
+          setIssues((issuesRes.value.data ?? []) as QaIssueRow[]);
+        } else {
+          throw new Error(
+            issuesRes.reason instanceof Error
+              ? issuesRes.reason.message
+              : "Load latest pending issues failed",
+          );
+        }
+
+        if (errors.length > 0) {
+          setError(errors.join(" | "));
+        }
+
+        setStats([
+          { label: "TOTAL REVIEWS", value: total },
+          { label: "PENDING QA", value: pending },
+          { label: "QA APPROVED", value: approved },
+          { label: "COMPLIANCE RATE", value: complianceRate },
+        ]);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const handleViewLearner = (issue: QaIssueRow) => {
+    setSelectedLearner({ ...issue });
     setShowLearnerModal(true);
   };
 
@@ -76,50 +184,79 @@ const QADashboard: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    if (selectedLearner) {
-      setTableData(prev =>
-        prev.map(learner =>
-          learner.id === selectedLearner.id ? selectedLearner : learner
-        )
-      );
-      alert(`QA Status updated: ${selectedLearner.name} - ${selectedLearner.status}`);
-      closeModal();
-    }
+    if (!selectedLearner) return;
+
+    const save = async () => {
+      try {
+        const { error: updateError } = (await withTimeout(
+          supabase
+            .from("qa_issues")
+            .update({ status: selectedLearner.status })
+            .eq("id", selectedLearner.id),
+          10000,
+          "Update QA issue",
+        )) as { error: { message: string } | null };
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+
+        setIssues((prev) =>
+          prev.map((i) => (i.id === selectedLearner.id ? selectedLearner : i)),
+        );
+        closeModal();
+      } catch (e: unknown) {
+        alert(
+          `Update failed: ${e instanceof Error ? e.message : "Unknown error"}`,
+        );
+      }
+    };
+
+    void save();
   };
+
+  const tableData = useMemo(() => {
+    return issues.map((issue) => ({
+      ...issue,
+      submittedOn: issue.created_at ? issue.created_at.slice(0, 10) : "",
+      action: (
+        <button
+          className="view-action-btn"
+          onClick={() => handleViewLearner(issue)}
+        >
+          Review
+        </button>
+      ),
+    }));
+  }, [issues]);
 
   return (
     <div className="qa-dashboard-container">
       <div className="dashboard-content">
         <h1 className="dashboard-title">Super Admin</h1>
-        <p className="dashboard-subtitle">dashbaord for qa officer & coordinator</p>
+        <p className="dashboard-subtitle">
+          dashbaord for qa officer & coordinator
+        </p>
 
         <div className="dashboard-cards">
-          <DashboardStats stats={stats} />
+          {loading ? <LoadingSpinner /> : <DashboardStats stats={stats} />}
         </div>
+
+        {error ? (
+          <div style={{ color: "#dc3545", padding: "12px 0" }}>{error}</div>
+        ) : null}
 
         <h3 className="table-title">PENDING QA REVIEWS</h3>
 
         <TableComponent
           columns={[
-            { header: "LEARNER", key: "name" },
-            { header: "HOST", key: "host" },
-            { header: "PROGRAMME", key: "programme" },
+            { header: "TITLE", key: "title" },
+            { header: "SEVERITY", key: "severity" },
             { header: "QA STATUS", key: "status" },
-            { header: "QA SCORE", key: "qaScore" },
             { header: "SUBMITTED ON", key: "submittedOn" },
             { header: "ACTION", key: "action" },
           ]}
-          data={tableData.map(learner => ({
-            ...learner,
-            action: (
-              <button
-                className="view-action-btn"
-                onClick={() => handleViewLearner(learner)}
-              >
-                Review
-              </button>
-            ),
-          }))}
+          data={tableData}
         />
 
         {/* Learner Modal */}
@@ -127,7 +264,7 @@ const QADashboard: React.FC = () => {
           <div className="learner-modal-overlay" onClick={closeModal}>
             <div
               className="learner-modal-content"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
                 <h2>QA Review Details</h2>
@@ -138,45 +275,38 @@ const QADashboard: React.FC = () => {
 
               <div className="modal-body">
                 <div className="detail-row">
-                  <span className="detail-label">Student ID:</span>
+                  <span className="detail-label">Issue ID:</span>
                   <span className="detail-value">{selectedLearner.id}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Full Name:</span>
-                  <span className="detail-value">{selectedLearner.name}</span>
+                  <span className="detail-label">Title:</span>
+                  <span className="detail-value">{selectedLearner.title}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Email:</span>
-                  <span className="detail-value">{selectedLearner.email}</span>
+                  <span className="detail-label">Severity:</span>
+                  <span className="detail-value">
+                    {selectedLearner.severity}
+                  </span>
                 </div>
                 <div className="detail-row">
-                  <span className="detail-label">Phone:</span>
-                  <span className="detail-value">{selectedLearner.phone}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Host Company:</span>
-                  <span className="detail-value">{selectedLearner.host}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Programme:</span>
-                  <span className="detail-value">{selectedLearner.programme}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">QA Score:</span>
-                  <span className="detail-value">{selectedLearner.qaScore}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Compliance Status:</span>
-                  <span className="detail-value">{selectedLearner.complianceStatus}</span>
+                  <span className="detail-label">Description:</span>
+                  <span className="detail-value">
+                    {selectedLearner.description}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">QA Status:</span>
                   <select
                     className="status-dropdown"
                     value={selectedLearner.status}
-                    onChange={e =>
-                      setSelectedLearner((prev: any) =>
-                        prev ? { ...prev, status: e.target.value } : null
+                    onChange={(e) =>
+                      setSelectedLearner((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              status: e.target.value as QaIssueStatus,
+                            }
+                          : null,
                       )
                     }
                   >
@@ -188,7 +318,11 @@ const QADashboard: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Submitted On:</span>
-                  <span className="detail-value">{selectedLearner.submittedOn}</span>
+                  <span className="detail-value">
+                    {selectedLearner.created_at
+                      ? selectedLearner.created_at.slice(0, 10)
+                      : ""}
+                  </span>
                 </div>
               </div>
 

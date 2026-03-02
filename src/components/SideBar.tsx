@@ -27,6 +27,7 @@ const SideBar: React.FC = () => {
   const roleFromPath: UserRole | null = (() => {
     if (location.pathname.startsWith("/admin")) return "admin";
     if (location.pathname.startsWith("/facilitator")) return "admin";
+    if (location.pathname.startsWith("/super-admin")) return "super_admin";
     if (location.pathname.startsWith("/coordinator"))
       return "programme_coordinator";
     if (location.pathname.startsWith("/qa")) return "qa_officer";
@@ -86,8 +87,7 @@ const SideBar: React.FC = () => {
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
-        { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
+        { label: "SYSTEM SETTINGS", path: "/super-admin/settings" },
       ],
       qa_officer: [
         { label: "DASHBOARD", path: "/qa/dashboard" },

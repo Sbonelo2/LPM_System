@@ -1,23 +1,17 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent"; // Import TableComponent and TableColumn type
+import LoadingSpinner from "../components/LoadingSpinner";
+import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
 import "./AdminDashboard.css"; // Import AdminDashboard specific styles
 
 const FacilitatorDashboard: React.FC = () => {
   const navigate = useNavigate();
   console.log("FacilitatorDashboard component rendering");
-
-  // Placeholder data for Admin DashboardStats
-  const adminDashboardStats = [
-    { label: "ACTIVE LEARNERS", value: 150 },
-    { label: "ACTIVE PLACEMENTS", value: 75 },
-    { label: "PENDING ISSUES", value: 12 },
-    { label: "COMPLIANCE STATUS", value: "95%" },
-  ];
 
   // Placeholder data for Users Table
   interface UserData {
@@ -27,6 +21,118 @@ const FacilitatorDashboard: React.FC = () => {
     createdDate: string;
   }
 
+  interface ProfileRow {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    role: string;
+    is_active: boolean | null;
+    created_at: string;
+  }
+
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+  const [stats, setStats] = useState<
+    { label: string; value: string | number }[]
+  >([]);
+  const [profiles, setProfiles] = useState<ProfileRow[]>([]);
+
+  const withTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+      ),
+    ]);
+  };
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const results = await Promise.allSettled([
+          withTimeout(
+            supabase
+              .from("profiles")
+              .select("id", { count: "exact", head: true })
+              .eq("role", "learner")
+              .eq("is_active", true),
+            8000,
+            "Load learner count",
+          ),
+          withTimeout(
+            supabase
+              .from("placements")
+              .select("id", { count: "exact", head: true })
+              .eq("status", "Active"),
+            8000,
+            "Load active placements count",
+          ),
+          withTimeout(
+            supabase
+              .from("qa_issues")
+              .select("id", { count: "exact", head: true })
+              .eq("status", "Open"),
+            8000,
+            "Load open issues count",
+          ),
+          withTimeout(
+            supabase
+              .from("profiles")
+              .select("id, full_name, email, role, is_active, created_at")
+              .order("created_at", { ascending: false })
+              .limit(10),
+            8000,
+            "Load latest users",
+          ),
+        ]);
+
+        const learnerCountRes = results[0];
+        const placementsRes = results[1];
+        const issuesRes = results[2];
+        const profilesRes = results[3];
+
+        const learnerCount =
+          learnerCountRes.status === "fulfilled" && !learnerCountRes.value.error
+            ? (learnerCountRes.value.count ?? 0)
+            : 0;
+
+        const placementsCount =
+          placementsRes.status === "fulfilled" && !placementsRes.value.error
+            ? (placementsRes.value.count ?? 0)
+            : 0;
+
+        const openIssuesCount =
+          issuesRes.status === "fulfilled" && !issuesRes.value.error
+            ? (issuesRes.value.count ?? 0)
+            : 0;
+
+        if (profilesRes.status === "fulfilled" && !profilesRes.value.error) {
+          setProfiles((profilesRes.value.data ?? []) as ProfileRow[]);
+        }
+
+        setStats([
+          { label: "ACTIVE LEARNERS", value: learnerCount },
+          { label: "ACTIVE PLACEMENTS", value: placementsCount },
+          { label: "PENDING ISSUES", value: openIssuesCount },
+          { label: "COMPLIANCE STATUS", value: "N/A" },
+        ]);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load dashboard");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
   const userColumns: TableColumn<UserData>[] = [
     { key: "fullName", header: "Full Name" },
     { key: "email", header: "Email" },
@@ -34,32 +140,14 @@ const FacilitatorDashboard: React.FC = () => {
     { key: "createdDate", header: "Created Date" },
   ];
 
-  const userData: UserData[] = [
-    {
-      fullName: "Sine Mathebula",
-      email: "sine@example.com",
-      role: "Learner",
-      createdDate: "2023-01-15",
-    },
-    {
-      fullName: "Jane Doe",
-      email: "jane.doe@example.com",
-      role: "Super Admin",
-      createdDate: "2022-11-01",
-    },
-    {
-      fullName: "John Smith",
-      email: "john.smith@example.com",
-      role: "Super Admin",
-      createdDate: "2023-03-20",
-    },
-    {
-      fullName: "Admin User",
-      email: "test@admin.com",
-      role: "Admin",
-      createdDate: "2023-02-10",
-    },
-  ];
+  const userData: UserData[] = useMemo(() => {
+    return profiles.map((p) => ({
+      fullName: p.full_name ?? "",
+      email: p.email ?? "",
+      role: p.role ?? "",
+      createdDate: p.created_at ? p.created_at.slice(0, 10) : "",
+    }));
+  }, [profiles]);
 
   return (
     <>
@@ -81,10 +169,13 @@ const FacilitatorDashboard: React.FC = () => {
         </div>
 
         <div className="dashboard-stats-container">
-          <DashboardStats stats={adminDashboardStats} />
+          {loading ? <LoadingSpinner /> : <DashboardStats stats={stats} />}
         </div>
         <div className="dashboard-my-placements-container">
           <h3>USERS</h3>
+          {error ? (
+            <div style={{ color: "#dc3545", padding: "12px 0" }}>{error}</div>
+          ) : null}
           <Card>
             <TableComponent
               columns={userColumns}

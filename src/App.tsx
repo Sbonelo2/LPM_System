@@ -24,6 +24,7 @@ import "./App.css";
 import LandingPage from "./pages/LandingPage";
 import FacilitatorDashboard from "./pages/AdminDashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import SuperAdminProtectedRoute from "./components/SuperAdminProtectedRoute";
 import AdminProfile from "./pages/AdminProfile"; // Updated import
 import AdminUserManagement from "./pages/AdminUserManagement"; // Added import
 import AdminSystemMonitor from "./pages/AdminSystemMonitor";
@@ -104,16 +105,28 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return metadataRole;
   };
 
+  const enableDummyAuth =
+    (import.meta as { env?: Record<string, string | undefined> }).env
+      ?.VITE_ENABLE_DUMMY_AUTH === "true";
+
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         console.log("Auth state changed:", session?.user);
 
-        // Check if we have a dummy token - if so, don't overwrite with Supabase session
-        const superAdminToken = localStorage.getItem("super-admin-token");
-        const coordinatorToken = localStorage.getItem("coordinator-token");
-        const adminToken = localStorage.getItem("admin-token");
-        const qaToken = localStorage.getItem("qa-token");
+        // Dummy-token auth is dev-only. In production, always use real Supabase auth.
+        const superAdminToken = enableDummyAuth
+          ? localStorage.getItem("super-admin-token")
+          : null;
+        const coordinatorToken = enableDummyAuth
+          ? localStorage.getItem("coordinator-token")
+          : null;
+        const adminToken = enableDummyAuth
+          ? localStorage.getItem("admin-token")
+          : null;
+        const qaToken = enableDummyAuth
+          ? localStorage.getItem("qa-token")
+          : null;
 
         if (session?.user) {
           localStorage.removeItem("admin-token");
@@ -121,10 +134,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem("coordinator-token");
           localStorage.removeItem("qa-token");
         } else if (
-          superAdminToken ||
-          coordinatorToken ||
-          adminToken ||
-          qaToken
+          enableDummyAuth &&
+          (superAdminToken || coordinatorToken || adminToken || qaToken)
         ) {
           console.log(
             "Dummy token exists, ignoring Supabase auth state change",
@@ -151,11 +162,17 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     const getUserSession = async () => {
-      // Check for dummy tokens first
-      const superAdminToken = localStorage.getItem("super-admin-token");
-      const coordinatorToken = localStorage.getItem("coordinator-token");
-      const adminToken = localStorage.getItem("admin-token");
-      const qaToken = localStorage.getItem("qa-token");
+      // Check for dummy tokens first (dev-only)
+      const superAdminToken = enableDummyAuth
+        ? localStorage.getItem("super-admin-token")
+        : null;
+      const coordinatorToken = enableDummyAuth
+        ? localStorage.getItem("coordinator-token")
+        : null;
+      const adminToken = enableDummyAuth
+        ? localStorage.getItem("admin-token")
+        : null;
+      const qaToken = enableDummyAuth ? localStorage.getItem("qa-token") : null;
 
       if (adminToken && (superAdminToken || coordinatorToken || qaToken)) {
         localStorage.removeItem("super-admin-token");
@@ -163,7 +180,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.removeItem("qa-token");
       }
 
-      if (adminToken) {
+      if (enableDummyAuth && adminToken) {
         console.log("Found admin token, creating dummy user");
         const dummyUser = {
           id: "admin-123",
@@ -182,7 +199,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      if (superAdminToken || coordinatorToken || qaToken) {
+      if (enableDummyAuth && (superAdminToken || coordinatorToken || qaToken)) {
         console.log("Found super admin token, creating dummy user");
         const dummyUser = {
           id: "super-admin-123",
@@ -213,7 +230,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         (window.location.pathname === "/" ||
           window.location.pathname === "/login")
       ) {
-        navigate(getDefaultPathForRole(session.user.user_metadata?.role));
+        const effectiveRole = await getEffectiveRole(session.user);
+        navigate(getDefaultPathForRole(effectiveRole));
       } else if (!session?.user && window.location.pathname === "/dashboard") {
         navigate("/login");
       }
@@ -279,7 +297,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     pathname.includes("/coordinator") ||
     pathname.includes("/qa") ||
     pathname.includes("/mentor") ||
-    pathname.includes("/admin");
+    pathname.includes("/admin") ||
+    pathname.includes("/facilitator") ||
+    pathname.includes("/super-admin");
 
   if (!user && !forceSidebar) {
     return <>{children}</>;
@@ -362,6 +382,28 @@ function App() {
               <MainLayout>
                 <QADashboard />
               </MainLayout>
+            }
+          />
+
+          <Route
+            path="/super-admin/settings"
+            element={
+              <SuperAdminProtectedRoute>
+                <MainLayout>
+                  <SystemSettings />
+                </MainLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/super-admin/system-settings"
+            element={
+              <SuperAdminProtectedRoute>
+                <MainLayout>
+                  <SystemSettings />
+                </MainLayout>
+              </SuperAdminProtectedRoute>
             }
           />
 
@@ -510,16 +552,6 @@ function App() {
             }
           />
           <Route
-            path="/facilitator/settings"
-            element={
-              <AdminProtectedRoute>
-                <MainLayout>
-                  <SystemSettings />
-                </MainLayout>
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
             path="/facilitator/monitoring"
             element={
               <AdminProtectedRoute>
@@ -603,9 +635,22 @@ function App() {
           <Route
             path="/super-admin/users"
             element={
-              <ProtectedRoute>
-                <AdminUserManagement />
-              </ProtectedRoute>
+              <SuperAdminProtectedRoute>
+                <MainLayout>
+                  <AdminUserManagement />
+                </MainLayout>
+              </SuperAdminProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/super-admin/user-management"
+            element={
+              <SuperAdminProtectedRoute>
+                <MainLayout>
+                  <AdminUserManagement />
+                </MainLayout>
+              </SuperAdminProtectedRoute>
             }
           />
         </Routes>

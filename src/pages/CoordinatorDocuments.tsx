@@ -7,6 +7,8 @@ import Snackbar from "../components/Snackbar";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
 import { supabase } from "../services/supabaseClient";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import "./CoordinatorDocuments.css";
 
 type DocumentTypeKey =
@@ -74,6 +76,12 @@ function resolveDocumentType(fileName: string): DocumentTypeKey | null {
 }
 
 function isCoordinatorTokenSession(): boolean {
+  const enableDummyAuth =
+    (import.meta as { env?: Record<string, string | undefined> }).env
+      ?.VITE_ENABLE_DUMMY_AUTH === "true";
+
+  if (!enableDummyAuth) return false;
+
   return (
     localStorage.getItem("super-admin-token") === "dummy-super-admin-token" ||
     localStorage.getItem("coordinator-token") === "dummy-coordinator-token" ||
@@ -111,10 +119,16 @@ function loadHistoricalDocuments(): HistoricalDocumentEntry[] {
 
         const fileName = record.file_name || record.doc?.file_name || "";
         const fileUrl = record.file_url || record.doc?.file_url || "";
-        const createdAt = record.created_at || record.doc?.created_at || new Date().toISOString();
-        const sourceDocumentId = record.sourceDocumentId || record.doc?.id || `legacy-${index}`;
-        const userId = record.userId || record.doc?.user_id || COORDINATOR_LOCAL_USER_ID;
-        const typeKey = record.typeKey || resolveDocumentType(fileName) || "ID_COPY";
+        const createdAt =
+          record.created_at ||
+          record.doc?.created_at ||
+          new Date().toISOString();
+        const sourceDocumentId =
+          record.sourceDocumentId || record.doc?.id || `legacy-${index}`;
+        const userId =
+          record.userId || record.doc?.user_id || COORDINATOR_LOCAL_USER_ID;
+        const typeKey =
+          record.typeKey || resolveDocumentType(fileName) || "ID_COPY";
         const typeLabel =
           record.typeLabel ||
           DOCUMENT_TYPES.find((item) => item.key === typeKey)?.label ||
@@ -145,7 +159,9 @@ function loadHistoricalDocuments(): HistoricalDocumentEntry[] {
   }
 }
 
-function saveHistoricalDocuments(history: HistoricalDocumentEntry[]): HistoricalDocumentEntry[] {
+function saveHistoricalDocuments(
+  history: HistoricalDocumentEntry[],
+): HistoricalDocumentEntry[] {
   // Avoid persisting huge base64 payloads in history records.
   const compactHistory = history.map((entry) => ({
     ...entry,
@@ -238,6 +254,8 @@ type CurrentTableRow = {
 };
 
 export default function CoordinatorDocuments(): React.JSX.Element {
+  const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -245,18 +263,23 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState("");
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(
+    null,
+  );
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
-  const [roleModalDocument, setRoleModalDocument] = useState<DocumentRecord | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(
+    null,
+  );
+  const [roleModalDocument, setRoleModalDocument] =
+    useState<DocumentRecord | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [editingRoles, setEditingRoles] = useState<string[]>([]);
-  const [documentRoleTargets, setDocumentRoleTargets] = useState<Record<string, string[]>>(
-    () => loadDocumentRoleTargets(),
-  );
-  const [historicalRecords, setHistoricalRecords] = useState<HistoricalDocumentEntry[]>(
-    () => loadHistoricalDocuments(),
-  );
+  const [documentRoleTargets, setDocumentRoleTargets] = useState<
+    Record<string, string[]>
+  >(() => loadDocumentRoleTargets());
+  const [historicalRecords, setHistoricalRecords] = useState<
+    HistoricalDocumentEntry[]
+  >(() => loadHistoricalDocuments());
 
   const updateHistoricalRecords = (
     updater: (prev: HistoricalDocumentEntry[]) => HistoricalDocumentEntry[],
@@ -274,7 +297,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   ) => {
     const typeKey = resolveDocumentType(doc.file_name) ?? "ID_COPY";
     const typeLabel =
-      DOCUMENT_TYPES.find((entry) => entry.key === typeKey)?.label ?? "Document";
+      DOCUMENT_TYPES.find((entry) => entry.key === typeKey)?.label ??
+      "Document";
 
     const record: HistoricalDocumentEntry = {
       historyId: `${doc.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -294,7 +318,9 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
   const ensureCurrentDocsInHistory = (docs: DocumentRecord[]) => {
     updateHistoricalRecords((prev) => {
-      const seen = new Set(prev.map((entry) => `${entry.sourceDocumentId}:${entry.created_at}`));
+      const seen = new Set(
+        prev.map((entry) => `${entry.sourceDocumentId}:${entry.created_at}`),
+      );
       const additions: HistoricalDocumentEntry[] = [];
 
       docs.forEach((doc) => {
@@ -303,7 +329,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
         const typeKey = resolveDocumentType(doc.file_name) ?? "ID_COPY";
         const typeLabel =
-          DOCUMENT_TYPES.find((entry) => entry.key === typeKey)?.label ?? "Document";
+          DOCUMENT_TYPES.find((entry) => entry.key === typeKey)?.label ??
+          "Document";
 
         additions.push({
           historyId: `${doc.id}-seed-${Math.random().toString(36).slice(2, 7)}`,
@@ -331,7 +358,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       const type = resolveDocumentType(doc.file_name);
       if (!type) continue;
 
-      const typeLabel = DOCUMENT_TYPES.find((item) => item.key === type)?.label || type;
+      const typeLabel =
+        DOCUMENT_TYPES.find((item) => item.key === type)?.label || type;
       const groupKey = `${doc.user_id}:${type}`;
 
       if (!map.has(groupKey)) {
@@ -350,7 +378,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
     const groups = Array.from(map.values());
     groups.forEach((group) => {
       group.docs.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
     });
 
@@ -366,7 +395,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   const historicalDocuments = useMemo<HistoricalDocumentEntry[]>(
     () =>
       [...historicalRecords].sort(
-        (a, b) => new Date(b.event_at).getTime() - new Date(a.event_at).getTime(),
+        (a, b) =>
+          new Date(b.event_at).getTime() - new Date(a.event_at).getTime(),
       ),
     [historicalRecords],
   );
@@ -457,11 +487,14 @@ export default function CoordinatorDocuments(): React.JSX.Element {
           id: group.groupKey,
           source: group.typeLabel,
           documentName: stripTypePrefix(currentDoc.file_name),
-          uploadedOn: `${new Date(currentDoc.created_at).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-          })} ${new Date(currentDoc.created_at).toLocaleTimeString([], {
+          uploadedOn: `${new Date(currentDoc.created_at).toLocaleDateString(
+            "en-GB",
+            {
+              day: "2-digit",
+              month: "long",
+              year: "numeric",
+            },
+          )} ${new Date(currentDoc.created_at).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false,
@@ -556,6 +589,13 @@ export default function CoordinatorDocuments(): React.JSX.Element {
         return;
       }
 
+      if (authLoading) return;
+
+      if (!user) {
+        setDocuments([]);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("documents")
@@ -576,7 +616,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
     };
 
     fetchDocuments();
-  }, []);
+  }, [authLoading, user]);
 
   const handleChooseFile = () => {
     fileInputRef.current?.click();
@@ -612,7 +652,10 @@ export default function CoordinatorDocuments(): React.JSX.Element {
     }
 
     try {
-      const { error } = await supabase.from("documents").delete().eq("id", documentId);
+      const { error } = await supabase
+        .from("documents")
+        .delete()
+        .eq("id", documentId);
       if (error) throw error;
       setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
       setDocumentRoleTargets((prev) => {
@@ -634,7 +677,11 @@ export default function CoordinatorDocuments(): React.JSX.Element {
     }
   };
 
-  const requestDelete = (documentId: string, fileName: string, createdAt: string) => {
+  const requestDelete = (
+    documentId: string,
+    fileName: string,
+    createdAt: string,
+  ) => {
     setPendingDelete({ id: documentId, fileName, createdAt });
   };
 
@@ -739,7 +786,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
   const openHistoricalDocument = (entry: HistoricalDocumentEntry) => {
     const fallbackUrl =
-      documents.find((doc) => doc.id === entry.sourceDocumentId)?.file_url || "";
+      documents.find((doc) => doc.id === entry.sourceDocumentId)?.file_url ||
+      "";
     const resolvedUrl = entry.file_url || fallbackUrl;
 
     if (!resolvedUrl) {
@@ -770,7 +818,9 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
   const addRoleToSelection = () => {
     if (!selectedRole) return;
-    setEditingRoles((prev) => (prev.includes(selectedRole) ? prev : [...prev, selectedRole]));
+    setEditingRoles((prev) =>
+      prev.includes(selectedRole) ? prev : [...prev, selectedRole],
+    );
     setSelectedRole("");
   };
 
@@ -828,7 +878,11 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       <div style={{ flex: 1 }}>
         <div className="coordinator-documents-page">
           <div className="coordinator-documents-header">
-            <h2>COORDINATOR DOCUMENTS</h2>
+            <h2>
+              {location.pathname.startsWith("/super-admin")
+                ? "SUPER ADMIN DOCUMENTS"
+                : "COORDINATOR DOCUMENTS"}
+            </h2>
             <Button
               text="View Historical Documents"
               variant="secondary"
@@ -836,7 +890,9 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             />
           </div>
 
-          {feedback && <p className="coordinator-documents-feedback">{feedback}</p>}
+          {feedback && (
+            <p className="coordinator-documents-feedback">{feedback}</p>
+          )}
 
           <div className="coordinator-documents-layout">
             <div className="coordinator-documents-list">
@@ -858,15 +914,22 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
             <aside className="coordinator-upload-panel-wrap">
               <Card className="coordinator-upload-panel">
-                <h3 className="coordinator-upload-title">UPLOAD NEW DOCUMENT</h3>
-                <label className="coordinator-upload-label" htmlFor="coordinator-document-type-select">
+                <h3 className="coordinator-upload-title">
+                  UPLOAD NEW DOCUMENT
+                </h3>
+                <label
+                  className="coordinator-upload-label"
+                  htmlFor="coordinator-document-type-select"
+                >
                   Select Document Type
                 </label>
                 <select
                   id="coordinator-document-type-select"
                   className="coordinator-upload-select"
                   value={selectedType}
-                  onChange={(event) => setSelectedType(event.target.value as DocumentTypeKey)}
+                  onChange={(event) =>
+                    setSelectedType(event.target.value as DocumentTypeKey)
+                  }
                   disabled={uploading}
                 >
                   {DOCUMENT_TYPES.map((type) => (
@@ -897,7 +960,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
                   disabled={uploading || !selectedFile}
                 />
                 <p className="coordinator-upload-note">
-                  Supported formats: PDF, JPG, PNG. New uploads become current versions.
+                  Supported formats: PDF, JPG, PNG. New uploads become current
+                  versions.
                 </p>
               </Card>
             </aside>
@@ -908,14 +972,14 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       {showHistoryModal && (
         <Modal
           isOpen={showHistoryModal}
-          onClose={() => {
-            setShowHistoryModal(false);
-          }}
+          onClose={() => setShowHistoryModal(false)}
           title="Historical Documents"
         >
           <div className="coordinator-history-modal">
             {historicalDocuments.length === 0 ? (
-              <p className="coordinator-history-empty">No historical documents available yet.</p>
+              <p className="coordinator-history-empty">
+                No historical documents available yet.
+              </p>
             ) : (
               <TableComponent
                 columns={historyColumns}
@@ -995,9 +1059,11 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             </div>
             <div className="coordinator-role-modal__chips">
               {editingRoles.length === 0 ? (
-                <span className="coordinator-role-modal__empty">No roles selected.</span>
+                <span className="coordinator-role-modal__empty">
+                  No roles selected.
+                </span>
               ) : (
-                editingRoles.map((role) => (
+                editingRoles.map((role: string) => (
                   <span key={role} className="coordinator-role-chip">
                     {role}
                     <button
@@ -1013,8 +1079,16 @@ export default function CoordinatorDocuments(): React.JSX.Element {
               )}
             </div>
             <div className="coordinator-delete-modal-actions">
-              <Button text="Cancel" variant="secondary" onClick={closeRoleModal} />
-              <Button text="Save Roles" variant="primary" onClick={saveRoleSelection} />
+              <Button
+                text="Cancel"
+                variant="secondary"
+                onClick={closeRoleModal}
+              />
+              <Button
+                text="Save Roles"
+                variant="primary"
+                onClick={saveRoleSelection}
+              />
             </div>
           </div>
         </Modal>

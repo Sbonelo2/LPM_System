@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
@@ -7,6 +7,7 @@ import InputField from "../components/InputField";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
 import "./Dashboard.css";
 import "./SystemSettings.css";
+import { supabase } from "../services/supabaseClient";
 
 type NotificationChannel = "email" | "sms" | "in_app";
 
@@ -71,6 +72,18 @@ const DEFAULT_RECIPIENTS: Record<RecipientKey, boolean> = {
   facilitators: false,
 };
 
+const withTimeout = async <T,>(
+  promise: PromiseLike<T>,
+  ms: number,
+  label: string,
+): Promise<T> =>
+  Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((_resolve, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+    ),
+  ]);
+
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState<
     | "notification"
@@ -78,6 +91,10 @@ export default function SystemSettings() {
     | "compliance_rules"
     | "security_params"
   >("notification");
+
+  const [saveStatus, setSaveStatus] = useState<
+    "" | "saving" | "saved" | "error"
+  >("");
 
   const [requiredDocsRole, setRequiredDocsRole] =
     useState<RequiredDocumentsRole>("learners");
@@ -289,6 +306,224 @@ export default function SystemSettings() {
   const [newExpiryDate, setNewExpiryDate] = useState("N/A");
   const [addRuleError, setAddRuleError] = useState("");
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // notification_settings
+        const { data: notifData } = (await withTimeout(
+          supabase
+            .from("notification_settings")
+            .select("id, title, channel, recipients, subject, message"),
+          10000,
+          "Load notification settings",
+        )) as {
+          data:
+            | {
+                id: string;
+                title: string;
+                channel: string;
+                recipients: Record<string, boolean>;
+                subject: string;
+                message: string;
+              }[]
+            | null;
+          error: unknown;
+        };
+        if (notifData && notifData.length > 0) {
+          setSettings(
+            notifData.map((r) => ({
+              id: r.id,
+              title: r.title,
+              channel: (r.channel as NotificationChannel) ?? "email",
+              recipients: (r.recipients as Record<RecipientKey, boolean>) ?? {
+                ...DEFAULT_RECIPIENTS,
+              },
+              subject: r.subject ?? "",
+              message: r.message ?? "",
+            })),
+          );
+        }
+
+        // required_document_rules
+        const { data: reqData } = (await withTimeout(
+          supabase
+            .from("required_document_rules")
+            .select(
+              "applies_to_role, document_name, required, allowed_formats, max_size_mb, expiry_required",
+            ),
+          10000,
+          "Load required document rules",
+        )) as {
+          data:
+            | {
+                applies_to_role: string;
+                document_name: string;
+                required: boolean;
+                allowed_formats: string;
+                max_size_mb: number | null;
+                expiry_required: boolean;
+              }[]
+            | null;
+          error: unknown;
+        };
+        if (reqData && reqData.length > 0) {
+          const grouped: RequiredDocsState = {
+            learners: [],
+            facilitators: [],
+            qa_officers: [],
+            programme_coordinators: [],
+          };
+          reqData.forEach((r) => {
+            const role = r.applies_to_role as RequiredDocumentsRole;
+            if (grouped[role]) {
+              grouped[role].push({
+                documentName: r.document_name,
+                required: r.required ? "Yes" : "No",
+                formats: r.allowed_formats ?? "",
+                maxSize: r.max_size_mb != null ? `${r.max_size_mb} MB` : "N/A",
+                expiryDate: r.expiry_required ? "Required" : "N/A",
+              });
+            }
+          });
+          setRequiredDocsRulesByRole(grouped);
+        }
+
+        // compliance_rules
+        const { data: compData } = (await withTimeout(
+          supabase
+            .from("compliance_rules")
+            .select("area, rule_name, applies_to, doc_type, max_size_mb"),
+          10000,
+          "Load compliance rules",
+        )) as {
+          data:
+            | {
+                area: string;
+                rule_name: string;
+                applies_to: string;
+                doc_type: string | null;
+                max_size_mb: number | null;
+              }[]
+            | null;
+          error: unknown;
+        };
+        if (compData && compData.length > 0) {
+          const grouped: ComplianceRulesState = {
+            learner_placements: [],
+            assessments: [],
+            document_submissions: [],
+            host_compliance: [],
+          };
+          compData.forEach((r) => {
+            const area = r.area as ComplianceArea;
+            if (grouped[area]) {
+              grouped[area].push({
+                ruleName: r.rule_name,
+                appliesTo: r.applies_to ?? "",
+                type: r.doc_type ?? "",
+                size: r.max_size_mb != null ? `${r.max_size_mb} MB` : "N/A",
+              });
+            }
+          });
+          setComplianceRulesByArea(grouped);
+        }
+
+        // security_permissions
+        const { data: secData } = (await withTimeout(
+          supabase
+            .from("security_permissions")
+            .select(
+              "role_key, view_learner_data, submit_assessments, approve_documents",
+            ),
+          10000,
+          "Load security permissions",
+        )) as {
+          data:
+            | {
+                role_key: string;
+                view_learner_data: boolean;
+                submit_assessments: boolean;
+                approve_documents: boolean;
+              }[]
+            | null;
+          error: unknown;
+        };
+        if (secData && secData.length > 0) {
+          const perms = { ...securityPermissions };
+          secData.forEach((r) => {
+            const role = r.role_key as SecurityRole;
+            if (perms[role] !== undefined) {
+              perms[role] = {
+                viewLearnerData: r.view_learner_data,
+                submitAssessments: r.submit_assessments,
+                approveDocuments: r.approve_documents,
+              };
+            }
+          });
+          setSecurityPermissions(perms);
+        }
+      } catch (_) {
+        /* fall back to defaults */
+      }
+    };
+    void load();
+  }, []);
+
+  const saveNotificationSettings = async () => {
+    setSaveStatus("saving");
+    try {
+      const rows = settings.map((s) => ({
+        id: s.id,
+        title: s.title,
+        channel: s.channel,
+        recipients: s.recipients,
+        subject: s.subject,
+        message: s.message,
+        enabled: true,
+      }));
+      const { error } = (await withTimeout(
+        supabase
+          .from("notification_settings")
+          .upsert(rows, { onConflict: "id" }),
+        10000,
+        "Save notification settings",
+      )) as { error: { message: string } | null };
+      if (error) throw new Error(error.message);
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(""), 2500);
+    } catch (e) {
+      setSaveStatus("error");
+      alert(`Save failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    }
+  };
+
+  const saveSecurityPermissions = async () => {
+    setSaveStatus("saving");
+    try {
+      for (const role of Object.keys(securityPermissions) as SecurityRole[]) {
+        const p = securityPermissions[role];
+        const { error } = (await withTimeout(
+          supabase
+            .from("security_permissions")
+            .update({
+              view_learner_data: p.viewLearnerData,
+              submit_assessments: p.submitAssessments,
+              approve_documents: p.approveDocuments,
+            })
+            .eq("role_key", role),
+          10000,
+          `Save security ${role}`,
+        )) as { error: { message: string } | null };
+        if (error) throw new Error(error.message);
+      }
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(""), 2500);
+    } catch (e) {
+      setSaveStatus("error");
+      alert(`Save failed: ${e instanceof Error ? e.message : "unknown error"}`);
+    }
+  };
+
   const [settings, setSettings] = useState<NotificationSetting[]>([
     {
       id: "placement_assigned",
@@ -398,28 +633,51 @@ export default function SystemSettings() {
     const docName = newDocName.trim();
     const formats = newFormats.trim();
     const maxSize = newMaxSize.trim();
-    const expiryDate = newExpiryDate.trim();
 
-    if (!docName || !formats || !maxSize || !expiryDate) {
-      setAddRuleError("Please fill in all fields.");
+    if (!docName || !formats || !maxSize) {
+      setAddRuleError("Please fill in all required fields.");
       return;
     }
 
-    setRequiredDocsRulesByRole((prev) => ({
-      ...prev,
-      [requiredDocsRole]: [
-        {
-          documentName: docName,
-          required: newRequired,
-          formats,
-          maxSize,
-          expiryDate,
-        },
-        ...prev[requiredDocsRole],
-      ],
-    }));
+    const requiredBool = newRequired === "Yes";
+    const maxSizeMb = parseInt(maxSize.replace(/[^0-9]/g, ""), 10) || 5;
+    const expiryDate = newExpiryDate.trim();
+    const expiryRequired = expiryDate !== "N/A" && expiryDate.length > 0;
 
-    closeAddRuleModal();
+    const insert = async () => {
+      try {
+        const { error } = (await withTimeout(
+          supabase.from("required_document_rules").insert({
+            applies_to_role: requiredDocsRole,
+            document_name: docName,
+            required: requiredBool,
+            allowed_formats: formats,
+            max_size_mb: maxSizeMb,
+            expiry_required: expiryRequired,
+          }),
+          10000,
+          "Add required document rule",
+        )) as { error: { message: string } | null };
+        if (error) throw new Error(error.message);
+        setRequiredDocsRulesByRole((prev) => ({
+          ...prev,
+          [requiredDocsRole]: [
+            {
+              documentName: docName,
+              required: newRequired,
+              formats,
+              maxSize: `${maxSizeMb} MB`,
+              expiryDate: expiryRequired ? "Required" : "N/A",
+            },
+            ...prev[requiredDocsRole],
+          ],
+        }));
+        closeAddRuleModal();
+      } catch (e) {
+        setAddRuleError(e instanceof Error ? e.message : "Save failed");
+      }
+    };
+    void insert();
   };
 
   const openAddComplianceModal = () => {
@@ -442,19 +700,40 @@ export default function SystemSettings() {
     const type = newComplianceType.trim();
     const size = newComplianceSize.trim();
 
-    if (!ruleName || !appliesTo || !type || !size) {
-      setAddComplianceError("Please fill in all fields.");
+    if (!ruleName || !appliesTo) {
+      setAddComplianceError("Please fill in all required fields.");
       return;
     }
 
-    setComplianceRulesByArea((prev) => ({
-      ...prev,
-      [complianceArea]: [
-        { ruleName, appliesTo, type, size },
-        ...prev[complianceArea],
-      ],
-    }));
-    closeAddComplianceModal();
+    const maxSizeMb = parseInt(size.replace(/[^0-9]/g, ""), 10) || null;
+
+    const insert = async () => {
+      try {
+        const { error } = (await withTimeout(
+          supabase.from("compliance_rules").insert({
+            area: complianceArea,
+            rule_name: ruleName,
+            applies_to: appliesTo,
+            doc_type: type || null,
+            max_size_mb: maxSizeMb,
+          }),
+          10000,
+          "Add compliance rule",
+        )) as { error: { message: string } | null };
+        if (error) throw new Error(error.message);
+        setComplianceRulesByArea((prev) => ({
+          ...prev,
+          [complianceArea]: [
+            { ruleName, appliesTo, type, size },
+            ...prev[complianceArea],
+          ],
+        }));
+        closeAddComplianceModal();
+      } catch (e) {
+        setAddComplianceError(e instanceof Error ? e.message : "Save failed");
+      }
+    };
+    void insert();
   };
 
   const updatePermission = (
@@ -464,10 +743,7 @@ export default function SystemSettings() {
   ) => {
     setSecurityPermissions((prev) => ({
       ...prev,
-      [role]: {
-        ...prev[role],
-        [key]: value,
-      },
+      [role]: { ...prev[role], [key]: value },
     }));
   };
 
@@ -550,7 +826,6 @@ export default function SystemSettings() {
                 <h3 className="system-settings__section-title">
                   {setting.title}
                 </h3>
-
                 <div className="system-settings__grid">
                   <Card className="system-settings__card">
                     <div className="system-settings__card-title">
@@ -560,51 +835,28 @@ export default function SystemSettings() {
                       className="system-settings__radio-group"
                       role="radiogroup"
                     >
-                      <label className="system-settings__option">
-                        <input
-                          type="radio"
-                          name={`${setting.id}-channel`}
-                          checked={setting.channel === "email"}
-                          onChange={() =>
-                            handleSettingUpdate(setting.id, (prev) => ({
-                              ...prev,
-                              channel: "email",
-                            }))
-                          }
-                        />
-                        <span>Email</span>
-                      </label>
-                      <label className="system-settings__option">
-                        <input
-                          type="radio"
-                          name={`${setting.id}-channel`}
-                          checked={setting.channel === "sms"}
-                          onChange={() =>
-                            handleSettingUpdate(setting.id, (prev) => ({
-                              ...prev,
-                              channel: "sms",
-                            }))
-                          }
-                        />
-                        <span>SMS</span>
-                      </label>
-                      <label className="system-settings__option">
-                        <input
-                          type="radio"
-                          name={`${setting.id}-channel`}
-                          checked={setting.channel === "in_app"}
-                          onChange={() =>
-                            handleSettingUpdate(setting.id, (prev) => ({
-                              ...prev,
-                              channel: "in_app",
-                            }))
-                          }
-                        />
-                        <span>In-App</span>
-                      </label>
+                      {(["email", "sms", "in_app"] as const).map((ch) => (
+                        <label key={ch} className="system-settings__option">
+                          <input
+                            type="radio"
+                            name={`${setting.id}-channel`}
+                            checked={setting.channel === ch}
+                            onChange={() =>
+                              handleSettingUpdate(setting.id, (prev) => ({
+                                ...prev,
+                                channel: ch,
+                              }))
+                            }
+                          />
+                          <span>
+                            {ch === "in_app"
+                              ? "In-App"
+                              : ch.charAt(0).toUpperCase() + ch.slice(1)}
+                          </span>
+                        </label>
+                      ))}
                     </div>
                   </Card>
-
                   <Card className="system-settings__card">
                     <div className="system-settings__card-title">
                       Recipients
@@ -633,7 +885,6 @@ export default function SystemSettings() {
                       ))}
                     </div>
                   </Card>
-
                   <Card className="system-settings__card system-settings__card--template">
                     <div className="system-settings__card-title">
                       Message Template
@@ -673,9 +924,23 @@ export default function SystemSettings() {
                 </div>
               </section>
             ))}
-
             <div className="system-settings__actions">
-              <Button text="Save" variant="primary" />
+              {saveStatus === "saving" && (
+                <span style={{ marginRight: 12, color: "#888" }}>Saving…</span>
+              )}
+              {saveStatus === "saved" && (
+                <span style={{ marginRight: 12, color: "green" }}>Saved!</span>
+              )}
+              {saveStatus === "error" && (
+                <span style={{ marginRight: 12, color: "red" }}>
+                  Save failed
+                </span>
+              )}
+              <Button
+                text="Save"
+                variant="primary"
+                onClick={() => void saveNotificationSettings()}
+              />
             </div>
           </div>
         ) : activeTab === "required_documents" ? (
@@ -684,44 +949,30 @@ export default function SystemSettings() {
               <Card className="required-documents__role-card">
                 <div className="system-settings__card-title">Select Role</div>
                 <div className="system-settings__radio-group" role="radiogroup">
-                  <label className="system-settings__option">
-                    <input
-                      type="radio"
-                      name="required-docs-role"
-                      checked={requiredDocsRole === "learners"}
-                      onChange={() => setRequiredDocsRole("learners")}
-                    />
-                    <span>Learners</span>
-                  </label>
-                  <label className="system-settings__option">
-                    <input
-                      type="radio"
-                      name="required-docs-role"
-                      checked={requiredDocsRole === "facilitators"}
-                      onChange={() => setRequiredDocsRole("facilitators")}
-                    />
-                    <span>Facilitators</span>
-                  </label>
-                  <label className="system-settings__option">
-                    <input
-                      type="radio"
-                      name="required-docs-role"
-                      checked={requiredDocsRole === "qa_officers"}
-                      onChange={() => setRequiredDocsRole("qa_officers")}
-                    />
-                    <span>QA Officers</span>
-                  </label>
-                  <label className="system-settings__option">
-                    <input
-                      type="radio"
-                      name="required-docs-role"
-                      checked={requiredDocsRole === "programme_coordinators"}
-                      onChange={() =>
-                        setRequiredDocsRole("programme_coordinators")
-                      }
-                    />
-                    <span>Programme Coordinators</span>
-                  </label>
+                  {(
+                    [
+                      "learners",
+                      "facilitators",
+                      "qa_officers",
+                      "programme_coordinators",
+                    ] as const
+                  ).map((role) => (
+                    <label key={role} className="system-settings__option">
+                      <input
+                        type="radio"
+                        name="required-docs-role"
+                        checked={requiredDocsRole === role}
+                        onChange={() => setRequiredDocsRole(role)}
+                      />
+                      <span>
+                        {role === "programme_coordinators"
+                          ? "Programme Coordinators"
+                          : role === "qa_officers"
+                            ? "QA Officers"
+                            : role.charAt(0).toUpperCase() + role.slice(1)}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </Card>
 
@@ -769,10 +1020,10 @@ export default function SystemSettings() {
                   required
                 />
                 <InputField
-                  label="Max Size"
+                  label="Max Size (MB)"
                   value={newMaxSize}
                   onChange={setNewMaxSize}
-                  placeholder="e.g. 5MB"
+                  placeholder="e.g. 5"
                   required
                 />
                 <InputField
@@ -889,14 +1140,12 @@ export default function SystemSettings() {
                   value={newComplianceType}
                   onChange={setNewComplianceType}
                   placeholder="e.g. PDF"
-                  required
                 />
                 <InputField
-                  label="Size"
+                  label="Size (MB)"
                   value={newComplianceSize}
                   onChange={setNewComplianceSize}
-                  placeholder="e.g. 5MB"
-                  required
+                  placeholder="e.g. 5"
                 />
 
                 {addComplianceError && (
@@ -1052,7 +1301,22 @@ export default function SystemSettings() {
             </Card>
 
             <div className="system-settings__actions">
-              <Button text="Save" variant="primary" />
+              {saveStatus === "saving" && (
+                <span style={{ marginRight: 12, color: "#888" }}>Saving…</span>
+              )}
+              {saveStatus === "saved" && (
+                <span style={{ marginRight: 12, color: "green" }}>Saved!</span>
+              )}
+              {saveStatus === "error" && (
+                <span style={{ marginRight: 12, color: "red" }}>
+                  Save failed
+                </span>
+              )}
+              <Button
+                text="Save"
+                variant="primary"
+                onClick={() => void saveSecurityPermissions()}
+              />
             </div>
           </div>
         ) : (

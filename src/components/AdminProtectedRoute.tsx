@@ -12,7 +12,7 @@ const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   }
 
   const role = user?.user_metadata?.role;
-  if (!user || (role !== "facilitator" && role !== "admin" && role !== "super_admin")) {
+  if (!user || (role !== "facilitator" && role !== "admin")) {
     return <Navigate to="/login" />;
   }
 

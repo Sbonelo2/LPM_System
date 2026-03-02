@@ -12,6 +12,10 @@ const Login: React.FC = () => {
   const [message, setMessage] = useState<string>("");
   const navigate = useNavigate();
 
+  const enableDummyAuth =
+    (import.meta as { env?: Record<string, string | undefined> }).env
+      ?.VITE_ENABLE_DUMMY_AUTH === "true";
+
   const withTimeout = async <T,>(
     promise: PromiseLike<T>,
     ms: number,
@@ -30,7 +34,11 @@ const Login: React.FC = () => {
     setLoading(true);
     setMessage("");
 
-    if (email === "office@admin.com" && password === "123456") {
+    if (
+      enableDummyAuth &&
+      email === "office@admin.com" &&
+      password === "123456"
+    ) {
       localStorage.removeItem("admin-token");
       localStorage.removeItem("coordinator-token");
       localStorage.removeItem("qa-token");
@@ -40,7 +48,11 @@ const Login: React.FC = () => {
       return;
     }
 
-    if (email.endsWith("@admin.com") && password === "Admin123") {
+    if (
+      enableDummyAuth &&
+      email.endsWith("@admin.com") &&
+      password === "Admin123"
+    ) {
       localStorage.removeItem("super-admin-token");
       localStorage.removeItem("coordinator-token");
       localStorage.removeItem("qa-token");
@@ -51,9 +63,10 @@ const Login: React.FC = () => {
     }
 
     if (
-      (email === "superadmin@gmail.com" && password === "SuperAdmin123") ||
-      (email === "coordinator@gmail.com" && password === "Coordinator123") ||
-      (email === "test@qa.com" && password === "Qa123")
+      enableDummyAuth &&
+      ((email === "superadmin@gmail.com" && password === "SuperAdmin123") ||
+        (email === "coordinator@gmail.com" && password === "Coordinator123") ||
+        (email === "test@qa.com" && password === "Qa123"))
     ) {
       localStorage.removeItem("admin-token");
       localStorage.removeItem("coordinator-token");
@@ -107,7 +120,9 @@ const Login: React.FC = () => {
         }
       }
 
-      if (effectiveRole === "admin") {
+      if (effectiveRole === "super_admin") {
+        navigate("/super-admin/dashboard");
+      } else if (effectiveRole === "admin") {
         navigate("/facilitator/dashboard");
       } else if (effectiveRole === "programme_coordinator") {
         navigate("/coordinator/documents");

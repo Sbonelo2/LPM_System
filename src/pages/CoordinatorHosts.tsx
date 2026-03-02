@@ -1,59 +1,107 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./CoordinatorHosts.css";
 import Button from "../components/Button";
 import AddHostModal from "../components/AddHostModal";
 import Card from "../components/Card";
 import type { NewHostPayload } from "../components/AddHostModal";
+import LoadingSpinner from "../components/LoadingSpinner";
+import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 
 type CoordinatorHostsProps = {
   pageTitle?: string;
 };
 
 const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
+  const { user, loading: authLoading } = useAuth();
   const [showAddHostModal, setShowAddHostModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedHost, setSelectedHost] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [industryFilter, setIndustryFilter] = useState("all");
-  const [hosts, setHosts] = useState([
-    {
-      id: "HOST001",
-      name: "ABC Company",
-      industry: "Technology",
-      location: "Johannesburg, Gauteng",
-      contactPerson: "John Manager",
-      email: "contact@abccompany.co.za",
-      phone: "+27 11 234 5678",
-      capacity: 10,
-      currentLearners: 6,
-      status: "Active",
-    },
-    {
-      id: "HOST002",
-      name: "XYZ Organization",
-      industry: "Finance",
-      location: "Cape Town, Western Cape",
-      contactPerson: "Jane Supervisor",
-      email: "info@xyzorg.co.za",
-      phone: "+27 21 345 6789",
-      capacity: 8,
-      currentLearners: 4,
-      status: "Active",
-    },
-    {
-      id: "HOST003",
-      name: "Tech Solutions Ltd",
-      industry: "IT Services",
-      location: "Durban, KwaZulu-Natal",
-      contactPerson: "Mike Director",
-      email: "admin@techsolutions.co.za",
-      phone: "+27 31 456 7890",
-      capacity: 12,
-      currentLearners: 9,
-      status: "Pending",
-    },
-  ]);
+  const [hosts, setHosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+
+  const withTimeout = async <T,>(
+    promise: PromiseLike<T>,
+    ms: number,
+    label: string,
+  ): Promise<T> => {
+    return await Promise.race([
+      Promise.resolve(promise),
+      new Promise<T>((_resolve, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
+      ),
+    ]);
+  };
+
+  const loadHosts = async () => {
+    if (!user) {
+      setHosts([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const { data, error: supaError } = (await withTimeout(
+        supabase
+          .from("hosts")
+          .select(
+            "id, name, industry, location, contact_person, contact_email, contact_phone, capacity, status, created_at",
+          )
+          .order("created_at", { ascending: false })
+          .limit(500),
+        12000,
+        "Load hosts",
+      )) as {
+        data:
+          | {
+              id: string;
+              name: string;
+              industry: string | null;
+              location: string | null;
+              contact_person: string | null;
+              contact_email: string | null;
+              contact_phone: string | null;
+              capacity: number | null;
+              status: string | null;
+              created_at: string;
+            }[]
+          | null;
+        error: { message: string } | null;
+      };
+
+      if (supaError) throw new Error(supaError.message);
+
+      setHosts(
+        (data ?? []).map((row) => ({
+          id: row.id,
+          name: row.name,
+          industry: row.industry ?? "General",
+          location: row.location ?? "",
+          contactPerson: row.contact_person ?? "",
+          email: row.contact_email ?? "",
+          phone: row.contact_phone ?? "",
+          capacity: row.capacity ?? 0,
+          currentLearners: 0,
+          status: row.status ?? "Pending",
+        })),
+      );
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load hosts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (authLoading) return;
+    void loadHosts();
+  }, [authLoading, user]);
 
   // Get unique industries for filter dropdown
   const industries = ["all", ...new Set(hosts.map((host) => host.industry))];
@@ -68,22 +116,37 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
   });
 
   const handleAddHost = (payload: NewHostPayload) => {
-    console.log("Adding host:", payload);
-    // Add the new host to the list with correct capacity and industry
-    const newHost = {
-      id: `HOST${String(hosts.length + 1).padStart(3, "0")}`,
-      name: payload.hostName,
-      industry: "General", // You can make this a field in the form if needed
-      location: payload.location,
-      contactPerson: payload.contactPerson,
-      email: payload.contactEmail,
-      phone: payload.contactPhone,
-      capacity: 5, // Default capacity, can be made configurable
-      currentLearners: 0,
-      status: "Pending",
+    const insert = async () => {
+      try {
+        const { error: insertError } = (await withTimeout(
+          supabase.from("hosts").insert([
+            {
+              name: payload.hostName,
+              industry: "General",
+              location: payload.location,
+              contact_person: payload.contactPerson,
+              contact_email: payload.contactEmail,
+              contact_phone: payload.contactPhone,
+              capacity: 5,
+              status: "Pending",
+            },
+          ]),
+          12000,
+          "Add host",
+        )) as { error: { message: string } | null };
+
+        if (insertError) throw new Error(insertError.message);
+
+        setShowAddHostModal(false);
+        await loadHosts();
+      } catch (e: unknown) {
+        alert(
+          `Add host failed: ${e instanceof Error ? e.message : "Unknown error"}`,
+        );
+      }
     };
-    setHosts([...hosts, newHost]);
-    setShowAddHostModal(false);
+
+    void insert();
   };
 
   const handleEditHost = (host: any) => {
@@ -94,21 +157,36 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
   const handleUpdateHost = (payload: NewHostPayload) => {
     if (!selectedHost) return;
 
-    const updatedHosts = hosts.map((host) =>
-      host.id === selectedHost.id
-        ? {
-            ...host,
-            name: payload.hostName,
-            location: payload.location,
-            contactPerson: payload.contactPerson,
-            email: payload.contactEmail,
-            phone: payload.contactPhone,
-          }
-        : host,
-    );
-    setHosts(updatedHosts);
-    setShowEditModal(false);
-    setSelectedHost(null);
+    const update = async () => {
+      try {
+        const { error: updateError } = (await withTimeout(
+          supabase
+            .from("hosts")
+            .update({
+              name: payload.hostName,
+              location: payload.location,
+              contact_person: payload.contactPerson,
+              contact_email: payload.contactEmail,
+              contact_phone: payload.contactPhone,
+            })
+            .eq("id", selectedHost.id),
+          12000,
+          "Update host",
+        )) as { error: { message: string } | null };
+
+        if (updateError) throw new Error(updateError.message);
+
+        setShowEditModal(false);
+        setSelectedHost(null);
+        await loadHosts();
+      } catch (e: unknown) {
+        alert(
+          `Update failed: ${e instanceof Error ? e.message : "Unknown error"}`,
+        );
+      }
+    };
+
+    void update();
   };
 
   const handleDeleteHost = (host: any) => {
@@ -119,18 +197,45 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
   const confirmDelete = () => {
     if (!selectedHost) return;
 
-    const updatedHosts = hosts.filter((host) => host.id !== selectedHost.id);
-    setHosts(updatedHosts);
-    setShowDeleteModal(false);
-    setSelectedHost(null);
+    const del = async () => {
+      try {
+        const { error: deleteError } = (await withTimeout(
+          supabase.from("hosts").delete().eq("id", selectedHost.id),
+          12000,
+          "Delete host",
+        )) as { error: { message: string } | null };
+
+        if (deleteError) throw new Error(deleteError.message);
+
+        setShowDeleteModal(false);
+        setSelectedHost(null);
+        await loadHosts();
+      } catch (e: unknown) {
+        alert(
+          `Delete failed: ${e instanceof Error ? e.message : "Unknown error"}`,
+        );
+      }
+    };
+
+    void del();
   };
 
   return (
     <div className="hosts-container">
       <div className="hosts-content">
         <div className="hosts-header">
-          <h2 className="hosts-title">Super Admin Hosts</h2>
+          <h2 className="hosts-title">{pageTitle ?? "Super Admin Hosts"}</h2>
         </div>
+
+        {loading ? (
+          <div style={{ padding: "16px 0" }}>
+            <LoadingSpinner />
+          </div>
+        ) : null}
+
+        {error ? (
+          <div style={{ color: "#dc3545", padding: "12px 0" }}>{error}</div>
+        ) : null}
         <div className="hosts-main">
           <div className="hosts-controls">
             <div className="hosts-filters">
