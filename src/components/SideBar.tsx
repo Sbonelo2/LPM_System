@@ -87,6 +87,7 @@ const SideBar: React.FC = () => {
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
+        { label: "NOTIFICATIONS", path: "/notifications" },
       ],
       qa_officer: [
         { label: "DASHBOARD", path: "/qa/dashboard" },
