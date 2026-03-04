@@ -42,6 +42,26 @@ import MaintenanceSettings from "./pages/MaintenanceSettings";
 import QAReports from "./pages/QAReports";
 import QACompliance from "./pages/QACompliance";
 
+const RoleMissing: React.FC = () => {
+  const { user } = useAuth();
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>
+        Account role not set
+      </div>
+      <div style={{ color: "#666", marginBottom: 12 }}>
+        You are logged in, but your account has no <code>role</code> in
+        <code> public.profiles</code> (or the app cannot read it).
+      </div>
+      <div style={{ fontFamily: "monospace", fontSize: 12 }}>
+        userId: {user?.id ?? ""}
+        <br />
+        email: {user?.email ?? ""}
+      </div>
+    </div>
+  );
+};
+
 const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -66,7 +86,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     ]);
   };
 
-  const getDefaultPathForRole = (role?: string) => {
+  const getDefaultPathForRole = (role?: string | null) => {
     if (role === "admin") return "/facilitator/dashboard";
     if (role === "mentor") return "/mentor/dashboard";
     if (
@@ -76,13 +96,14 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     ) {
       return "/super-admin/dashboard";
     }
-    return "/learner/dashboard";
+    if (role === "learner") return "/learner/dashboard";
+    return null;
   };
 
   const getEffectiveRole = async (sessionUser: {
     id: string;
     user_metadata?: { role?: string };
-  }) => {
+  }): Promise<string | null> => {
     const metadataRole = sessionUser.user_metadata?.role;
     try {
       const { data, error } = (await withTimeout(
@@ -102,7 +123,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch {
       // ignore
     }
-    return metadataRole;
+    return metadataRole ?? null;
   };
 
   const enableDummyAuth =
@@ -151,7 +172,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             window.location.pathname === "/login")
         ) {
           const effectiveRole = await getEffectiveRole(session.user);
-          navigate(getDefaultPathForRole(effectiveRole));
+          const nextPath = getDefaultPathForRole(effectiveRole);
+          navigate(nextPath ?? "/role-missing");
         } else if (
           !session?.user &&
           window.location.pathname === "/dashboard"
@@ -194,7 +216,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/" ||
           window.location.pathname === "/login"
         ) {
-          navigate(getDefaultPathForRole("admin"));
+          navigate(getDefaultPathForRole("admin") ?? "/role-missing");
         }
         return;
       }
@@ -213,7 +235,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/" ||
           window.location.pathname === "/login"
         ) {
-          navigate(getDefaultPathForRole("super_admin"));
+          navigate(getDefaultPathForRole("super_admin") ?? "/role-missing");
         }
         return;
       }
@@ -231,7 +253,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/login")
       ) {
         const effectiveRole = await getEffectiveRole(session.user);
-        navigate(getDefaultPathForRole(effectiveRole));
+        const nextPath = getDefaultPathForRole(effectiveRole);
+        navigate(nextPath ?? "/role-missing");
       } else if (!session?.user && window.location.pathname === "/dashboard") {
         navigate("/login");
       }
@@ -322,6 +345,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/role-missing" element={<RoleMissing />} />
           <Route path="/signup" element={<SignUp />} />
           <Route
             path="/dashboard"

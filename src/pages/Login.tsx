@@ -130,8 +130,10 @@ const Login: React.FC = () => {
         navigate("/qa/dashboard");
       } else if (effectiveRole === "mentor") {
         navigate("/mentor/dashboard");
-      } else {
+      } else if (effectiveRole === "learner") {
         navigate("/learner/dashboard");
+      } else {
+        navigate("/role-missing");
       }
     } catch (error: unknown) {
       alert(
