@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../services/supabaseClient";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import "./Profile.css";
 
 const Profile: React.FC = () => {
+  const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string>("");
   const [learnerName, setLearnerName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -12,36 +15,124 @@ const Profile: React.FC = () => {
   const [learnerId, setLearnerId] = useState<string>("");
   const [programme, setProgramme] = useState<string>("Software Development");
   const [loading, setLoading] = useState<boolean>(false);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+
+  useEffect(() => {
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  // Ensure email is set from user auth if not already set
+  useEffect(() => {
+    if (user && !email) {
+      setEmail(user.email || "");
+    }
+  }, [user, email]);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("learner_profiles")
+        .select("*")
+        .eq("user_id", user?.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error loading profile:", error);
+        return;
+      }
+
+      if (data) {
+        setLearnerName(data.learner_name || "");
+        setEmail(data.email || user?.email || "");
+        setLearnerAddress(data.learner_address || "");
+        setLearnerId(data.learner_identifier || "");
+        setProgramme(data.programme || "Software Development");
+        setProfileImage(data.profile_image_url || "");
+      } else if (user) {
+        // No profile found - set name from user metadata and email from user auth
+        setLearnerName(user.user_metadata?.full_name || "");
+        setEmail(user.email || "");
+      }
+    } catch (err) {
+      console.error("Error loading profile:", err);
+      if (user) {
+        setEmail(user.email || "");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Simulate save operation
-    setTimeout(() => {
-      console.log("Profile saved:", {
-        profileImage,
-        learnerName,
-        email,
-        learnerAddress,
-        learnerId,
-        programme,
-      });
-      setLoading(false);
-    }, 1000);
+    if (!user) return;
+
+    setSaving(true);
+    setMessage("");
+
+    try {
+      // Build the profile data
+      const profileData = {
+        user_id: user.id,
+        learner_name: learnerName,
+        email: email,
+        learner_address: learnerAddress,
+        learner_identifier: learnerId,
+        programme: programme,
+        profile_image_url: profileImage,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("learner_profiles")
+        .upsert(profileData, {
+          onConflict: "user_id",
+        });
+
+      if (error) throw error;
+
+      setMessage("Profile saved successfully!");
+      // Reload to ensure we have the latest data
+      await loadProfile();
+    } catch (err: any) {
+      console.error("Error saving profile:", err);
+      setMessage(`Failed to save profile: ${err.message || "Unknown error"}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <div className="profile-page">
       <div className="profile-card">
         <div className="profile-header">
-          <ProfileImageUpload 
+          <ProfileImageUpload
             currentImage={profileImage}
             onImageChange={setProfileImage}
           />
         </div>
 
         <form className="profile-form" onSubmit={handleSave}>
+          {message && (
+            <div
+              style={{
+                padding: "12px",
+                marginBottom: "16px",
+                borderRadius: "6px",
+                backgroundColor: message.includes("success")
+                  ? "#d1fae5"
+                  : "#fee2e2",
+                color: message.includes("success") ? "#065f46" : "#991b1b",
+              }}
+            >
+              {message}
+            </div>
+          )}
           <InputField
             label="Learner name"
             value={learnerName}
@@ -57,9 +148,18 @@ const Profile: React.FC = () => {
             onChange={setEmail}
             placeholder="Enter email"
             type="email"
-            required
-            disabled={loading}
+            disabled={true}
           />
+          <small
+            style={{
+              color: "#6b7280",
+              fontSize: "12px",
+              marginTop: "-8px",
+              display: "block",
+            }}
+          >
+            Contact admin to change your email address
+          </small>
 
           <InputField
             label="Learner Address"
@@ -81,7 +181,7 @@ const Profile: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label">Select Programme</label>
-            <select 
+            <select
               className="form-select"
               value={programme}
               onChange={(e) => setProgramme(e.target.value)}
@@ -96,10 +196,10 @@ const Profile: React.FC = () => {
 
           <div className="form-actions">
             <Button
-              text={loading ? "Saving..." : "SAVE"}
+              text={saving ? "Saving..." : "SAVE"}
               type="submit"
               className="save-button"
-              disabled={loading}
+              disabled={saving || loading}
             />
           </div>
         </form>

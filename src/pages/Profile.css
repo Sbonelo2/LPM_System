@@ -71,7 +71,7 @@
 }
 
 .save-button {
-  background-color: #96C74C;
+  background-color: #96c74c;
   color: white;
   border: none;
   padding: 12px 32px;
@@ -90,4 +90,21 @@
 .save-button:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
+}
+
+/* Disabled input styling for greyed out email */
+input:disabled,
+input[disabled] {
+  background-color: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed;
+  border-color: #d1d5db !important;
+}
+
+/* Optional: Add a label indicating email is read-only */
+.email-readonly-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-style: italic;
 }

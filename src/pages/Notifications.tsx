@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import './Notifications.css';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -9,87 +11,95 @@ import Modal from '../components/Modal';
 interface Notification {
   id: string;
   message: string;
-  timestamp: string;
+  created_at: string;
   read: boolean;
   details?: string; 
 }
 
 const Notifications: React.FC = () => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [sortKey, ] = useState<'timestamp' | 'read'>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [filterReadStatus, setFilterReadStatus] = useState<'all' | 'read' | 'unread'>('all');
 
   const fetchNotifications = async () => {
+    if (!user) return;
     setLoading(true);
-    return new Promise<Notification[]>(resolve => {
-      setTimeout(() => {
-        resolve([
-          { id: '1', message: 'Your document "Project Plan" has been approved.', details: 'The project plan for Q3 has been reviewed and approved by the management team. You can now proceed with the implementation phase.', timestamp: '2026-02-10T10:00:00Z', read: false },
-          { id: '2', message: 'New policy update: "Data Privacy Policy v2.0".', details: 'The company\'s Data Privacy Policy has been updated to version 2.0. Please review the new policy located in the "Compliance" section of the document repository.', timestamp: '2026-02-09T15:30:00Z', read: true },
-          { id: '3', message: 'Reminder: Complete your quarterly report by EOD.', details: 'This is a friendly reminder to complete and submit your quarterly performance report by the end of today. Access the report template from the "Reports" section.', timestamp: '2026-02-08T09:00:00Z', read: false },
-        ]);
-      }, 1000);
-    });
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: sortDirection === 'asc' });
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchNotifications().then((data: Notification[]) => {
-      setNotifications(data);
-      setLoading(false);
-    });
-  }, []);
+    fetchNotifications();
+  }, [user, sortDirection]);
 
   const openNotificationModal = (notification: Notification) => {
     setSelectedNotification(notification);
     setShowModal(true);
-  };
-// comment for testing git
-  const markAsRead = (id: string) => {
-    setNotifications(prevNotifications =>
-      prevNotifications.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prevNotifications =>
-      prevNotifications.map(notification => ({ ...notification, read: true }))
-    );
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (!user) return;
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('user_id', user.id)
+        .eq('read', false);
+
+      if (error) throw error;
+
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification => ({ ...notification, read: true }))
+      );
+    } catch (err) {
+      console.error('Error marking all as read:', err);
+    }
   };
 
   const refreshNotifications = () => {
-    // Re-fetch notifications or update state
-    setLoading(true);
-    // Simulate re-fetching
-    fetchNotifications().then((data: Notification[]) => {
-      setNotifications(data);
-      setLoading(false);
-    });
+    fetchNotifications();
   };
 
   const sortNotifications = () => {
-    const newSortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-    setSortDirection(newSortDirection);
-    setNotifications(prevNotifications =>
-      [...prevNotifications].sort((a, b) => {
-        if (sortKey === 'timestamp') {
-          return newSortDirection === 'asc'
-            ? new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        } else if (sortKey === 'read') {
-          // Sort unread first if ascending, read first if descending
-          return newSortDirection === 'asc'
-            ? (a.read === b.read ? 0 : a.read ? 1 : -1)
-            : (a.read === b.read ? 0 : a.read ? -1 : 1);
-        }
-        return 0;
-      })
-    );
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
   const filterNotifications = () => {
@@ -105,9 +115,16 @@ const Notifications: React.FC = () => {
     setSelectedNotification(null);
   };
 
-  if (loading) {
+  if (loading && notifications.length === 0) {
     return <LoadingSpinner />;
   }
+
+  const displayedNotifications = notifications
+    .filter(notification => {
+      if (filterReadStatus === 'read') return notification.read;
+      if (filterReadStatus === 'unread') return !notification.read;
+      return true;
+    });
 
   return (
     <div className="notifications-page">
@@ -116,36 +133,18 @@ const Notifications: React.FC = () => {
         <div className="notifications-header-icons">
           <Button onClick={refreshNotifications} variant="ghost" text="Refresh" />
           <Button onClick={markAllAsRead} variant="ghost" text="Mark All Read" />
-          <Button onClick={sortNotifications} variant="ghost" text="Sort" />
-          <Button onClick={filterNotifications} variant="ghost" text="Filter" />
+          <Button onClick={sortNotifications} variant="ghost" text={sortDirection === 'asc' ? "Sort: Oldest First" : "Sort: Newest First"} />
+          <Button onClick={filterNotifications} variant="ghost" text={`Filter: ${filterReadStatus.charAt(0).toUpperCase() + filterReadStatus.slice(1)}`} />
         </div>
-        {notifications.length === 0 ? (
-          <p>No new notifications.</p>
+        {displayedNotifications.length === 0 ? (
+          <p style={{ textAlign: 'center', padding: '20px' }}>No notifications found.</p>
         ) : (
           <div className="notifications-list">
-            {notifications
-              .filter(notification => {
-                if (filterReadStatus === 'read') return notification.read;
-                if (filterReadStatus === 'unread') return !notification.read;
-                return true;
-              })
-              .sort((a, b) => {
-                if (sortKey === 'timestamp') {
-                  return sortDirection === 'asc'
-                    ? new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-                    : new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-                } else if (sortKey === 'read') {
-                  return sortDirection === 'asc'
-                    ? (a.read === b.read ? 0 : a.read ? 1 : -1)
-                    : (a.read === b.read ? 0 : a.read ? -1 : 1);
-                }
-                return 0;
-              })
-              .map(notification => (
+            {displayedNotifications.map(notification => (
               <Card key={notification.id} className={"notification-item " + (notification.read ? "read" : "unread")}>
                 <div className="notification-content">
                   <p>{notification.message}</p>
-                  <span className="notification-timestamp">{new Date(notification.timestamp).toLocaleString()}</span>
+                  <span className="notification-timestamp">{new Date(notification.created_at).toLocaleString()}</span>
                 </div>
                 <div className="notification-actions">
                   <Button onClick={() => openNotificationModal(notification)} variant="primary">View</Button>
@@ -163,10 +162,17 @@ const Notifications: React.FC = () => {
         <Modal
           isOpen={showModal}
           onClose={closeNotificationModal}
-          title={selectedNotification.message}
+          title="Notification Details"
         >
-          <p>{selectedNotification.details}</p>
-          <p className="notification-timestamp">Received: {new Date(selectedNotification.timestamp).toLocaleString()}</p>
+          <div style={{ padding: '20px' }}>
+            <h3 style={{ marginBottom: '10px' }}>{selectedNotification.message}</h3>
+            {selectedNotification.details && (
+              <p style={{ marginBottom: '20px', lineHeight: '1.5' }}>{selectedNotification.details}</p>
+            )}
+            <p className="notification-timestamp" style={{ color: '#666', fontSize: '14px' }}>
+              Received: {new Date(selectedNotification.created_at).toLocaleString()}
+            </p>
+          </div>
         </Modal>
       )}
     </div>

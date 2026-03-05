@@ -153,3 +153,12 @@
   background-color: #9ca3af;
   cursor: not-allowed;
 }
+
+/* Disabled input styling for greyed out email */
+input:disabled,
+input[disabled] {
+  background-color: #f3f4f6 !important;
+  color: #6b7280 !important;
+  cursor: not-allowed;
+  border-color: #d1d5db !important;
+}

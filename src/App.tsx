@@ -65,24 +65,33 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     ]);
   };
 
+  const normalizeRole = (rawRole?: string): string | undefined => {
+    if (!rawRole) return undefined;
+    const normalized = rawRole
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    if (normalized === "superadmin") return "super_admin";
+    if (normalized === "program_coordinator") return "programme_coordinator";
+    return normalized;
+  };
+
   const getDefaultPathForRole = (role?: string) => {
-    if (role === "admin") return "/facilitator/dashboard";
+    // Only 4 roles: learner, mentor, facilitator (admin), super_admin
+    if (role === "facilitator" || role === "admin")
+      return "/facilitator/dashboard";
     if (role === "mentor") return "/mentor/dashboard";
-    if (
-      role === "super_admin" ||
-      role === "programme_coordinator" ||
-      role === "qa_officer"
-    ) {
-      return "/super-admin/dashboard";
-    }
-    return "/learner/dashboard";
+    if (role === "super_admin") return "/super-admin/dashboard";
+    return "/learner/dashboard"; // Default to learner
   };
 
   const getEffectiveRole = async (sessionUser: {
     id: string;
-    user_metadata?: { role?: string };
+    email?: string;
+    user_metadata?: { role?: string; full_name?: string };
   }) => {
-    const metadataRole = sessionUser.user_metadata?.role;
+    const metadataRole = normalizeRole(sessionUser.user_metadata?.role);
+
     try {
       const { data, error } = (await withTimeout(
         supabase
@@ -97,11 +106,46 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         error: { message: string } | null;
       };
 
-      if (!error && data?.role) return String(data.role);
+      if (!error && data?.role) return normalizeRole(String(data.role));
+
+      // If no profile exists, create one with default role
+      if (error || !data) {
+        const defaultRole = metadataRole ?? "learner";
+
+        // Try to create profile
+        await supabase.from("profiles").upsert(
+          {
+            id: sessionUser.id,
+            email: sessionUser.email ?? "",
+            full_name:
+              sessionUser.user_metadata?.full_name ??
+              sessionUser.email?.split("@")[0] ??
+              "User",
+            role: defaultRole,
+          },
+          { onConflict: "id" },
+        );
+
+        // If role is learner, also create learner profile
+        if (defaultRole === "learner") {
+          await supabase.from("learner_profiles").upsert(
+            {
+              user_id: sessionUser.id,
+              learner_name:
+                sessionUser.user_metadata?.full_name ??
+                sessionUser.email?.split("@")[0] ??
+                "Learner",
+              email: sessionUser.email ?? "",
+              programme: "Software Development",
+            },
+            { onConflict: "user_id" },
+          );
+        }
+      }
     } catch {
       // ignore
     }
-    return metadataRole;
+    return metadataRole ?? "learner";
   };
 
   useEffect(() => {
@@ -303,9 +347,82 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
+          {/* Legacy redirects */}
           <Route
             path="/dashboard"
             element={<Navigate to="/learner/dashboard" replace />}
+          />
+          <Route
+            path="/profile"
+            element={<Navigate to="/learner/profile" replace />}
+          />
+          <Route
+            path="/placements"
+            element={<Navigate to="/learner/placements" replace />}
+          />
+          <Route
+            path="/myDocuments"
+            element={<Navigate to="/learner/documents" replace />}
+          />
+          <Route
+            path="/my-placements"
+            element={<Navigate to="/learner/placements" replace />}
+          />
+          <Route
+            path="/notifications"
+            element={<Navigate to="/learner/notifications" replace />}
+          />
+
+          {/* Admin/Facilitator redirects */}
+          <Route
+            path="/admin"
+            element={<Navigate to="/facilitator/dashboard" replace />}
+          />
+          <Route
+            path="/admin/profile"
+            element={<Navigate to="/facilitator/profile" replace />}
+          />
+
+          {/* QA/Coordinator redirects to Super Admin */}
+          <Route
+            path="/qa/dashboard"
+            element={<Navigate to="/super-admin/dashboard" replace />}
+          />
+          <Route
+            path="/qa/placements"
+            element={<Navigate to="/super-admin/placements" replace />}
+          />
+          <Route
+            path="/qa/documents"
+            element={<Navigate to="/super-admin/documents" replace />}
+          />
+          <Route
+            path="/qa/hosts"
+            element={<Navigate to="/super-admin/hosts" replace />}
+          />
+          <Route
+            path="/qa/reports"
+            element={<Navigate to="/super-admin/reports" replace />}
+          />
+          <Route
+            path="/qa/compliance"
+            element={<Navigate to="/super-admin/compliance" replace />}
+          />
+          <Route
+            path="/coordinator/dashboard"
+            element={<Navigate to="/super-admin/dashboard" replace />}
+          />
+          <Route
+            path="/coordinator/placements"
+            element={<Navigate to="/super-admin/placements" replace />}
+          />
+          <Route
+            path="/coordinator/hosts"
+            element={<Navigate to="/super-admin/hosts" replace />}
+          />
+          <Route
+            path="/coordinator/reports"
+            element={<Navigate to="/super-admin/reports" replace />}
           />
           <Route
             path="/learner/dashboard"
@@ -318,15 +435,27 @@ function App() {
             }
           />
           <Route
-            path="/super-admin/documents"
+            path="/learner/profile"
             element={
-              <MainLayout>
-                <CoordinatorDocuments />
-              </MainLayout>
+              <ProtectedRoute>
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              </ProtectedRoute>
             }
           />
           <Route
-            path="/myDocuments"
+            path="/learner/placements"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Placements />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learner/documents"
             element={
               <ProtectedRoute>
                 <MainLayout>
@@ -336,13 +465,21 @@ function App() {
             }
           />
           <Route
-            path="/placements"
+            path="/learner/notifications"
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <Placements />
+                  <Notifications />
                 </MainLayout>
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/documents"
+            element={
+              <MainLayout>
+                <CoordinatorDocuments />
+              </MainLayout>
             }
           />
           <Route
@@ -442,43 +579,8 @@ function App() {
               </MainLayout>
             }
           />
-
-          <Route
-            path="/my-placements"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Placements />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Profile />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <Notifications />
-                </MainLayout>
-              </ProtectedRoute>
-            }
-          />
           <Route path="/" element={<Login />} />
 
-          <Route
-            path="/admin"
-            element={<Navigate to="/facilitator/dashboard" replace />}
-          />
           <Route
             path="/facilitator/dashboard"
             element={
@@ -535,6 +637,16 @@ function App() {
               <AdminProtectedRoute>
                 <MainLayout>
                   <MaintenanceSettings />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/notifications"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <Notifications />
                 </MainLayout>
               </AdminProtectedRoute>
             }
@@ -605,6 +717,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <AdminUserManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin/notifications"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Notifications />
+                </MainLayout>
               </ProtectedRoute>
             }
           />
