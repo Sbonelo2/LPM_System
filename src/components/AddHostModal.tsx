@@ -7,6 +7,8 @@ export type NewHostPayload = {
   contactPerson: string;
   contactEmail: string;
   contactPhone: string;
+  currentLearners: number;
+  maxCapacity: number;
 };
 
 type Props = {
@@ -20,10 +22,12 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
 
   const [hostName, setHostName] = useState("");
   const [location, setLocation] = useState("");
-  const [contactPerson, setContactPerson] = useState("Shantela Silindile Noyila");
-  const [contactEmail, setContactEmail] = useState("shantelaslie@gmail.com");
-  const [contactPhone, setContactPhone] = useState("0638998411");
+  const [contactPerson, setContactPerson] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [capacityString, setCapacityString] = useState(""); // Format: "5/10"
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const canSubmit = useMemo(() => {
     return (
@@ -31,12 +35,24 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
       location.trim().length > 0 &&
       contactPerson.trim().length > 0 &&
       contactEmail.trim().length > 0 &&
-      contactPhone.trim().length > 0
+      contactPhone.trim().length > 0 &&
+      capacityString.includes("/")
     );
-  }, [hostName, location, contactPerson, contactEmail, contactPhone]);
+  }, [hostName, location, contactPerson, contactEmail, contactPhone, capacityString]);
 
   const handleSubmit = async () => {
     if (!canSubmit || submitting) return;
+    setError("");
+
+    // Parse "5/10" format
+    const parts = capacityString.split("/");
+    const current = parseInt(parts[0]);
+    const max = parseInt(parts[1]);
+
+    if (isNaN(current) || isNaN(max)) {
+      setError("Capacity must be in format 'current/max' (e.g. 5/10)");
+      return;
+    }
 
     const payload: NewHostPayload = {
       hostName: hostName.trim(),
@@ -44,6 +60,8 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
       contactPerson: contactPerson.trim(),
       contactEmail: contactEmail.trim(),
       contactPhone: contactPhone.trim(),
+      currentLearners: current,
+      maxCapacity: max,
     };
 
     try {
@@ -56,6 +74,9 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
       setContactPerson("");
       setContactEmail("");
       setContactPhone("");
+      setCapacityString("");
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
     } finally {
       setSubmitting(false);
     }
@@ -149,6 +170,23 @@ export default function AddHostModal({ open, onClose, onCreate }: Props) {
               disabled={submitting}
             />
           </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="capacity">
+              Learner Capacity (Current/Max) <span style={{ color: "#dc3545" }}>*</span>
+            </label>
+            <input
+              id="capacity"
+              type="text"
+              className="form-input"
+              placeholder="e.g. 5/10"
+              value={capacityString}
+              onChange={(e) => setCapacityString(e.target.value)}
+              disabled={submitting}
+            />
+          </div>
+          
+          {error && <p style={{ color: '#dc3545', fontSize: '14px', marginTop: '10px' }}>{error}</p>}
         </div>
 
         <div className="modal-footer">

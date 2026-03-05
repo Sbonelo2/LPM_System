@@ -25,13 +25,14 @@ const SideBar: React.FC = () => {
   const { user } = useAuth();
 
   const roleFromPath: UserRole | null = (() => {
-    if (location.pathname.startsWith("/admin")) return "admin";
     if (location.pathname.startsWith("/facilitator")) return "admin";
     if (location.pathname.startsWith("/super-admin")) return "super_admin";
-    if (location.pathname.startsWith("/coordinator"))
-      return "programme_coordinator";
-    if (location.pathname.startsWith("/qa")) return "qa_officer";
     if (location.pathname.startsWith("/mentor")) return "mentor";
+    if (location.pathname.startsWith("/learner")) return "learner";
+    // Legacy path detection for backward compatibility
+    if (location.pathname.startsWith("/admin")) return "admin";
+    if (location.pathname.startsWith("/coordinator")) return "super_admin";
+    if (location.pathname.startsWith("/qa")) return "super_admin";
     return null;
   })();
 
@@ -70,14 +71,14 @@ const SideBar: React.FC = () => {
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
         { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
+        { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
       ],
       learner: [
-        { label: "DASHBOARD", path: "/dashboard" },
-        { label: "MY PLACEMENTS", path: "/my-placements" },
-        { label: "MY DOCUMENTS", path: "/myDocuments" },
-        { label: "PROFILE", path: "/profile" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
+        { label: "DASHBOARD", path: "/learner/dashboard" },
+        { label: "MY PLACEMENTS", path: "/learner/placements" },
+        { label: "MY DOCUMENTS", path: "/learner/documents" },
+        { label: "PROFILE", path: "/learner/profile" },
+        { label: "NOTIFICATIONS", path: "/learner/notifications" },
       ],
       super_admin: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
@@ -88,6 +89,7 @@ const SideBar: React.FC = () => {
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
         { label: "SYSTEM SETTINGS", path: "/super-admin/settings" },
+        { label: "NOTIFICATIONS", path: "/super-admin/notifications" },
       ],
       qa_officer: [
         { label: "DASHBOARD", path: "/qa/dashboard" },
@@ -98,13 +100,13 @@ const SideBar: React.FC = () => {
         { label: "COMPLIANCE", path: "/qa/compliance" },
       ],
       programme_coordinator: [
-        { label: "DASHBOARD", path: "/coordinator/dashboard" },
-        { label: "PLACEMENTS", path: "/placements" },
-        { label: "DOCUMENTS", path: "/documents" },
-        { label: "HOSTS", path: "/hosts" },
-        { label: "REPORTS", path: "/reports" },
-        { label: "COMPLIANCE", path: "/compliance" },
-        { label: "NOTIFICATIONS", path: "/notifications" },
+        { label: "DASHBOARD", path: "/super-admin/dashboard" },
+        { label: "PLACEMENTS", path: "/super-admin/placements" },
+        { label: "DOCUMENTS", path: "/super-admin/documents" },
+        { label: "HOSTS", path: "/super-admin/hosts" },
+        { label: "REPORTS", path: "/super-admin/reports" },
+        { label: "COMPLIANCE", path: "/super-admin/compliance" },
+        { label: "NOTIFICATIONS", path: "/super-admin/notifications" },
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },

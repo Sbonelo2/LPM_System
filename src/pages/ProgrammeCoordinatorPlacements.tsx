@@ -1,274 +1,230 @@
 import React, { useEffect, useState } from "react";
+import { supabase } from "../services/supabaseClient";
+import TableComponent, { type TableColumn } from "../components/TableComponent";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import Snackbar from "../components/Snackbar";
+import Modal from "../components/Modal";
+import AddPlacementModal from "../components/AddPlacementModal";
 import "./ProgrammeCoordinatorPlacements.css";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 
 interface Placement {
   id: string;
   learner: string;
+  learner_id: string;
   host: string;
+  host_id: string;
   program: string;
-  status: "Active" | "Inactive" | "Pending" | "Suspended" | "Cancelled";
+  status: string;
   startDate: string;
   endDate: string;
 }
 
 const ProgrammeCoordinatorPlacements: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
   const [placements, setPlacements] = useState<Placement[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editPlacement, setEditPlacement] = useState<Placement | null>(null);
+  const [deletePlacement, setDeletePlacement] = useState<Placement | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [processing, setProcessing] = useState(false);
 
-  const withTimeout = async <T,>(
-    promise: PromiseLike<T>,
-    ms: number,
-    label: string,
-  ): Promise<T> => {
-    return await Promise.race([
-      Promise.resolve(promise),
-      new Promise<T>((_resolve, reject) =>
-        setTimeout(() => reject(new Error(`${label} timed out`)), ms),
-      ),
-    ]);
-  };
-
-  const loadPlacements = async () => {
-    if (!user) {
-      setPlacements([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
+  const fetchPlacements = async () => {
     try {
-      const { data, error: supaError } = (await withTimeout(
-        supabase
-          .from("placements")
-          .select(
-            "id, host_name, programme, status, start_date, end_date, created_at, learner_id",
-          )
-          .order("created_at", { ascending: false })
-          .limit(200),
-        12000,
-        "Load placements",
-      )) as {
-        data:
-          | {
-              id: string;
-              host_name: string;
-              programme: string;
-              status: string;
-              start_date: string | null;
-              end_date: string | null;
-              created_at: string;
-              learner_id: string;
-            }[]
-          | null;
-        error: { message: string } | null;
-      };
+      setLoading(true);
+      
+      const { data: lpData, error: lpError } = await supabase
+        .from("learner_placements")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-      if (supaError) throw new Error(supaError.message);
+      if (lpError) throw lpError;
 
-      const learnerIds = Array.from(
-        new Set((data ?? []).map((row) => row.learner_id).filter(Boolean)),
-      );
+      const { data: profData } = await supabase
+        .from("profiles")
+        .select("id, full_name, email");
+      
+      const profileMap = (profData || []).reduce((acc: any, p) => {
+        acc[p.id] = p.full_name || p.email;
+        return acc;
+      }, {});
 
-      const learnerById = new Map<string, string>();
-      if (learnerIds.length > 0) {
-        const { data: learnerRows, error: learnersError } = (await withTimeout(
-          supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .in("id", learnerIds),
-          12000,
-          "Load learners",
-        )) as {
-          data:
-            | { id: string; full_name: string | null; email: string | null }[]
-            | null;
-          error: { message: string } | null;
-        };
+      const formatted: Placement[] = (lpData || []).map((p: any) => ({
+        id: p.id,
+        learner_id: p.learner_id,
+        host_id: p.host_id || "",
+        learner: profileMap[p.learner_id] || "Unknown Learner",
+        host: p.host_name || "Unknown Host",
+        program: p.program,
+        status: p.status,
+        startDate: p.start_date || "",
+        endDate: p.end_date || "",
+      }));
 
-        if (learnersError) throw new Error(learnersError.message);
-
-        (learnerRows ?? []).forEach((l) => {
-          learnerById.set(l.id, l.full_name ?? l.email ?? l.id);
-        });
-      }
-
-      const normalized: Placement[] = (data ?? []).map((row) => {
-        const learnerName =
-          learnerById.get(row.learner_id) ?? row.learner_id ?? "";
-
-        const status = ((): Placement["status"] => {
-          const s = String(row.status ?? "");
-          if (s === "Active") return "Active";
-          if (s === "Inactive") return "Inactive";
-          if (s === "Pending") return "Pending";
-          if (s === "Suspended") return "Suspended";
-          if (s === "Cancelled") return "Cancelled";
-          return "Pending";
-        })();
-
-        return {
-          id: row.id,
-          learner: learnerName,
-          host: row.host_name ?? "",
-          program: row.programme ?? "",
-          status,
-          startDate: row.start_date ?? "",
-          endDate: row.end_date ?? "",
-        };
-      });
-
-      setPlacements(normalized);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load placements");
+      setPlacements(formatted);
+    } catch (err: any) {
+      console.error("Error fetching placements:", err);
+      setSnackbarMessage(`Error: ${err.message || "Failed to load placements"}`);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (authLoading) return;
-    void loadPlacements();
-  }, [authLoading, user]);
+    fetchPlacements();
+  }, []);
 
-  const handleAction = async (placementId: string, action: string) => {
-    if (!action) return;
-    const nextStatus =
-      action === "pending"
-        ? "Pending"
-        : action === "suspended"
-          ? "Suspended"
-          : action === "cancelled"
-            ? "Cancelled"
-            : action === "inactive"
-              ? "Inactive"
-              : "Active";
-
+  const handleStatusChange = async (placementId: string, newStatus: string) => {
+    if (!newStatus) return;
     try {
-      const { error: updateError } = (await withTimeout(
-        supabase
-          .from("placements")
-          .update({ status: nextStatus })
-          .eq("id", placementId),
-        12000,
-        "Update placement status",
-      )) as { error: { message: string } | null };
+      const { error } = await supabase
+        .from("learner_placements")
+        .update({ status: newStatus })
+        .eq("id", placementId);
 
-      if (updateError) throw new Error(updateError.message);
-
-      setPlacements((prev) =>
-        prev.map((p) =>
-          p.id === placementId
-            ? { ...p, status: nextStatus as Placement["status"] }
-            : p,
-        ),
-      );
-    } catch (e: unknown) {
-      alert(
-        `Update failed: ${e instanceof Error ? e.message : "Unknown error"}`,
-      );
+      if (error) throw error;
+      
+      setPlacements(prev => prev.map(p => p.id === placementId ? { ...p, status: newStatus } : p));
+      setSnackbarMessage(`Status updated to ${newStatus}`);
+    } catch (err: any) {
+      setSnackbarMessage("Failed to update status.");
     }
+  };
+
+  const confirmDelete = async () => {
+    if (!deletePlacement) return;
+    setProcessing(true);
+    try {
+      const { error } = await supabase.from("learner_placements").delete().eq("id", deletePlacement.id);
+      if (error) throw error;
+      setSnackbarMessage("Placement deleted successfully.");
+      setDeletePlacement(null);
+      fetchPlacements();
+    } catch (err: any) {
+      setSnackbarMessage(`Delete failed: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleEdit = (p: Placement) => {
+    setEditPlacement(p);
+    setShowAddModal(true);
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "#16A34A";
-      case "Inactive":
-        return "#6B7280";
-      case "Pending":
-        return "#F59E0B";
-      case "Suspended":
-        return "#EF4444";
-      case "Cancelled":
-        return "#DC2626";
-      default:
-        return "#6B7280";
+    switch (status?.toLowerCase()) {
+      case "active": return "#16A34A";
+      case "pending": return "#F59E0B";
+      case "suspended": return "#EF4444";
+      case "cancelled": return "#DC2626";
+      default: return "#6B7280";
     }
   };
 
+  const columns: TableColumn<Placement>[] = [
+    { key: "learner", header: "Learner" },
+    { key: "host", header: "Host" },
+    { key: "program", header: "Program" },
+    { 
+      key: "status", 
+      header: "Status",
+      render: (row: Placement) => (
+        <select
+          style={{ 
+            padding: '6px 12px', 
+            borderRadius: '4px', 
+            border: 'none',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            backgroundColor: getStatusColor(row.status),
+            color: 'white',
+            width: '120px',
+            appearance: 'none',
+            textAlign: 'center'
+          }}
+          onChange={(e) => handleStatusChange(row.id, e.target.value)}
+          value={row.status || 'Pending'}
+        >
+          <option value="Pending" style={{ backgroundColor: 'white', color: '#000' }}>PENDING</option>
+          <option value="Active" style={{ backgroundColor: 'white', color: '#000' }}>ACTIVE</option>
+          <option value="Suspended" style={{ backgroundColor: 'white', color: '#000' }}>SUSPENDED</option>
+          <option value="Cancelled" style={{ backgroundColor: 'white', color: '#000' }}>CANCELLED</option>
+        </select>
+      )
+    },
+    { key: "startDate", header: "Start Date" },
+    { key: "endDate", header: "End Date" },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Placement) => (
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+          <span onClick={() => handleEdit(row)} style={{ cursor: 'pointer', color: "var(--primary-color)" }} title="Edit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentColor" d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83l3.75 3.75M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Z" /></svg>
+          </span>
+          <span onClick={() => setDeletePlacement(row)} style={{ cursor: 'pointer', color: "var(--secondary-color)" }} title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12l1.41 1.41L13.41 14l2.12 2.12l-1.41 1.41L12 15.41l-2.12 2.12l-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z" /></svg>
+          </span>
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="programme-coordinator-page">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 className="page-title">Super Admin - Placements</h1>
-        <div className="design-badge">Super Admin - Design</div>
+        <Button 
+          text="Add Placement" 
+          onClick={() => { setEditPlacement(null); setShowAddModal(true); }} 
+          variant="primary" 
+        />
       </div>
 
-      {loading ? (
-        <div style={{ padding: "16px 0" }}>
-          <LoadingSpinner />
-        </div>
-      ) : null}
+      <Card>
+        {loading ? (
+          <p style={{ textAlign: 'center', padding: '20px' }}>Loading placements...</p>
+        ) : (
+          <TableComponent
+            columns={columns}
+            data={placements}
+            caption="Manage learner placements and host allocations"
+          />
+        )}
+      </Card>
 
-      {error ? (
-        <div style={{ color: "#dc3545", padding: "12px 0" }}>{error}</div>
-      ) : null}
+      {showAddModal && (
+        <AddPlacementModal 
+          isOpen={showAddModal} 
+          onClose={() => { setShowAddModal(false); setEditPlacement(null); }} 
+          editPlacement={editPlacement}
+          onSuccess={() => {
+            setSnackbarMessage(editPlacement ? "Placement updated successfully!" : "Placement created successfully!");
+            fetchPlacements();
+          }}
+        />
+      )}
 
-      <div className="placements-table-container">
-        <table className="placements-table">
-          <thead>
-            <tr>
-              <th>Learner</th>
-              <th>Host</th>
-              <th>Program</th>
-              <th>Status</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {!loading && placements.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={7}
-                  style={{ padding: "16px", textAlign: "center" }}
-                >
-                  No placements found.
-                </td>
-              </tr>
-            ) : null}
-            {placements.map((placement) => (
-              <tr key={placement.id}>
-                <td>{placement.learner}</td>
-                <td>{placement.host}</td>
-                <td>{placement.program}</td>
-                <td>
-                  <span
-                    className="status-badge"
-                    style={{
-                      backgroundColor: getStatusColor(placement.status),
-                    }}
-                  >
-                    {placement.status}
-                  </span>
-                </td>
-                <td>{placement.startDate}</td>
-                <td>{placement.endDate}</td>
-                <td>
-                  <select
-                    className="action-select"
-                    onChange={(e) => handleAction(placement.id, e.target.value)}
-                    defaultValue=""
-                  >
-                    <option value="">Select Action</option>
-                    <option value="pending">Pending</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="active">Active</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {deletePlacement && (
+        <Modal isOpen={Boolean(deletePlacement)} onClose={() => setDeletePlacement(null)} title="Confirm Deletion">
+          <div style={{ padding: '10px' }}>
+            <p>Are you sure you want to delete the placement for <strong>{deletePlacement.learner}</strong> at <strong>{deletePlacement.host}</strong>?</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <Button text="Cancel" onClick={() => setDeletePlacement(null)} variant="secondary" />
+              <Button text={processing ? "Deleting..." : "Delete"} onClick={confirmDelete} variant="primary" disabled={processing} />
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      <Snackbar 
+        message={snackbarMessage} 
+        onClose={() => setSnackbarMessage("")} 
+      />
     </div>
   );
 };

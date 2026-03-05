@@ -19,23 +19,61 @@ const SignUp: React.FC = () => {
     setMessage("");
 
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            fullName,
+            full_name: fullName,
+            role: "learner",
           },
         },
       });
 
       if (error) throw error;
-      setMessage("Sign up successful! Check your email for confirmation.");
-      navigate("/login");
-    } catch (error: unknown) {
-      alert(
-        `Sign up failed: ${error instanceof Error ? error.message : "Unknown error"}`
+
+      // Create profile in Supabase after successful signup
+      if (data.user) {
+        try {
+          // Create profile in profiles table
+          await supabase.from("profiles").upsert(
+            {
+              id: data.user.id,
+              email: email,
+              full_name: fullName,
+              role: "learner",
+            },
+            { onConflict: "id" },
+          );
+
+          // Create learner profile
+          await supabase.from("learner_profiles").upsert(
+            {
+              user_id: data.user.id,
+              learner_name: fullName,
+              email: email,
+              programme: "Software Development",
+            },
+            { onConflict: "user_id" },
+          );
+        } catch (profileError) {
+          console.error("Profile creation error:", profileError);
+          // Continue even if profile creation fails - tables might not exist yet
+        }
+      }
+
+      setMessage(
+        "Sign up successful! Please check your email for confirmation.",
       );
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      alert(`Sign up failed: ${errorMessage}`);
+      setMessage(`Sign up failed: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -83,7 +121,7 @@ const SignUp: React.FC = () => {
 
           <div className="auth-actions">
             <Button
-              text={loading ? "Loading..." : "Create Account"}
+              text={loading ? "Creating Account..." : "Create Account"}
               type="submit"
               className="auth-cta"
               disabled={loading}

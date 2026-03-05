@@ -1,7 +1,9 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Button from "../components/Button";
 import Card from "../components/Card";
-import DocumentCard from "../components/DocumentCard";
+import TableComponent, { type TableColumn } from "../components/TableComponent";
+import Snackbar from "../components/Snackbar";
+import PdfViewer from "../components/PdfViewer";
 import { supabase } from "../services/supabaseClient";
 import "./Documents.css";
 
@@ -17,6 +19,9 @@ type DocumentRecord = {
   file_name: string;
   file_url: string;
   created_at: string;
+  document_type?: string;
+  review_owner_role?: string;
+  review_status?: string;
 };
 
 const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
@@ -70,26 +75,10 @@ export default function Documents(): React.JSX.Element {
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
+  const [submitTo, setSubmitTo] = useState<"mentor" | "super_admin">("mentor");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [feedback, setFeedback] = useState("");
-
-  const groupedDocuments = useMemo(() => {
-    const result: Record<DocumentTypeKey, DocumentRecord[]> = {
-      ID_COPY: [],
-      MATRIC_CERTIFICATE: [],
-      TERTIARY_QUALIFICATION: [],
-      PROOF_OF_ADDRESS: [],
-    };
-
-    documents.forEach((doc) => {
-      const type = resolveDocumentType(doc.file_name);
-      if (type) {
-        result[type].push(doc);
-      }
-    });
-
-    return result;
-  }, [documents]);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -100,20 +89,20 @@ export default function Documents(): React.JSX.Element {
         } = await supabase.auth.getUser();
 
         if (userError || !user) {
-          setFeedback("Please sign in to view documents.");
+          setSnackbarMessage("Please sign in to view documents.");
           return;
         }
 
         const { data, error } = await supabase
           .from("documents")
-          .select("id, user_id, file_name, file_url, created_at")
+          .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
         if (error) throw error;
         setDocuments(data ?? []);
       } catch (error: unknown) {
-        setFeedback(
+        setSnackbarMessage(
           `Failed to load documents: ${
             error instanceof Error ? error.message : "Unknown error"
           }`,
@@ -133,35 +122,15 @@ export default function Documents(): React.JSX.Element {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     setSelectedFile(file);
-    setFeedback("");
+    setSnackbarMessage("");
   };
 
-  const handleDelete = async (documentId: string, fileName: string) => {
+  const handleDelete = async (documentId: string) => {
     if (!confirm('Are you sure you want to delete this document?')) {
       return;
     }
 
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        throw new Error("User not authenticated.");
-      }
-
-      // Delete from storage
-      const filePath = `${user.id}/${fileName}`;
-      const { error: storageError } = await supabase.storage
-        .from("documents")
-        .remove([filePath]);
-
-      if (storageError) {
-        console.warn('Failed to delete from storage:', storageError);
-      }
-
-      // Delete from database
       const { error: deleteError } = await supabase
         .from("documents")
         .delete()
@@ -172,9 +141,9 @@ export default function Documents(): React.JSX.Element {
       }
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
-      setFeedback("Document deleted successfully.");
+      setSnackbarMessage("Document deleted successfully.");
     } catch (error: unknown) {
-      setFeedback(
+      setSnackbarMessage(
         `Delete failed: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
@@ -184,12 +153,12 @@ export default function Documents(): React.JSX.Element {
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setFeedback("Please choose a file first.");
+      setSnackbarMessage("Please choose a file first.");
       return;
     }
 
     setUploading(true);
-    setFeedback("Uploading document...");
+    setSnackbarMessage("Uploading document...");
 
     try {
       const {
@@ -228,9 +197,12 @@ export default function Documents(): React.JSX.Element {
             user_id: user.id,
             file_name: taggedFileName,
             file_url: publicUrl,
+            document_type: selectedType,
+            review_owner_role: submitTo,
+            storage_path: filePath
           },
         ])
-        .select("id, user_id, file_name, file_url, created_at")
+        .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status")
         .single();
 
       if (insertError) {
@@ -242,9 +214,9 @@ export default function Documents(): React.JSX.Element {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setFeedback("Upload complete. Latest file is now current for this type.");
+      setSnackbarMessage(`Upload complete. Document submitted to ${submitTo === 'mentor' ? 'Mentor' : 'Super Admin'}.`);
     } catch (error: unknown) {
-      setFeedback(
+      setSnackbarMessage(
         `Upload failed: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
@@ -254,56 +226,108 @@ export default function Documents(): React.JSX.Element {
     }
   };
 
+  const handleView = (doc: DocumentRecord) => {
+    setViewingDocument(doc);
+  };
+
+  const documentColumns: TableColumn<DocumentRecord>[] = [
+    { 
+      key: "document_type", 
+      header: "Document Type",
+      render: (row: DocumentRecord) => {
+        const typeKey = row.document_type || resolveDocumentType(row.file_name);
+        return DOCUMENT_TYPES.find(t => t.key === typeKey)?.label || "Unknown";
+      }
+    },
+    { 
+      key: "file_name", 
+      header: "File Name",
+      render: (row: DocumentRecord) => (
+        <span 
+          style={{ color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 500 }}
+          onClick={() => handleView(row)}
+        >
+          {stripTypePrefix(row.file_name)}
+        </span>
+      )
+    },
+    { 
+      key: "review_owner_role", 
+      header: "Submitted To",
+      render: (row: DocumentRecord) => row.review_owner_role === "super_admin" ? "Super Admin" : "Mentor"
+    },
+    { 
+      key: "review_status", 
+      header: "Status",
+      render: (row: DocumentRecord) => (
+        <span className={`status-tag status-${row.review_status || 'pending'}`}>
+          {(row.review_status || 'pending').toUpperCase()}
+        </span>
+      )
+    },
+    { 
+      key: "created_at", 
+      header: "Date Uploaded",
+      render: (row: DocumentRecord) => new Date(row.created_at).toLocaleDateString()
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: DocumentRecord) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <span
+            onClick={() => handleView(row)}
+            style={{ cursor: "pointer", color: "var(--primary-color)", fontSize: "1.2em" }}
+            title="View Document"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5Z"/>
+            </svg>
+          </span>
+          <span
+            onClick={() => handleDelete(row.id)}
+            style={{ cursor: "pointer", color: "var(--secondary-color)", fontSize: "1.2em" }}
+            title="Delete Document"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12l1.41 1.41L13.41 14l2.12 2.12l-1.41 1.41L12 15.41l-2.12 2.12l-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+            </svg>
+          </span>
+        </div>
+      )
+    }
+  ];
+
   return (
     <div className="documents-page">
+      <Snackbar 
+        message={snackbarMessage} 
+        onClose={() => setSnackbarMessage("")}
+      />
 
-      {feedback && <p className="documents-page__feedback">{feedback}</p>}
+      {viewingDocument && (
+        <PdfViewer 
+          document={{
+            id: viewingDocument.id,
+            file_name: stripTypePrefix(viewingDocument.file_name),
+            file_url: viewingDocument.file_url,
+            created_at: viewingDocument.created_at
+          }} 
+          onClose={() => setViewingDocument(null)} 
+        />
+      )}
 
       <div className="documents-layout">
-        {documents.length > 0 ? (
-          <div className="documents-list">
-            {DOCUMENT_TYPES.map((type) => {
-              const docs = groupedDocuments[type.key];
-              const currentDoc = docs[0];
-              const previousDocs = docs.slice(1);
-
-              // Only show document card if there are documents of this type
-              if (docs.length === 0) return null;
-
-              return (
-                <DocumentCard
-                  key={type.key}
-                  title={type.label}
-                  currentFileName={currentDoc ? stripTypePrefix(currentDoc.file_name) : undefined}
-                  uploadedAt={currentDoc ? new Date(currentDoc.created_at).toLocaleDateString() : undefined}
-                  thumbnailLabel={type.label}
-                  onCurrentClick={currentDoc ? () => window.open(currentDoc.file_url, '_blank') : undefined}
-                  onDeleteCurrent={currentDoc ? () => handleDelete(currentDoc.id, currentDoc.file_name) : undefined}
-                  showPreviousToggle={previousDocs.length > 0}
-                  defaultExpanded={false}
-                >
-                  {previousDocs.map((doc) => (
-                    <DocumentCard
-                      key={doc.id}
-                      title={`${type.label} (Previous)`}
-                      currentFileName={stripTypePrefix(doc.file_name)}
-                      uploadedAt={new Date(doc.created_at).toLocaleDateString()}
-                      thumbnailLabel={type.label}
-                      onCurrentClick={() => window.open(doc.file_url, '_blank')}
-                      onDeleteCurrent={() => handleDelete(doc.id, doc.file_name)}
-                      showPreviousToggle={false}
-                    />
-                  ))}
-                </DocumentCard>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="no-documents-message">
-            <h3>No documents uploaded yet</h3>
-            <p>Use the upload panel to add your first document.</p>
-          </div>
-        )}
+        <div className="documents-list-section">
+          <Card>
+            <h3>MY UPLOADED DOCUMENTS</h3>
+            <TableComponent 
+              columns={documentColumns} 
+              data={documents} 
+              caption="Manage your uploaded documents and track their review status"
+            />
+          </Card>
+        </div>
 
         <aside className="upload-panel-wrap">
           <Card className="upload-panel">
@@ -333,6 +357,26 @@ export default function Documents(): React.JSX.Element {
                   {type.label}
                 </option>
               ))}
+            </select>
+
+            <label
+              className="upload-panel__label"
+              htmlFor="submit-to-select"
+              style={{ marginTop: '15px' }}
+            >
+              Submit To
+            </label>
+            <select
+              id="submit-to-select"
+              className="upload-panel__select"
+              value={submitTo}
+              onChange={(event) =>
+                setSubmitTo(event.target.value as "mentor" | "super_admin")
+              }
+              disabled={uploading}
+            >
+              <option value="mentor">Mentor</option>
+              <option value="super_admin">Super Admin</option>
             </select>
 
             <input

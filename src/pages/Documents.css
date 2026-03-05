@@ -18,16 +18,30 @@
 
 .documents-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: 1fr 320px;
   gap: 28px;
   align-items: start;
 }
 
-.documents-list {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.documents-list-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
 }
+
+.status-tag {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-approved { background: #d1fae5; color: #065f46; }
+.status-rejected { background: #fee2e2; color: #991b1b; }
+.status-needs_revision { background: #dbeafe; color: #1e40af; }
 
 .no-documents-message {
   text-align: center;
