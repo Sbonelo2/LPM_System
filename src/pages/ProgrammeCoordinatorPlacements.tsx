@@ -6,6 +6,7 @@ import Button from "../components/Button";
 import Snackbar from "../components/Snackbar";
 import Modal from "../components/Modal";
 import AddPlacementModal from "../components/AddPlacementModal";
+import { useAuth } from "../hooks/useAuth";
 import "./ProgrammeCoordinatorPlacements.css";
 
 interface Placement {
@@ -21,6 +22,7 @@ interface Placement {
 }
 
 const ProgrammeCoordinatorPlacements: React.FC = () => {
+  const { user } = useAuth();
   const [placements, setPlacements] = useState<Placement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -29,10 +31,23 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [processing, setProcessing] = useState(false);
 
+  const logAudit = async (action: string, details: string) => {
+    try {
+      await supabase.from('audit_logs').insert([{
+        user_id: user?.id,
+        user_email: user?.email,
+        action: action.toUpperCase(),
+        module: 'PLACEMENTS',
+        details: details
+      }]);
+    } catch (err) {
+      console.warn("Audit logging failed:", err);
+    }
+  };
+
   const fetchPlacements = async () => {
     try {
       setLoading(true);
-      
       const { data: lpData, error: lpError } = await supabase
         .from("learner_placements")
         .select("*")
@@ -84,6 +99,9 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
 
       if (error) throw error;
       
+      const placement = placements.find(p => p.id === placementId);
+      await logAudit('UPDATE', `Changed placement status for ${placement?.learner} to ${newStatus}`);
+      
       setPlacements(prev => prev.map(p => p.id === placementId ? { ...p, status: newStatus } : p));
       setSnackbarMessage(`Status updated to ${newStatus}`);
     } catch (err: any) {
@@ -97,6 +115,9 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
     try {
       const { error } = await supabase.from("learner_placements").delete().eq("id", deletePlacement.id);
       if (error) throw error;
+      
+      await logAudit('DELETE', `Removed placement for ${deletePlacement.learner} at ${deletePlacement.host}`);
+      
       setSnackbarMessage("Placement deleted successfully.");
       setDeletePlacement(null);
       fetchPlacements();
@@ -201,7 +222,9 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
           onClose={() => { setShowAddModal(false); setEditPlacement(null); }} 
           editPlacement={editPlacement}
           onSuccess={() => {
-            setSnackbarMessage(editPlacement ? "Placement updated successfully!" : "Placement created successfully!");
+            const msg = editPlacement ? "Placement updated successfully!" : "Placement created successfully!";
+            setSnackbarMessage(msg);
+            logAudit(editPlacement ? 'UPDATE' : 'CREATE', msg);
             fetchPlacements();
           }}
         />

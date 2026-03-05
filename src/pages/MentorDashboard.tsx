@@ -1,5 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Card from "../components/Card";
+import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
+import Snackbar from "../components/Snackbar";
 import "./MentorDashboard.css";
 
 type Learner = {
@@ -8,48 +12,67 @@ type Learner = {
   weekLabel: string;
   attendanceSummary: string;
   approved: boolean;
+  email: string;
 };
 
 const MentorDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(null);
+  const [learners, setLearners] = useState<Learner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [stats, setStats] = useState({
+    qualifications: "BCom Degree",
+    maxStudents: 10,
+    currentStudents: 0
+  });
 
-  const [learners, setLearners] = useState<Learner[]>([
-    {
-      id: "LRN001",
-      name: "Alice Lee",
-      weekLabel: "Week 12 Timesheet",
-      attendanceSummary: "Present: 4/5 days",
-      approved: true,
-    },
-    {
-      id: "LRN002",
-      name: "Brian Moore",
-      weekLabel: "Week 12 Timesheet",
-      attendanceSummary: "Present: 5/5 days",
-      approved: true,
-    },
-    {
-      id: "LRN003",
-      name: "Clara Smith",
-      weekLabel: "Week 12 Timesheet",
-      attendanceSummary: "Present: 3/5 days",
-      approved: true,
-    },
-    {
-      id: "LRN004",
-      name: "Daniel Johnson",
-      weekLabel: "Week 12 Timesheet",
-      attendanceSummary: "Present: 4/5 days",
-      approved: true,
-    },
-    {
-      id: "LRN005",
-      name: "Emma Stone",
-      weekLabel: "Week 12 Timesheet",
-      attendanceSummary: "Present: 5/5 days",
-      approved: true,
-    },
-  ]);
+  useEffect(() => {
+    if (user) {
+      fetchMentorData();
+    }
+  }, [user]);
+
+  const fetchMentorData = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch Mentor Profile for stats
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("full_name, role")
+        .eq("id", user?.id)
+        .single();
+
+      // 2. Fetch assigned learners
+      const { data: learnerData, error: learnerErr } = await supabase
+        .from("learner_profiles")
+        .select("user_id, learner_name, email")
+        .eq("mentor_id", user?.id);
+
+      if (learnerErr) throw learnerErr;
+
+      // 3. Fetch documents for these learners to see "pending" status (mocking timesheet approval for now)
+      const formattedLearners: Learner[] = (learnerData || []).map(l => ({
+        id: l.user_id,
+        name: l.learner_name,
+        email: l.email,
+        weekLabel: "Current Timesheet",
+        attendanceSummary: "Pending review",
+        approved: false
+      }));
+
+      setLearners(formattedLearners);
+      setStats(prev => ({
+        ...prev,
+        currentStudents: formattedLearners.length
+      }));
+
+    } catch (err: any) {
+      setSnackbarMessage(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const selectedLearner = useMemo(
     () => learners.find((l) => l.id === selectedLearnerId) ?? null,
@@ -58,7 +81,7 @@ const MentorDashboard: React.FC = () => {
 
   const initials = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
-    return `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}`.toUpperCase();
+    return `${parts[0]?.[0] ?? ""}${parts[parts.length - 1]?.[0] ?? ""}`.toUpperCase();
   };
 
   const handleApproveToggle = (learnerId: string) => {
@@ -72,10 +95,14 @@ const MentorDashboard: React.FC = () => {
           : l,
       ),
     );
+    setSnackbarMessage(`Timesheet ${!selectedLearner?.approved ? 'approved' : 'unapproved'} for ${selectedLearner?.name}`);
   };
+
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="mentor-dashboard">
+      <Snackbar message={snackbarMessage} onClose={() => setSnackbarMessage("")} />
       <div className="mentor-header">
         <h1 className="mentor-title">Mentor Overview</h1>
         <p className="mentor-subtitle">
@@ -86,15 +113,15 @@ const MentorDashboard: React.FC = () => {
       <div className="mentor-stats">
         <Card className="mentor-stat-card">
           <div className="mentor-stat-label">Qualifications</div>
-          <div className="mentor-stat-value">BCom Degree</div>
+          <div className="mentor-stat-value">{stats.qualifications}</div>
         </Card>
         <Card className="mentor-stat-card">
           <div className="mentor-stat-label">Maximum Students</div>
-          <div className="mentor-stat-value">10</div>
+          <div className="mentor-stat-value">{stats.maxStudents}</div>
         </Card>
         <Card className="mentor-stat-card">
           <div className="mentor-stat-label">Current Students</div>
-          <div className="mentor-stat-value">7 / 10</div>
+          <div className="mentor-stat-value">{stats.currentStudents} / {stats.maxStudents}</div>
         </Card>
       </div>
 
@@ -150,6 +177,7 @@ const MentorDashboard: React.FC = () => {
                 </span>
               </button>
             ))}
+            {learners.length === 0 && <p className="mentor-empty">No learners assigned to you.</p>}
           </div>
         </Card>
 
@@ -165,6 +193,12 @@ const MentorDashboard: React.FC = () => {
                 <div className="mentor-details-label">Learner</div>
                 <div className="mentor-details-value">
                   {selectedLearner.name}
+                </div>
+              </div>
+              <div className="mentor-details-row">
+                <div className="mentor-details-label">Email</div>
+                <div className="mentor-details-value">
+                  {selectedLearner.email}
                 </div>
               </div>
               <div className="mentor-details-row">
@@ -194,3 +228,4 @@ const MentorDashboard: React.FC = () => {
 };
 
 export default MentorDashboard;
+

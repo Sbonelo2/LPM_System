@@ -1,0 +1,162 @@
+.mentor-learners {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.mentor-learners__title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.mentor-learners__subtitle {
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.mentor-learners__layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 2rem;
+}
+
+.mentor-learners__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.mentor-learners__learner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mentor-learners__learner-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.mentor-learners__learner-card:hover {
+  border-color: #007bff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.mentor-learners__learner-card--active {
+  border-color: #007bff;
+  background-color: #f0f7ff;
+}
+
+.mentor-learners__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #495057;
+  margin-right: 1rem;
+}
+
+.mentor-learners__learner-info {
+  flex: 1;
+}
+
+.mentor-learners__learner-name {
+  font-weight: 600;
+  color: #2c3e50;
+  display: block;
+}
+
+.mentor-learners__learner-email {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+.mentor-learners__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.mentor-learners__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #7f8c8d;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.mentor-learners__actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.mentor-learners__upload-section {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+}
+
+.mentor-learners__upload-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mentor-learners__field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mentor-learners__label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.mentor-learners__select {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  background: #fff;
+  min-width: 200px;
+}
+
+.status-tag {
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-pending { background-color: #fff3cd; color: #856404; }
+.status-approved { background-color: #d4edda; color: #155724; }
+.status-declined { background-color: #f8d7da; color: #721c24; }
+.status-submitted { background-color: #cce5ff; color: #004085; }
+
+@media (max-width: 1024px) {
+  .mentor-learners__layout {
+    grid-template-columns: 1fr;
+  }
+}

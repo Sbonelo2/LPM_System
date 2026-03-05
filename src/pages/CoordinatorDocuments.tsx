@@ -8,6 +8,7 @@ import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
 import InputField from "../components/InputField";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import "./CoordinatorDocuments.css";
 
 type DocumentTypeKey =
@@ -83,6 +84,7 @@ type CurrentTableRow = {
 };
 
 export default function CoordinatorDocuments(): React.JSX.Element {
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -99,9 +101,22 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   const [reviewComment, setReviewComment] = useState("");
   const [processing, setProcessing] = useState(false);
 
+  const logAudit = async (action: string, details: string) => {
+    try {
+      await supabase.from('audit_logs').insert([{
+        user_id: user?.id,
+        user_email: user?.email,
+        action: action.toUpperCase(),
+        module: 'DOCUMENTS',
+        details: details
+      }]);
+    } catch (err) {
+      console.warn("Audit logging failed:", err);
+    }
+  };
+
   const fetchData = async () => {
     try {
-      // Fetch documents
       const { data: docData, error: docError } = await supabase
         .from("documents")
         .select("*")
@@ -110,7 +125,6 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       if (docError) throw docError;
       setDocuments(docData ?? []);
 
-      // Fetch profiles to map user_id to name
       const { data: profData, error: profError } = await supabase
         .from("profiles")
         .select("id, full_name");
@@ -147,8 +161,12 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
   const executeDelete = async (documentId: string) => {
     try {
+      const docToDelete = documents.find(d => d.id === documentId);
       const { error } = await supabase.from("documents").delete().eq("id", documentId);
       if (error) throw error;
+      
+      await logAudit('DELETE', `Deleted document: ${stripTypePrefix(docToDelete?.file_name || 'unknown')}`);
+      
       setDocuments((prev) => prev.filter((doc) => doc.id !== documentId));
       setSnackbarMessage("Document deleted successfully.");
     } catch (error: unknown) {
@@ -175,6 +193,9 @@ export default function CoordinatorDocuments(): React.JSX.Element {
         .eq("id", reviewingDocument.id);
 
       if (error) throw error;
+      
+      await logAudit('UPDATE', `Reviewed document ${stripTypePrefix(reviewingDocument.file_name)}: ${status.toUpperCase()}`);
+      
       setSnackbarMessage(`Document ${status === 'approved' ? 'Approved' : 'Declined'} successfully.`);
       fetchData();
       setReviewingDocument(null);
@@ -197,17 +218,17 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
     try {
       const {
-        data: { user },
+        data: { user: authUser },
         error: userError,
       } = await supabase.auth.getUser();
 
-      if (userError || !user) {
+      if (userError || !authUser) {
         throw new Error("User not authenticated.");
       }
 
       const safeName = selectedFile.name.replace(/[^\w.-]/g, "_");
       const storageFileName = `${Date.now()}_${safeName}`;
-      const filePath = `${user.id}/admin_docs/${storageFileName}`;
+      const filePath = `${authUser.id}/admin_docs/${storageFileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("documents")
@@ -227,7 +248,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
         .from("documents")
         .insert([
           {
-            user_id: user.id,
+            user_id: authUser.id,
             file_name: taggedFileName,
             file_url: publicUrl,
             subject: subject,
@@ -243,6 +264,8 @@ export default function CoordinatorDocuments(): React.JSX.Element {
 
       if (insertError) throw insertError;
 
+      await logAudit('CREATE', `Uploaded administrative document: ${selectedFile.name}`);
+
       setDocuments((prev) => [inserted, ...prev]);
       setSelectedFile(null);
       setSubject("");
@@ -250,7 +273,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       if (fileInputRef.current) fileInputRef.current.value = "";
       setFeedback("Upload complete.");
       setSnackbarMessage("Document uploaded successfully.");
-      fetchData(); // Refresh to get uploader name
+      fetchData(); 
     } catch (error: unknown) {
       setFeedback(
         `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -369,7 +392,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             />
 
             <div className="form-group" style={{ marginBottom: '15px' }}>
-              <label className="form-label">Comment</label>
+              <label className="form-label" style={{ color: '#000' }}>Comment</label>
               <textarea
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px', color: '#000' }}
                 value={comment}
@@ -413,18 +436,24 @@ export default function CoordinatorDocuments(): React.JSX.Element {
           title="Review Document"
         >
           <div style={{ padding: '10px', color: '#000' }}>
-            <p style={{ color: '#000 !important' }}><strong style={{ color: '#000 !important' }}>Document:</strong> <span style={{ color: '#000 !important' }}>{stripTypePrefix(reviewingDocument.file_name)}</span></p>
-            <p style={{ marginTop: '10px', color: '#000 !important' }}>Add a comment for the user (optional if approving, required if declining):</p>
+            <p style={{ color: '#000', marginBottom: '10px' }}>
+              <strong style={{ color: '#000' }}>Document:</strong> 
+              <span style={{ color: '#000', marginLeft: '5px' }}>{stripTypePrefix(reviewingDocument.file_name)}</span>
+            </p>
+            <p style={{ marginTop: '15px', color: '#000', fontWeight: '500' }}>
+              Add a comment for the user (optional if approving, required if declining):
+            </p>
             <textarea
               style={{ 
                 width: '100%', 
-                padding: '10px', 
+                padding: '12px', 
                 borderRadius: '6px', 
-                border: '1px solid #ddd', 
-                minHeight: '100px',
+                border: '1px solid #ccc', 
+                minHeight: '120px',
                 marginTop: '10px',
                 color: '#000',
-                backgroundColor: '#fff'
+                backgroundColor: '#fff',
+                fontSize: '14px'
               }}
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}

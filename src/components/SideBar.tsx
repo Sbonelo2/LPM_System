@@ -69,7 +69,6 @@ const SideBar: React.FC = () => {
       admin: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
-        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
         { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
       ],
@@ -88,6 +87,7 @@ const SideBar: React.FC = () => {
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
+        { label: "SYSTEM MONITORING", path: "/super-admin/monitoring" },
         { label: "NOTIFICATIONS", path: "/super-admin/notifications" },
       ],
       qa_officer: [
@@ -109,7 +109,7 @@ const SideBar: React.FC = () => {
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
-        { label: "HOST", path: "/mentor/host" },
+        { label: "LEARNERS", path: "/mentor/learners" },
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
     };

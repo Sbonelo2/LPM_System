@@ -15,6 +15,7 @@ import ProgrammeCoordinatorPlacements from "./pages/ProgrammeCoordinatorPlacemen
 import QADashboard from "./pages/QADashboard";
 import QADocuments from "./pages/QADocuments";
 import MentorDashboard from "./pages/MentorDashboard";
+import MentorLearners from "./pages/MentorLearners";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -73,6 +74,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .replace(/[\s-]+/g, "_");
     if (normalized === "superadmin") return "super_admin";
     if (normalized === "program_coordinator") return "programme_coordinator";
+    if (normalized === "facilitator") return "facilitator";
     return normalized;
   };
 
@@ -82,6 +84,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return "/facilitator/dashboard";
     if (role === "mentor") return "/mentor/dashboard";
     if (role === "super_admin") return "/super-admin/dashboard";
+    if (role === "learner") return "/learner/dashboard";
     return "/learner/dashboard"; // Default to learner
   };
 
@@ -205,7 +208,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const dummyUser = {
           id: "admin-123",
           email: "admin@admin.com",
-          user_metadata: { role: "admin" },
+          user_metadata: { role: "facilitator" },
         };
         setUser(dummyUser);
         setLoading(false);
@@ -214,7 +217,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           window.location.pathname === "/" ||
           window.location.pathname === "/login"
         ) {
-          navigate(getDefaultPathForRole("admin"));
+          navigate(getDefaultPathForRole("facilitator"));
         }
         return;
       }
@@ -565,10 +568,10 @@ function App() {
           />
 
           <Route
-            path="/mentor/host"
+            path="/mentor/learners"
             element={
               <MainLayout>
-                <CoordinatorHosts pageTitle="Mentor Hosts" />
+                <MentorLearners />
               </MainLayout>
             }
           />
@@ -624,13 +627,13 @@ function App() {
             }
           />
           <Route
-            path="/facilitator/monitoring"
+            path="/super-admin/monitoring"
             element={
-              <AdminProtectedRoute>
+              <ProtectedRoute>
                 <MainLayout>
                   <AdminSystemMonitor />
                 </MainLayout>
-              </AdminProtectedRoute>
+              </ProtectedRoute>
             }
           />
           <Route

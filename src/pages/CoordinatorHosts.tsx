@@ -6,6 +6,7 @@ import Card from "../components/Card";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Snackbar from "../components/Snackbar";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import type { NewHostPayload } from "../components/AddHostModal";
 
 type CoordinatorHostsProps = {
@@ -13,6 +14,7 @@ type CoordinatorHostsProps = {
 };
 
 const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
+  const { user } = useAuth();
   const [showAddHostModal, setShowAddHostModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,6 +25,20 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
   const [loading, setLoading] = useState(true);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  const logAudit = async (action: string, details: string) => {
+    try {
+      await supabase.from('audit_logs').insert([{
+        user_id: user?.id,
+        user_email: user?.email,
+        action: action.toUpperCase(),
+        module: 'HOSTS',
+        details: details
+      }]);
+    } catch (err) {
+      console.warn("Audit logging failed:", err);
+    }
+  };
 
   const fetchHosts = async () => {
     try {
@@ -74,6 +90,8 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
         }]);
 
       if (error) throw error;
+      
+      await logAudit('CREATE', `Added new host organization: ${payload.hostName} in ${payload.location}`);
       setSnackbarMessage("Host added successfully!");
       fetchHosts();
       setShowAddHostModal(false);
@@ -93,7 +111,6 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
     if (!selectedHost) return;
     setProcessing(true);
     try {
-      // Parse "5/10" string from edit modal
       const parts = payload.capacity.split("/");
       const current = parseInt(parts[0]);
       const max = parseInt(parts[1]);
@@ -116,6 +133,8 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
         .eq("id", selectedHost.id);
 
       if (error) throw error;
+
+      await logAudit('UPDATE', `Updated host: ${payload.hostName}. New capacity: ${payload.capacity}`);
       setSnackbarMessage("Host updated successfully!");
       fetchHosts();
       setShowEditModal(false);
@@ -136,6 +155,8 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
         .eq("id", selectedHost.id);
 
       if (error) throw error;
+
+      await logAudit('DELETE', `Removed host organization: ${selectedHost.name}`);
       setSnackbarMessage("Host deleted.");
       fetchHosts();
       setShowDeleteModal(false);
@@ -243,33 +264,33 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
         <div className="host-modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="host-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Host</h2>
+              <h2 style={{color: '#000'}}>Edit Host</h2>
               <Button text="×" onClick={() => setShowEditModal(false)} className="modal-close-btn" />
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Host Name</label>
-                <input id="editHostName" className="form-input" defaultValue={selectedHost.name} />
+                <label className="form-label" style={{color: '#000'}}>Host Name</label>
+                <input id="editHostName" className="form-input" defaultValue={selectedHost.name} style={{color: '#000'}} />
               </div>
               <div className="form-group">
-                <label className="form-label">Location</label>
-                <input id="editLocation" className="form-input" defaultValue={selectedHost.location} />
+                <label className="form-label" style={{color: '#000'}}>Location</label>
+                <input id="editLocation" className="form-input" defaultValue={selectedHost.location} style={{color: '#000'}} />
               </div>
               <div className="form-group">
-                <label className="form-label">Contact Person</label>
-                <input id="editContactPerson" className="form-input" defaultValue={selectedHost.contact_person} />
+                <label className="form-label" style={{color: '#000'}}>Contact Person</label>
+                <input id="editContactPerson" className="form-input" defaultValue={selectedHost.contact_person} style={{color: '#000'}} />
               </div>
               <div className="form-group">
-                <label className="form-label">Contact Email</label>
-                <input id="editContactEmail" className="form-input" defaultValue={selectedHost.email} />
+                <label className="form-label" style={{color: '#000'}}>Contact Email</label>
+                <input id="editContactEmail" className="form-input" defaultValue={selectedHost.email} style={{color: '#000'}} />
               </div>
               <div className="form-group">
-                <label className="form-label">Contact Phone</label>
-                <input id="editContactPhone" className="form-input" defaultValue={selectedHost.phone} />
+                <label className="form-label" style={{color: '#000'}}>Contact Phone</label>
+                <input id="editContactPhone" className="form-input" defaultValue={selectedHost.phone} style={{color: '#000'}} />
               </div>
               <div className="form-group">
-                <label className="form-label">Learner Capacity (Current/Max)</label>
-                <input id="editCapacity" type="text" className="form-input" defaultValue={`${selectedHost.current_learners || 0}/${selectedHost.capacity || 0}`} placeholder="e.g. 5/10" />
+                <label className="form-label" style={{color: '#000'}}>Learner Capacity (Current/Max)</label>
+                <input id="editCapacity" type="text" className="form-input" defaultValue={`${selectedHost.current_learners || 0}/${selectedHost.capacity || 0}`} placeholder="e.g. 5/10" style={{color: '#000'}} />
               </div>
             </div>
             <div className="modal-footer">
@@ -299,11 +320,11 @@ const CoordinatorHosts: React.FC<CoordinatorHostsProps> = ({ pageTitle }) => {
         <div className="host-modal-overlay" onClick={() => setShowDeleteModal(false)}>
           <div className="host-modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Delete Host</h2>
+              <h2 style={{color: '#000'}}>Delete Host</h2>
               <Button text="×" onClick={() => setShowDeleteModal(false)} className="modal-close-btn" />
             </div>
             <div className="modal-body">
-              <p>Are you sure you want to delete <strong>{selectedHost.name}</strong>?</p>
+              <p style={{color: '#000'}}>Are you sure you want to delete <strong>{selectedHost.name}</strong>?</p>
             </div>
             <div className="modal-footer">
               <Button text="Cancel" onClick={() => setShowDeleteModal(false)} className="modal-btn modal-btn-cancel" />

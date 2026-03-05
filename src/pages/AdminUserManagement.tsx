@@ -9,6 +9,8 @@ import Dropdown, { type DropdownOption } from "../components/Dropdown";
 import { type TableColumn } from "../components/TableComponent";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import { formatDate } from "../utils/dateUtils";
 
 interface User {
   id: string;
@@ -45,6 +47,7 @@ type GeneratedCredentials = {
 };
 
 const AdminUserManagement: React.FC = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -63,6 +66,20 @@ const AdminUserManagement: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
+  const logAudit = async (action: string, details: string) => {
+    try {
+      await supabase.from('audit_logs').insert([{
+        user_id: user?.id,
+        user_email: user?.email,
+        action: action.toUpperCase(),
+        module: 'USER MANAGEMENT',
+        details: details
+      }]);
+    } catch (err) {
+      console.warn("Audit logging failed:", err);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -78,7 +95,7 @@ const AdminUserManagement: React.FC = () => {
         fullName: u.full_name || "N/A",
         email: u.email || "N/A",
         role: u.role || "learner",
-        createdDate: new Date(u.created_at).toISOString().split("T")[0],
+        createdDate: formatDate(u.created_at),
       }));
 
       setUsers(formattedUsers);
@@ -127,7 +144,6 @@ const AdminUserManagement: React.FC = () => {
       return;
     }
 
-    // Basic Email Regex for validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
       setAddUserError("Please enter a valid email address (e.g., user@example.com).");
@@ -140,9 +156,6 @@ const AdminUserManagement: React.FC = () => {
     try {
       const password = generateSystemPassword();
       
-      // 1. Create the user in Auth
-      // Note: In a production app, this should ideally be an Edge Function 
-      // using the service_role key to avoid session issues.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: password,
@@ -151,7 +164,6 @@ const AdminUserManagement: React.FC = () => {
             full_name: trimmedFullName,
             role: trimmedRole,
           },
-          // Prevent auto-login so the Admin doesn't lose their session
           emailRedirectTo: window.location.origin,
         }
       });
@@ -164,7 +176,6 @@ const AdminUserManagement: React.FC = () => {
       }
 
       if (authData.user) {
-        // 2. Profiles table sync
         const { error: profileError } = await supabase.from("profiles").upsert({
           id: authData.user.id,
           full_name: trimmedFullName,
@@ -174,7 +185,6 @@ const AdminUserManagement: React.FC = () => {
 
         if (profileError) console.error("Profile upsert error:", profileError);
 
-        // 3. If learner, create learner_profile
         if (trimmedRole === "learner") {
           await supabase.from("learner_profiles").upsert({
             user_id: authData.user.id,
@@ -190,6 +200,7 @@ const AdminUserManagement: React.FC = () => {
           password,
         });
 
+        await logAudit('CREATE', `Created new user: ${trimmedFullName} (${trimmedEmail}) as ${trimmedRole}`);
         showSnackbar(`User ${trimmedFullName} account created!`);
         fetchUsers(); // Refresh list
       }
@@ -234,6 +245,7 @@ const AdminUserManagement: React.FC = () => {
 
         if (error) throw error;
 
+        await logAudit('UPDATE', `Updated user: ${editedFullName}. Role changed to ${editedRole}`);
         showSnackbar(`User ${editedFullName} updated successfully!`);
         fetchUsers();
         setShowEditModal(false);
@@ -254,8 +266,6 @@ const AdminUserManagement: React.FC = () => {
     if (userToDelete) {
       setProcessing(true);
       try {
-        // Note: auth.users can only be deleted via admin API
-        // We delete from profiles, and hopefully have a trigger or just leave auth user
         const { error } = await supabase
           .from("profiles")
           .delete()
@@ -263,6 +273,7 @@ const AdminUserManagement: React.FC = () => {
 
         if (error) throw error;
 
+        await logAudit('DELETE', `Removed user record for: ${userToDelete.fullName} (${userToDelete.email})`);
         showSnackbar(`User record ${userToDelete.fullName} removed.`);
         fetchUsers();
         setShowDeleteModal(false);
@@ -271,6 +282,62 @@ const AdminUserManagement: React.FC = () => {
       } finally {
         setProcessing(false);
       }
+    }
+  };
+
+  const [showAssignMentorModal, setShowAssignMentorModal] = useState<boolean>(false);
+  const [selectedLearnerForMentor, setSelectedLearnerForMentor] = useState<User | null>(null);
+  const [mentors, setMentors] = useState<DropdownOption[]>([]);
+  const [selectedMentorId, setSelectedMentorId] = useState<string>("");
+
+  const fetchMentors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("role", "mentor");
+      
+      if (error) throw error;
+      setMentors((data || []).map(m => ({ label: `${m.full_name} (${m.email})`, value: m.id })));
+    } catch (err) {
+      console.error("Error fetching mentors:", err);
+    }
+  };
+
+  const handleOpenAssignMentor = async (learner: User) => {
+    setSelectedLearnerForMentor(learner);
+    await fetchMentors();
+    
+    // Check if learner already has a mentor
+    const { data } = await supabase
+      .from("learner_profiles")
+      .select("mentor_id")
+      .eq("user_id", learner.id)
+      .maybeSingle();
+    
+    setSelectedMentorId(data?.mentor_id || "");
+    setShowAssignMentorModal(true);
+  };
+
+  const handleSaveMentorAssignment = async () => {
+    if (!selectedLearnerForMentor) return;
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("learner_profiles")
+        .update({ mentor_id: selectedMentorId || null })
+        .eq("user_id", selectedLearnerForMentor.id);
+
+      if (error) throw error;
+
+      const mentorName = mentors.find(m => m.value === selectedMentorId)?.label || "None";
+      await logAudit('UPDATE', `Assigned mentor ${mentorName} to learner ${selectedLearnerForMentor.fullName}`);
+      showSnackbar(`Mentor assigned to ${selectedLearnerForMentor.fullName}`);
+      setShowAssignMentorModal(false);
+    } catch (err: any) {
+      showSnackbar(`Failed to assign mentor: ${err.message}`);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -306,6 +373,18 @@ const AdminUserManagement: React.FC = () => {
               <path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12l1.41 1.41L13.41 14l2.12 2.12l-1.41 1.41L12 15.41l-2.12 2.12l-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z" />
             </svg>
           </span>
+          {user.role === "learner" && (
+            <span
+              onClick={() => handleOpenAssignMentor(user)}
+              style={{ cursor: "pointer", color: "#16A34A", fontSize: "1.2em" }}
+              title="Assign Mentor"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 3c-4.963 0-9 4.037-9 9s4.037 9 9 9s9-4.037 9-9s-4.037-9-9-9zm0 16c-3.859 0-7-3.141-7-7s3.141-7 7-7s7 3.141 7 7s-3.141 7-7 7zm.707-7l2.647-2.646l-1.414-1.414L11.293 10.5L8.646 7.854L7.232 9.268L9.879 11.914L7.232 14.56l1.414 1.414l2.647-2.646l2.647 2.646l1.414-1.414L12.707 12z" transform="rotate(45 12 12)" />
+                <path fill="currentColor" d="M12 6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-3 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5V17a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-1.5z" />
+              </svg>
+            </span>
+          )}
         </div>
       ),
     },
@@ -352,11 +431,11 @@ const AdminUserManagement: React.FC = () => {
             
             {generatedCredentials && (
               <div style={{ border: "1px solid #d6d6d6", borderRadius: "8px", padding: "12px", background: "#f8f8f8", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <strong>System generated credentials</strong>
-                <span><strong>Email:</strong> {generatedCredentials.email}</span>
-                <span><strong>Role:</strong> {generatedCredentials.role.toUpperCase()}</span>
-                <span style={{ fontFamily: "monospace" }}><strong>Temporary Password:</strong> {generatedCredentials.password}</span>
-                <span style={{ fontSize: "0.9rem" }}>Share these credentials with the user. They have been saved to the system.</span>
+                <strong style={{color: '#000'}}>System generated credentials</strong>
+                <span style={{color: '#000'}}><strong>Email:</strong> {generatedCredentials.email}</span>
+                <span style={{color: '#000'}}><strong>Role:</strong> {generatedCredentials.role.toUpperCase()}</span>
+                <span style={{ fontFamily: "monospace", color: '#000' }}><strong>Temporary Password:</strong> {generatedCredentials.password}</span>
+                <span style={{ fontSize: "0.9rem", color: '#000' }}>Share these credentials with the user. They have been saved to the system.</span>
                 <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
                   <Button text="Copy Credentials" onClick={copyGeneratedCredentials} variant="secondary" />
                 </div>
@@ -385,6 +464,35 @@ const AdminUserManagement: React.FC = () => {
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
               <Button text="Cancel" onClick={() => setShowEditModal(false)} variant="secondary" />
               <Button text={processing ? "Saving..." : "Save"} onClick={handleSaveUser} variant="primary" disabled={processing} />
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showAssignMentorModal && selectedLearnerForMentor && (
+        <Modal 
+          isOpen={showAssignMentorModal} 
+          onClose={() => setShowAssignMentorModal(false)} 
+          title={`Assign Mentor to ${selectedLearnerForMentor.fullName}`}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <p style={{ color: '#000' }}>Select a mentor to assign to this learner. The mentor will be able to review and approve the learner's documents.</p>
+            <Dropdown 
+              label="Select Mentor" 
+              value={selectedMentorId} 
+              onChange={setSelectedMentorId} 
+              options={mentors} 
+              placeholder="Select a mentor" 
+              disabled={processing}
+            />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
+              <Button text="Cancel" onClick={() => setShowAssignMentorModal(false)} variant="secondary" />
+              <Button 
+                text={processing ? "Assigning..." : "Assign Mentor"} 
+                onClick={handleSaveMentorAssignment} 
+                variant="primary" 
+                disabled={processing} 
+              />
             </div>
           </div>
         </Modal>

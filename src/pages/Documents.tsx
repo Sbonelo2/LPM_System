@@ -4,14 +4,16 @@ import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Snackbar from "../components/Snackbar";
 import PdfViewer from "../components/PdfViewer";
-import { supabase } from "../services/supabaseClient";
+import { formatDate } from "../utils/dateUtils";
 import "./Documents.css";
 
 type DocumentTypeKey =
   | "ID_COPY"
   | "MATRIC_CERTIFICATE"
   | "TERTIARY_QUALIFICATION"
-  | "PROOF_OF_ADDRESS";
+  | "PROOF_OF_ADDRESS"
+  | "TIMESHEET"
+  | "EVIDENCE";
 
 type DocumentRecord = {
   id: string;
@@ -22,6 +24,7 @@ type DocumentRecord = {
   document_type?: string;
   review_owner_role?: string;
   review_status?: string;
+  uploaded_by?: string;
 };
 
 const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
@@ -29,6 +32,8 @@ const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
   { key: "MATRIC_CERTIFICATE", label: "Matric Certificate" },
   { key: "TERTIARY_QUALIFICATION", label: "Tertiary Qualification" },
   { key: "PROOF_OF_ADDRESS", label: "Proof of Address" },
+  { key: "TIMESHEET", label: "Timesheet Template" },
+  { key: "EVIDENCE", label: "Evidence of Work" },
 ];
 
 const TYPE_PREFIX = "__DOC_TYPE__";
@@ -95,7 +100,7 @@ export default function Documents(): React.JSX.Element {
 
         const { data, error } = await supabase
           .from("documents")
-          .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status")
+          .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status, uploaded_by")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
@@ -256,6 +261,11 @@ export default function Documents(): React.JSX.Element {
       header: "Submitted To",
       render: (row: DocumentRecord) => row.review_owner_role === "super_admin" ? "Super Admin" : "Mentor"
     },
+    {
+      key: "uploaded_by",
+      header: "Source",
+      render: (row: DocumentRecord) => row.uploaded_by === row.user_id ? "Self" : "Mentor"
+    },
     { 
       key: "review_status", 
       header: "Status",
@@ -268,7 +278,7 @@ export default function Documents(): React.JSX.Element {
     { 
       key: "created_at", 
       header: "Date Uploaded",
-      render: (row: DocumentRecord) => new Date(row.created_at).toLocaleDateString()
+      render: (row: DocumentRecord) => formatDate(row.created_at)
     },
     {
       key: "actions",

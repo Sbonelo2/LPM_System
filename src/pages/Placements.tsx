@@ -3,6 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import Card from "../components/Card";
 import TableComponent from "../components/TableComponent";
+import { formatDate } from "../utils/dateUtils";
 import "./Placements.css";
 
 type PlacementRow = {
@@ -41,12 +42,8 @@ const Placements: React.FC = () => {
         host: p.host_name || "Unknown Host",
         program: p.program,
         status: p.status,
-        startDate: p.start_date
-          ? new Date(p.start_date).toLocaleDateString()
-          : "Not set",
-        endDate: p.end_date
-          ? new Date(p.end_date).toLocaleDateString()
-          : "Not set",
+        startDate: formatDate(p.start_date),
+        endDate: formatDate(p.end_date),
       }));
 
       setPlacements(formatted);

@@ -6,6 +6,7 @@ import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
 import Card from "../components/Card";
 import ProfileImageUpload from "../components/ProfileImageUpload";
+import { formatDate } from "../utils/dateUtils";
 import "./Dashboard.css";
 
 interface PlacementData {

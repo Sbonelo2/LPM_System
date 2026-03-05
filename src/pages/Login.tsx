@@ -107,10 +107,12 @@ const Login: React.FC = () => {
         }
       }
 
-      if (effectiveRole === "admin") {
+      if (effectiveRole === "admin" || effectiveRole === "facilitator") {
         navigate("/facilitator/dashboard");
       } else if (effectiveRole === "programme_coordinator") {
         navigate("/coordinator/documents");
+      } else if (effectiveRole === "super_admin") {
+        navigate("/super-admin/dashboard");
       } else if (effectiveRole === "qa_officer") {
         navigate("/qa/dashboard");
       } else if (effectiveRole === "mentor") {

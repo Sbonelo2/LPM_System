@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Modal from "../components/Modal";
 import InputField from "../components/InputField";
 import Dropdown, { type DropdownOption } from "../components/Dropdown";
+import LoadingSpinner from "../components/LoadingSpinner";
+import Snackbar from "../components/Snackbar";
+import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import "./Dashboard.css";
 import "./SystemSettings.css";
 import "./QACompliance.css";
@@ -16,9 +20,11 @@ type VerificationStatus = "Pending" | "Approved" | "Rejected";
 type VerifiableDocument = {
   id: string;
   learner: string;
+  learner_id: string;
   documentName: string;
   uploadedOn: string;
-  status: VerificationStatus;
+  status: string;
+  doc: any;
 };
 
 type DocumentIssue = {
@@ -40,438 +46,320 @@ const SEVERITY_OPTIONS: DropdownOption[] = [
 ];
 
 export default function QACompliance() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<ComplianceTab>("compliance");
+  const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  const [documents, setDocuments] = useState<VerifiableDocument[]>([
-    {
-      id: "DOC-001",
-      learner: "Sarah Coordinator",
-      documentName: "Learner ID Copy",
-      uploadedOn: "2024-08-01",
-      status: "Pending",
-    },
-    {
-      id: "DOC-002",
-      learner: "James Ndlovu",
-      documentName: "Proof of Address",
-      uploadedOn: "2024-08-02",
-      status: "Pending",
-    },
-    {
-      id: "DOC-003",
-      learner: "Ayesha Khan",
-      documentName: "Consent Form",
-      uploadedOn: "2024-08-03",
-      status: "Approved",
-    },
-  ]);
+  const [documents, setDocuments] = useState<VerifiableDocument[]>([]);
+  const [issues, setIssues] = useState<DocumentIssue[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
 
-  const [issues, setIssues] = useState<DocumentIssue[]>([
-    {
-      id: "ISS-001",
-      documentId: "DOC-001",
-      documentName: "Learner ID Copy",
-      learner: "Sarah Coordinator",
-      severity: "High",
-      title: "Document unclear",
-      description: "The ID copy is blurry. Please upload a clearer scan/photo.",
-      createdOn: "2024-08-04",
-      status: "Open",
-    },
-  ]);
-
+  // Modal states
   const [issueModalOpen, setIssueModalOpen] = useState(false);
-  const [issueDocId, setIssueDocId] = useState<string>("");
+  const [selectedDocForIssue, setSelectedDocForIssue] = useState<VerifiableDocument | null>(null);
   const [issueTitle, setIssueTitle] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
-  const [issueSeverity, setIssueSeverity] =
-    useState<DocumentIssue["severity"]>("Medium");
-  const [issueError, setIssueError] = useState("");
+  const [issueSeverity, setIssueSeverity] = useState<DocumentIssue["severity"]>("Medium");
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [rejectDocId, setRejectDocId] = useState<string>("");
+  const [selectedDocForReject, setSelectedDocForReject] = useState<VerifiableDocument | null>(null);
   const [rejectReason, setRejectReason] = useState("");
-  const [rejectError, setRejectError] = useState("");
 
-  const pendingCount = useMemo(
-    () => documents.filter((d) => d.status === "Pending").length,
-    [documents],
-  );
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // 1. Fetch profiles for name mapping
+      const { data: profData } = await supabase.from("profiles").select("id, full_name");
+      const profileMap: Record<string, string> = {};
+      (profData || []).forEach(p => {
+        profileMap[p.id] = p.full_name?.split(' ')[0] || 'Unknown';
+      });
+      setProfiles(profileMap);
 
-  const approvedCount = useMemo(
-    () => documents.filter((d) => d.status === "Approved").length,
-    [documents],
-  );
+      // 2. Fetch documents
+      const { data: docData, error: docError } = await supabase
+        .from("documents")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  const rejectedCount = useMemo(
-    () => documents.filter((d) => d.status === "Rejected").length,
-    [documents],
-  );
+      if (docError) throw docError;
 
-  const complianceRate = useMemo(() => {
-    const total = documents.length;
-    if (total === 0) return 0;
-    return Math.round((approvedCount / total) * 100);
-  }, [approvedCount, documents.length]);
+      const formattedDocs: VerifiableDocument[] = (docData || []).map(d => ({
+        id: d.id,
+        learner: profileMap[d.user_id] || 'Unknown',
+        learner_id: d.user_id,
+        documentName: d.file_name.includes('__') ? d.file_name.split('__').pop() || d.file_name : d.file_name,
+        uploadedOn: new Date(d.created_at).toLocaleDateString(),
+        status: d.review_status || 'pending',
+        doc: d
+      }));
+      setDocuments(formattedDocs);
 
-  const openIssueModal = (documentId: string) => {
-    setIssueError("");
-    setIssueDocId(documentId);
-    setIssueTitle("");
-    setIssueDescription("");
-    setIssueSeverity("Medium");
-    setIssueModalOpen(true);
+      // 3. Fetch issues
+      const { data: issueData, error: issueError } = await supabase
+        .from("compliance_issues")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (issueError) {
+        if (!issueError.message.includes("not found")) throw issueError;
+      }
+
+      const formattedIssues: DocumentIssue[] = (issueData || []).map(i => {
+        const doc = formattedDocs.find(d => d.id === i.document_id);
+        return {
+          id: i.id,
+          documentId: i.document_id,
+          documentName: doc?.documentName || 'Unknown Doc',
+          learner: profileMap[i.learner_id] || 'Unknown',
+          severity: i.severity as any,
+          title: i.title,
+          description: i.description,
+          createdOn: new Date(i.created_at).toLocaleDateString(),
+          status: i.status as any
+        };
+      });
+      setIssues(formattedIssues);
+
+    } catch (err: any) {
+      console.error("Error fetching compliance data:", err);
+      setSnackbarMessage(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeIssueModal = () => {
-    setIssueModalOpen(false);
-    setIssueError("");
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const stats = useMemo(() => {
+    const pending = documents.filter(d => d.status.toLowerCase() === "pending").length;
+    const approved = documents.filter(d => d.status.toLowerCase() === "approved").length;
+    const rejected = documents.filter(d => d.status.toLowerCase() === "declined" || d.status.toLowerCase() === "rejected").length;
+    const rate = documents.length > 0 ? Math.round((approved / documents.length) * 100) : 0;
+    return { pending, approved, rejected, rate };
+  }, [documents]);
+
+  const approveDocument = async (docId: string) => {
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ review_status: "approved" })
+        .eq("id", docId);
+      if (error) throw error;
+      setSnackbarMessage("Document approved.");
+      fetchData();
+    } catch (err: any) {
+      setSnackbarMessage(`Failed to approve: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const openRejectModal = (documentId: string) => {
-    setRejectError("");
-    setRejectDocId(documentId);
-    setRejectReason("");
-    setRejectModalOpen(true);
+  const submitRejection = async () => {
+    if (!selectedDocForReject || !rejectReason.trim()) return;
+    setProcessing(true);
+    try {
+      // 1. Update document status
+      const { error: docError } = await supabase
+        .from("documents")
+        .update({ review_status: "declined", review_comment: rejectReason })
+        .eq("id", selectedDocForReject.id);
+      if (docError) throw docError;
+
+      // 2. Create a compliance issue
+      const { error: issueError } = await supabase
+        .from("compliance_issues")
+        .insert([{
+          document_id: selectedDocForReject.id,
+          learner_id: selectedDocForReject.learner_id,
+          user_id: user?.id,
+          severity: "High",
+          title: "Document Rejected",
+          description: rejectReason,
+          status: "Open"
+        }]);
+      
+      if (issueError) console.error("Error creating issue record:", issueError);
+
+      setSnackbarMessage("Document rejected and issue logged.");
+      setRejectModalOpen(false);
+      setRejectReason("");
+      fetchData();
+    } catch (err: any) {
+      setSnackbarMessage(`Failed: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const closeRejectModal = () => {
-    setRejectModalOpen(false);
-    setRejectError("");
+  const postIssue = async () => {
+    if (!selectedDocForIssue || !issueTitle.trim() || !issueDescription.trim()) return;
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("compliance_issues")
+        .insert([{
+          document_id: selectedDocForIssue.id,
+          learner_id: selectedDocForIssue.learner_id,
+          user_id: user?.id,
+          severity: issueSeverity,
+          title: issueTitle,
+          description: issueDescription,
+          status: "Open"
+        }]);
+      
+      if (error) throw error;
+
+      setSnackbarMessage("Compliance issue published.");
+      setIssueModalOpen(false);
+      setIssueTitle("");
+      setIssueDescription("");
+      fetchData();
+    } catch (err: any) {
+      setSnackbarMessage(`Failed: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  const approveDocument = (documentId: string) => {
-    setDocuments((prev) =>
-      prev.map((doc) =>
-        doc.id === documentId ? { ...doc, status: "Approved" } : doc,
+  const columns: TableColumn<VerifiableDocument>[] = [
+    { header: "Document", key: "documentName" },
+    { header: "Learner", key: "learner" },
+    { header: "Uploaded", key: "uploadedOn" },
+    { 
+      header: "Status", 
+      key: "status",
+      render: (row) => (
+        <span className={`status-tag status-${row.status.toLowerCase()}`} style={{
+          padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold',
+          backgroundColor: row.status === 'approved' ? '#dcfce7' : row.status === 'pending' ? '#fef9c3' : '#fee2e2',
+          color: row.status === 'approved' ? '#166534' : row.status === 'pending' ? '#854d0e' : '#991b1b',
+          textTransform: 'uppercase'
+        }}>
+          {row.status}
+        </span>
+      )
+    },
+    {
+      header: "Actions",
+      render: (row) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Button text="Verify" variant="primary" onClick={() => approveDocument(row.id)} disabled={processing || row.status === 'approved'} />
+          <Button text="Reject" variant="secondary" onClick={() => { setSelectedDocForReject(row); setRejectModalOpen(true); }} disabled={processing} />
+          <Button text="Issue" variant="secondary" onClick={() => { setSelectedDocForIssue(row); setIssueModalOpen(true); }} disabled={processing} />
+        </div>
       ),
-    );
-  };
+    },
+  ];
 
-  const rejectDocument = (documentId: string) => {
-    openRejectModal(documentId);
-  };
-
-  const submitRejection = () => {
-    const reason = rejectReason.trim();
-    if (!rejectDocId || !reason) {
-      setRejectError("Please provide a reason for rejection.");
-      return;
-    }
-
-    const doc = documents.find((d) => d.id === rejectDocId);
-    if (!doc) {
-      setRejectError("Selected document could not be found.");
-      return;
-    }
-
-    setDocuments((prev) =>
-      prev.map((item) =>
-        item.id === rejectDocId ? { ...item, status: "Rejected" } : item,
-      ),
-    );
-
-    const newIssue: DocumentIssue = {
-      id: `ISS-${String(issues.length + 1).padStart(3, "0")}`,
-      documentId: doc.id,
-      documentName: doc.documentName,
-      learner: doc.learner,
-      severity: "Medium",
-      title: "Document rejected",
-      description: reason,
-      createdOn: new Date().toISOString().slice(0, 10),
-      status: "Open",
-    };
-
-    setIssues((prev) => [newIssue, ...prev]);
-    closeRejectModal();
-  };
-
-  const postIssue = () => {
-    const title = issueTitle.trim();
-    const description = issueDescription.trim();
-
-    if (!issueDocId || !title || !description) {
-      setIssueError("Please fill in all fields.");
-      return;
-    }
-
-    const doc = documents.find((d) => d.id === issueDocId);
-    if (!doc) {
-      setIssueError("Selected document could not be found.");
-      return;
-    }
-
-    const newIssue: DocumentIssue = {
-      id: `ISS-${String(issues.length + 1).padStart(3, "0")}`,
-      documentId: doc.id,
-      documentName: doc.documentName,
-      learner: doc.learner,
-      severity: issueSeverity,
-      title,
-      description,
-      createdOn: new Date().toISOString().slice(0, 10),
-      status: "Open",
-    };
-
-    setIssues((prev) => [newIssue, ...prev]);
-    closeIssueModal();
-  };
-
-  const overviewColumns: TableColumn<VerifiableDocument>[] = useMemo(
-    () => [
-      { header: "Document", key: "documentName" },
-      { header: "Learner", key: "learner" },
-      { header: "Uploaded", key: "uploadedOn" },
-      { header: "Status", key: "status" },
-    ],
-    [],
-  );
-
-  const documentColumns: TableColumn<VerifiableDocument>[] = useMemo(
-    () => [
-      { header: "Document", key: "documentName" },
-      { header: "Learner", key: "learner" },
-      { header: "Uploaded", key: "uploadedOn" },
-      { header: "Status", key: "status" },
-      {
-        header: "Actions",
-        render: (doc) => (
-          <div className="qa-compliance__actions-cell">
-            <Button
-              text="Approve"
-              variant="primary"
-              onClick={() => approveDocument(doc.id)}
-            />
-            <Button
-              text="Reject"
-              variant="secondary"
-              onClick={() => rejectDocument(doc.id)}
-            />
-            <Button
-              text="Post Issue"
-              variant="secondary"
-              onClick={() => openIssueModal(doc.id)}
-            />
-          </div>
-        ),
-      },
-    ],
-    [],
-  );
-
-  const issueColumns: TableColumn<DocumentIssue>[] = useMemo(
-    () => [
-      { header: "Document", key: "documentName" },
-      { header: "Learner", key: "learner" },
-      { header: "Severity", key: "severity" },
-      { header: "Title", key: "title" },
-      { header: "Status", key: "status" },
-      { header: "Created", key: "createdOn" },
-    ],
-    [],
-  );
+  const issueCols: TableColumn<DocumentIssue>[] = [
+    { header: "Document", key: "documentName" },
+    { header: "Learner", key: "learner" },
+    { 
+      header: "Severity", 
+      key: "severity",
+      render: (row) => (
+        <span style={{ color: row.severity === 'High' ? '#ef4444' : row.severity === 'Medium' ? '#f59e0b' : '#10b981', fontWeight: 'bold' }}>
+          {row.severity}
+        </span>
+      )
+    },
+    { header: "Title", key: "title" },
+    { header: "Status", key: "status" },
+    { header: "Created", key: "createdOn" },
+  ];
 
   return (
     <div className="qa-compliance">
-      <h2 className="qa-compliance__title">QA Compliance</h2>
+      <h2 className="qa-compliance__title">COMPLIANCE & VERIFICATION</h2>
+      <Snackbar message={snackbarMessage} onClose={() => setSnackbarMessage("")} />
 
-      <div
-        className="system-settings__tabs"
-        role="tablist"
-        aria-label="QA compliance tabs"
-      >
-        <button
-          type="button"
-          className={
-            "system-settings__tab" +
-            (activeTab === "compliance" ? " system-settings__tab--active" : "")
-          }
-          role="tab"
-          aria-selected={activeTab === "compliance"}
-          onClick={() => setActiveTab("compliance")}
-        >
-          Compliance
+      <div className="system-settings__tabs">
+        <button className={`system-settings__tab ${activeTab === 'compliance' ? 'system-settings__tab--active' : ''}`} onClick={() => setActiveTab('compliance')}>
+          Overview
         </button>
-        <button
-          type="button"
-          className={
-            "system-settings__tab" +
-            (activeTab === "documents" ? " system-settings__tab--active" : "")
-          }
-          role="tab"
-          aria-selected={activeTab === "documents"}
-          onClick={() => setActiveTab("documents")}
-        >
-          Documents
+        <button className={`system-settings__tab ${activeTab === 'documents' ? 'system-settings__tab--active' : ''}`} onClick={() => setActiveTab('documents')}>
+          Verification
         </button>
-        <button
-          type="button"
-          className={
-            "system-settings__tab" +
-            (activeTab === "issues" ? " system-settings__tab--active" : "")
-          }
-          role="tab"
-          aria-selected={activeTab === "issues"}
-          onClick={() => setActiveTab("issues")}
-        >
-          Issues
+        <button className={`system-settings__tab ${activeTab === 'issues' ? 'system-settings__tab--active' : ''}`} onClick={() => setActiveTab('issues')}>
+          Issues Log
         </button>
       </div>
 
-      {activeTab === "compliance" ? (
-        <div className="qa-compliance__content">
-          <div className="qa-compliance__stats">
-            <Card className="qa-compliance__stat">
-              <div className="qa-compliance__stat-label">Pending Review</div>
-              <div className="qa-compliance__stat-value">{pendingCount}</div>
-            </Card>
-            <Card className="qa-compliance__stat">
-              <div className="qa-compliance__stat-label">Approved</div>
-              <div className="qa-compliance__stat-value">{approvedCount}</div>
-            </Card>
-            <Card className="qa-compliance__stat">
-              <div className="qa-compliance__stat-label">Rejected</div>
-              <div className="qa-compliance__stat-value">{rejectedCount}</div>
-            </Card>
-            <Card className="qa-compliance__stat">
-              <div className="qa-compliance__stat-label">Compliance Rate</div>
-              <div className="qa-compliance__stat-value">{complianceRate}%</div>
-            </Card>
-          </div>
+      {loading ? <LoadingSpinner /> : (
+        <div className="tab-content animate-fade-in">
+          {activeTab === 'compliance' && (
+            <>
+              <div className="qa-compliance__stats">
+                <Card className="qa-compliance__stat">
+                  <div className="qa-compliance__stat-label">PENDING REVIEW</div>
+                  <div className="qa-compliance__stat-value">{stats.pending}</div>
+                </Card>
+                <Card className="qa-compliance__stat">
+                  <div className="qa-compliance__stat-label">APPROVED</div>
+                  <div className="qa-compliance__stat-value">{stats.approved}</div>
+                </Card>
+                <Card className="qa-compliance__stat">
+                  <div className="qa-compliance__stat-label">REJECTED</div>
+                  <div className="qa-compliance__stat-value">{stats.rejected}</div>
+                </Card>
+                <Card className="qa-compliance__stat">
+                  <div className="qa-compliance__stat-label">COMPLIANCE RATE</div>
+                  <div className="qa-compliance__stat-value">{stats.rate}%</div>
+                </Card>
+              </div>
+              <Card><TableComponent columns={columns.slice(0, 4)} data={documents} caption="All uploaded documents status" /></Card>
+            </>
+          )}
 
-          <Card className="qa-compliance__table-card">
-            <TableComponent
-              columns={overviewColumns}
-              data={documents}
-              caption="Documents overview"
-            />
-          </Card>
-        </div>
-      ) : activeTab === "documents" ? (
-        <div className="qa-compliance__content">
-          <Card className="qa-compliance__table-card">
-            <TableComponent
-              columns={documentColumns}
-              data={documents}
-              caption="Documents to verify"
-            />
-          </Card>
-        </div>
-      ) : (
-        <div className="qa-compliance__content">
-          <div className="qa-compliance__issues-header">
-            <div className="qa-compliance__issues-title">Published Issues</div>
-            <Button
-              text="Post Issue"
-              variant="primary"
-              onClick={() => {
-                const firstPending = documents.find(
-                  (d) => d.status === "Pending",
-                );
-                openIssueModal(firstPending?.id ?? "");
-              }}
-            />
-          </div>
+          {activeTab === 'documents' && (
+            <Card><TableComponent columns={columns} data={documents} caption="Verify pending documents" /></Card>
+          )}
 
-          <Card className="qa-compliance__table-card">
-            <TableComponent
-              columns={issueColumns}
-              data={issues}
-              caption="Issues"
-            />
-          </Card>
+          {activeTab === 'issues' && (
+            <Card><TableComponent columns={issueCols} data={issues} caption="Active compliance issues" /></Card>
+          )}
         </div>
       )}
 
-      <Modal
-        isOpen={issueModalOpen}
-        onClose={closeIssueModal}
-        title="Post Issue"
-      >
-        <div className="qa-compliance__modal-form">
-          <InputField
-            label="Document ID"
-            value={issueDocId}
-            onChange={setIssueDocId}
-            placeholder="e.g. DOC-001"
-            required
+      {/* Reject Modal */}
+      <Modal isOpen={rejectModalOpen} onClose={() => setRejectModalOpen(false)} title="Decline Document">
+        <div style={{ padding: '10px', color: '#000' }}>
+          <p style={{ color: '#000' }}>Declining: <strong>{selectedDocForReject?.documentName}</strong></p>
+          <textarea
+            style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px', minHeight: '100px', marginTop: '15px', color: '#000' }}
+            placeholder="Reason for rejection..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
           />
-          <Dropdown
-            label="Severity"
-            value={issueSeverity}
-            onChange={(value) =>
-              setIssueSeverity(value as DocumentIssue["severity"])
-            }
-            options={SEVERITY_OPTIONS}
-          />
-          <InputField
-            label="Issue title"
-            value={issueTitle}
-            onChange={setIssueTitle}
-            placeholder="e.g. Missing signature"
-            required
-          />
-          <label className="system-settings__field">
-            <span className="system-settings__field-label">Description</span>
-            <textarea
-              className="system-settings__textarea"
-              value={issueDescription}
-              onChange={(e) => setIssueDescription(e.target.value)}
-              rows={4}
-            />
-          </label>
-
-          {issueError && (
-            <p className="qa-compliance__modal-error">{issueError}</p>
-          )}
-
-          <div className="qa-compliance__modal-actions">
-            <Button
-              text="Cancel"
-              variant="secondary"
-              onClick={closeIssueModal}
-            />
-            <Button text="Post" variant="primary" onClick={postIssue} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+            <Button text="Cancel" variant="secondary" onClick={() => setRejectModalOpen(false)} />
+            <Button text="Submit Rejection" variant="primary" onClick={submitRejection} disabled={processing || !rejectReason.trim()} />
           </div>
         </div>
       </Modal>
 
-      <Modal
-        isOpen={rejectModalOpen}
-        onClose={closeRejectModal}
-        title="Reject Document"
-      >
-        <div className="qa-compliance__modal-form">
-          <InputField
-            label="Document ID"
-            value={rejectDocId}
-            onChange={setRejectDocId}
-            placeholder="e.g. DOC-001"
-            required
+      {/* Issue Modal */}
+      <Modal isOpen={issueModalOpen} onClose={() => setIssueModalOpen(false)} title="Report Compliance Issue">
+        <div style={{ padding: '10px', color: '#000', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <p style={{ color: '#000' }}>Report issue for: <strong>{selectedDocForIssue?.documentName}</strong> ({selectedDocForIssue?.learner})</p>
+          <InputField label="Issue Title" value={issueTitle} onChange={setIssueTitle} placeholder="e.g. Invalid Format" required />
+          <Dropdown label="Severity" value={issueSeverity} onChange={(v) => setIssueSeverity(v as any)} options={SEVERITY_OPTIONS} />
+          <textarea
+            style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px', minHeight: '100px', color: '#000' }}
+            placeholder="Detailed description..."
+            value={issueDescription}
+            onChange={(e) => setIssueDescription(e.target.value)}
           />
-
-          <label className="system-settings__field">
-            <span className="system-settings__field-label">Reason</span>
-            <textarea
-              className="system-settings__textarea"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              rows={4}
-            />
-          </label>
-
-          {rejectError && (
-            <p className="qa-compliance__modal-error">{rejectError}</p>
-          )}
-
-          <div className="qa-compliance__modal-actions">
-            <Button
-              text="Cancel"
-              variant="secondary"
-              onClick={closeRejectModal}
-            />
-            <Button text="Reject" variant="primary" onClick={submitRejection} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <Button text="Cancel" variant="secondary" onClick={() => setIssueModalOpen(false)} />
+            <Button text="Publish Issue" variant="primary" onClick={postIssue} disabled={processing || !issueTitle.trim()} />
           </div>
         </div>
       </Modal>
