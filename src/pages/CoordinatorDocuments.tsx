@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, Trash2 } from "lucide-react";
+import { Eye, Trash2, CheckCircle } from "lucide-react";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import Modal from "../components/Modal";
@@ -26,6 +26,9 @@ type DocumentRecord = {
   subject?: string;
   comment?: string;
   document_type?: string;
+  review_status?: string;
+  review_comment?: string;
+  review_owner_role?: string;
 };
 
 const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
@@ -34,12 +37,6 @@ const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
   { key: "TERTIARY_QUALIFICATION", label: "Tertiary Qualification" },
   { key: "PROOF_OF_ADDRESS", label: "Proof of Address" },
   { key: "OTHER", label: "Other" },
-];
-
-const ROLE_OPTIONS: DropdownOption[] = [
-  { label: "Admin", value: "Admin" },
-  { label: "Learner", value: "Learner" },
-  { label: "Super Admin", value: "Super Admin" },
 ];
 
 const TYPE_PREFIX = "__DOC_TYPE__";
@@ -78,8 +75,9 @@ type CurrentTableRow = {
   id: string;
   source: string;
   documentName: string;
-  subject: string;
+  uploadedBy: string;
   comment: string;
+  status: string;
   uploadedOn: string;
   doc: DocumentRecord;
 };
@@ -87,6 +85,7 @@ type CurrentTableRow = {
 export default function CoordinatorDocuments(): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState<DocumentTypeKey>("ID_COPY");
   const [subject, setSubject] = useState("");
@@ -96,23 +95,36 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   const [pendingDelete, setPendingDelete] = useState<DocumentRecord | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
-  const [roleModalDocument, setRoleModalDocument] = useState<DocumentRecord | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [editingRoles, setEditingRoles] = useState<string[]>([]);
-  const [documentRoleTargets, setDocumentRoleTargets] = useState<Record<string, string[]>>({});
+  const [reviewingDocument, setReviewingDocument] = useState<DocumentRecord | null>(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [processing, setProcessing] = useState(false);
 
-  const fetchDocuments = async () => {
+  const fetchData = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch documents
+      const { data: docData, error: docError } = await supabase
         .from("documents")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setDocuments(data ?? []);
+      if (docError) throw docError;
+      setDocuments(docData ?? []);
+
+      // Fetch profiles to map user_id to name
+      const { data: profData, error: profError } = await supabase
+        .from("profiles")
+        .select("id, full_name");
+
+      if (profError) throw profError;
+      const profileMap: Record<string, string> = {};
+      (profData || []).forEach(p => {
+        profileMap[p.id] = p.full_name?.split(' ')[0] || 'Unknown';
+      });
+      setProfiles(profileMap);
+
     } catch (error: unknown) {
       setFeedback(
-        `Failed to load documents: ${
+        `Failed to load data: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
       );
@@ -120,7 +132,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   };
 
   useEffect(() => {
-    fetchDocuments();
+    fetchData();
   }, []);
 
   const handleChooseFile = () => {
@@ -148,6 +160,30 @@ export default function CoordinatorDocuments(): React.JSX.Element {
     if (!pendingDelete) return;
     await executeDelete(pendingDelete.id);
     setPendingDelete(null);
+  };
+
+  const handleReview = async (status: 'approved' | 'declined') => {
+    if (!reviewingDocument) return;
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ 
+          review_status: status, 
+          review_comment: reviewComment 
+        })
+        .eq("id", reviewingDocument.id);
+
+      if (error) throw error;
+      setSnackbarMessage(`Document ${status === 'approved' ? 'Approved' : 'Declined'} successfully.`);
+      fetchData();
+      setReviewingDocument(null);
+      setReviewComment("");
+    } catch (err: any) {
+      setSnackbarMessage(`Failed to review: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const handleUpload = async () => {
@@ -199,7 +235,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             document_type: selectedType,
             storage_path: filePath,
             review_owner_role: 'super_admin',
-            review_status: 'approved' // Admin docs are pre-approved
+            review_status: 'approved' 
           },
         ])
         .select("*")
@@ -214,6 +250,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
       if (fileInputRef.current) fileInputRef.current.value = "";
       setFeedback("Upload complete.");
       setSnackbarMessage("Document uploaded successfully.");
+      fetchData(); // Refresh to get uploader name
     } catch (error: unknown) {
       setFeedback(
         `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -229,19 +266,37 @@ export default function CoordinatorDocuments(): React.JSX.Element {
         id: doc.id,
         source: DOCUMENT_TYPES.find(t => t.key === (doc.document_type || resolveDocumentType(doc.file_name)))?.label || "Other",
         documentName: stripTypePrefix(doc.file_name),
-        subject: doc.subject || "No subject",
+        uploadedBy: profiles[doc.user_id] || "System",
         comment: doc.comment || "No comment",
+        status: doc.review_status || "pending",
         uploadedOn: new Date(doc.created_at).toLocaleString(),
         doc: doc,
       })),
-    [documents]
+    [documents, profiles]
   );
 
   const currentColumns: TableColumn<CurrentTableRow>[] = [
     { key: "source", header: "Type" },
     { key: "documentName", header: "Document" },
-    { key: "subject", header: "Subject" },
+    { key: "uploadedBy", header: "Uploaded By" },
     { key: "comment", header: "Comment" },
+    { 
+      key: "status", 
+      header: "Status",
+      render: (row: CurrentTableRow) => (
+        <span className={`status-tag status-${row.status.toLowerCase()}`} style={{
+          padding: '4px 8px',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          backgroundColor: row.status === 'approved' ? '#d1fae5' : row.status === 'declined' ? '#fee2e2' : '#fef3c7',
+          color: row.status === 'approved' ? '#065f46' : row.status === 'declined' ? '#991b1b' : '#92400e',
+          textTransform: 'uppercase'
+        }}>
+          {row.status}
+        </span>
+      )
+    },
     { key: "uploadedOn", header: "Uploaded On" },
     {
       key: "actions",
@@ -254,6 +309,16 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             title="View"
           >
             <Eye size={20} />
+          </span>
+          <span
+            style={{ cursor: "pointer", color: "#10b981" }}
+            onClick={() => {
+              setReviewingDocument(row.doc);
+              setReviewComment(row.doc.review_comment || "");
+            }}
+            title="Review"
+          >
+            <CheckCircle size={20} />
           </span>
           <span
             style={{ cursor: "pointer", color: "var(--secondary-color)" }}
@@ -306,7 +371,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
             <div className="form-group" style={{ marginBottom: '15px' }}>
               <label className="form-label">Comment</label>
               <textarea
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px' }}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '80px', color: '#000' }}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Add a comment about this document"
@@ -340,16 +405,60 @@ export default function CoordinatorDocuments(): React.JSX.Element {
         </aside>
       </div>
 
+      {/* Review Modal */}
+      {reviewingDocument && (
+        <Modal
+          isOpen={Boolean(reviewingDocument)}
+          onClose={() => setReviewingDocument(null)}
+          title="Review Document"
+        >
+          <div style={{ padding: '10px', color: '#000' }}>
+            <p style={{ color: '#000 !important' }}><strong style={{ color: '#000 !important' }}>Document:</strong> <span style={{ color: '#000 !important' }}>{stripTypePrefix(reviewingDocument.file_name)}</span></p>
+            <p style={{ marginTop: '10px', color: '#000 !important' }}>Add a comment for the user (optional if approving, required if declining):</p>
+            <textarea
+              style={{ 
+                width: '100%', 
+                padding: '10px', 
+                borderRadius: '6px', 
+                border: '1px solid #ddd', 
+                minHeight: '100px',
+                marginTop: '10px',
+                color: '#000',
+                backgroundColor: '#fff'
+              }}
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder="Enter your feedback here..."
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <Button text="Cancel" variant="ghost" onClick={() => setReviewingDocument(null)} />
+              <Button 
+                text="Decline" 
+                variant="secondary" 
+                onClick={() => handleReview('declined')}
+                disabled={processing || !reviewComment.trim()} 
+              />
+              <Button 
+                text="Approve" 
+                variant="primary" 
+                onClick={() => handleReview('approved')}
+                disabled={processing}
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {pendingDelete && (
         <Modal
           isOpen={Boolean(pendingDelete)}
           onClose={() => setPendingDelete(null)}
           title="Confirm Deletion"
         >
-          <p>Are you sure you want to delete <strong>{stripTypePrefix(pendingDelete.file_name)}</strong>?</p>
+          <p style={{ color: '#000' }}>Are you sure you want to delete <strong>{stripTypePrefix(pendingDelete.file_name)}</strong>?</p>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
             <Button text="Cancel" variant="secondary" onClick={() => setPendingDelete(null)} />
-            <Button text="Delete" variant="primary" onClick={confirmDelete} />
+            <Button text="Delete" variant="primary" onClick={confirmDelete} disabled={processing} />
           </div>
         </Modal>
       )}

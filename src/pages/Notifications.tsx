@@ -36,6 +36,7 @@ const Notifications: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [processing, setProcessing] = useState<boolean>(false);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
+  const [dbRole, setDbRole] = useState<string>("");
   
   // Modal states
   const [showViewModal, setShowViewModal] = useState<boolean>(false);
@@ -49,25 +50,50 @@ const Notifications: React.FC = () => {
   const [formDetails, setFormDetails] = useState<string>("");
   const [formCanReply, setFormCanReply] = useState<boolean>(false);
 
-  const isSuperAdmin = user?.user_metadata?.role === 'super_admin' || user?.email === 'office@admin.com';
+  // Reply state
+  const [replyMessage, setReplyMessage] = useState<string>("");
+  const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
+
+  // Determine if Super Admin using DB role
+  const isSuperAdmin = dbRole === 'super_admin' || user?.email === 'office@admin.com';
+
+  useEffect(() => {
+    if (user) {
+      fetchUserRole();
+    }
+  }, [user]);
+
+  const fetchUserRole = async () => {
+    try {
+      const { data } = await supabase.from('profiles').select('role').eq('id', user?.id).single();
+      if (data) setDbRole(data.role);
+    } catch (err) {
+      console.error("Error fetching role:", err);
+    }
+  };
 
   const fetchNotifications = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      let query = supabase.from('notifications').select('*, profiles:user_id(full_name)');
-      
-      if (!isSuperAdmin) {
+      // 1. Fetch notifications
+      let query = supabase.from('notifications').select('*');
+      if (dbRole !== 'super_admin' && user?.email !== 'office@admin.com') {
         query = query.eq('user_id', user.id);
       }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data: notifs, error: nErr } = await query.order('created_at', { ascending: false });
+      if (nErr) throw nErr;
 
-      if (error) throw error;
-      
-      const formatted: Notification[] = (data || []).map((n: any) => ({
+      // 2. Fetch profiles to map names manually (avoids the schema cache error if FK is missing)
+      const { data: profs } = await supabase.from('profiles').select('id, full_name');
+      const profileMap = (profs || []).reduce((acc: any, p) => {
+        acc[p.id] = p.full_name;
+        return acc;
+      }, {});
+
+      const formatted: Notification[] = (notifs || []).map((n: any) => ({
         ...n,
-        recipient_name: n.profiles?.full_name || 'Unknown User'
+        recipient_name: profileMap[n.user_id] || 'Unknown User'
       }));
       
       setNotifications(formatted);
@@ -80,7 +106,6 @@ const Notifications: React.FC = () => {
   };
 
   const fetchProfiles = async () => {
-    if (!isSuperAdmin) return;
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -94,15 +119,57 @@ const Notifications: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchNotifications();
-    fetchProfiles();
-  }, [user]);
+    if (dbRole) {
+      fetchNotifications();
+      if (isSuperAdmin) fetchProfiles();
+    }
+  }, [user, dbRole]);
 
   const handleOpenView = (notification: Notification) => {
     setSelectedNotification(notification);
     setShowViewModal(true);
+    setShowReplyForm(false);
+    setReplyMessage("");
     if (!notification.read && !isSuperAdmin) {
       markAsRead(notification.id);
+    }
+  };
+
+  const handleSendReply = async () => {
+    if (!selectedNotification || !selectedNotification.created_by) {
+      setSnackbarMessage("Cannot reply: Sender information missing.");
+      return;
+    }
+    if (!replyMessage.trim()) {
+      setSnackbarMessage("Please enter a reply message.");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      const validCreatedBy = user?.id && isUuid(user.id) ? user.id : null;
+
+      const payload = {
+        user_id: selectedNotification.created_by,
+        message: `Re: ${selectedNotification.message}`,
+        details: replyMessage,
+        can_reply: true, // Allow them to reply back if needed
+        created_by: validCreatedBy,
+      };
+
+      const { error } = await supabase.from('notifications').insert([payload]);
+      if (error) throw error;
+
+      setSnackbarMessage("Reply sent successfully.");
+      setShowReplyForm(false);
+      setReplyMessage("");
+      setShowViewModal(false);
+      fetchNotifications();
+    } catch (err: any) {
+      setSnackbarMessage(`Failed to send reply: ${err.message}`);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -146,7 +213,6 @@ const Notifications: React.FC = () => {
 
     setProcessing(true);
     try {
-      // Check if current user ID is a valid UUID before sending to DB
       const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
       const validCreatedBy = user?.id && isUuid(user.id) ? user.id : null;
 
@@ -261,15 +327,53 @@ const Notifications: React.FC = () => {
 
       {/* View Modal */}
       {showViewModal && selectedNotification && (
-        <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title="Notification Details">
-          <div style={{ padding: '20px' }}>
-            <h3 style={{ marginBottom: '10px' }}>{selectedNotification.message}</h3>
-            {selectedNotification.details && <p style={{ marginBottom: '20px' }}>{selectedNotification.details}</p>}
-            <p style={{ fontSize: '12px', color: '#666' }}>Sent: {new Date(selectedNotification.created_at).toLocaleString()}</p>
-            {selectedNotification.can_reply && (
-              <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
-                <p><em>Replies are enabled for this notification.</em></p>
-                <Button text="Reply" onClick={() => setSnackbarMessage("Reply feature coming soon!")} variant="secondary" />
+        <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title="Notification">
+          <div style={{ padding: '20px', color: '#000' }}>
+            <div style={{ marginBottom: '20px', borderBottom: '1px solid #eee', paddingBottom: '15px' }}>
+              <h3 style={{ marginBottom: '10px', color: '#000', fontWeight: 'bold' }}>{selectedNotification.message}</h3>
+              <p style={{ color: '#000', whiteSpace: 'pre-wrap', lineHeight: '1.5', fontSize: '16px' }}>
+                {selectedNotification.details || "No additional details provided."}
+              </p>
+              <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+                Received: {new Date(selectedNotification.created_at).toLocaleString()}
+              </p>
+            </div>
+            
+            {selectedNotification.can_reply && selectedNotification.created_by && (
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#000' }}>
+                  Your Reply:
+                </label>
+                <textarea
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    borderRadius: '8px', 
+                    border: '2px solid #ddd', 
+                    minHeight: '120px',
+                    color: '#000',
+                    fontSize: '14px',
+                    marginBottom: '15px'
+                  }}
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your response here..."
+                />
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <Button text="Cancel" onClick={() => setShowViewModal(false)} variant="ghost" />
+                  <Button 
+                    text={processing ? "Sending..." : "Send Reply"} 
+                    onClick={handleSendReply} 
+                    variant="primary" 
+                    disabled={processing || !replyMessage.trim()} 
+                  />
+                </div>
+              </div>
+            )}
+            
+            {!selectedNotification.can_reply && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                <Button text="Close" onClick={() => setShowViewModal(false)} variant="primary" />
               </div>
             )}
           </div>
@@ -292,7 +396,7 @@ const Notifications: React.FC = () => {
             <div className="form-group">
               <label className="form-label">Full Details</label>
               <textarea 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '100px' }}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', minHeight: '100px', color: '#000' }}
                 value={formDetails}
                 onChange={(e) => setFormDetails(e.target.value)}
                 placeholder="Enter full notification content here..."
@@ -300,7 +404,7 @@ const Notifications: React.FC = () => {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input type="checkbox" id="can_reply" checked={formCanReply} onChange={(e) => setFormCanReply(e.target.checked)} />
-              <label htmlFor="can_reply" style={{ cursor: 'pointer' }}>Allow recipient to reply</label>
+              <label htmlFor="can_reply" style={{ cursor: 'pointer', color: '#000' }}>Allow recipient to reply</label>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
               <Button text="Cancel" onClick={() => setShowManageModal(false)} variant="secondary" />
@@ -314,7 +418,7 @@ const Notifications: React.FC = () => {
       {showDeleteModal && (
         <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Confirm Delete">
           <div style={{ padding: '10px' }}>
-            <p>Are you sure you want to delete this notification sent to <strong>{selectedNotification?.recipient_name}</strong>?</p>
+            <p style={{ color: '#000' }}>Are you sure you want to delete this notification sent to <strong>{selectedNotification?.recipient_name}</strong>?</p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
               <Button text="Cancel" onClick={() => setShowDeleteModal(false)} variant="secondary" />
               <Button text={processing ? "Deleting..." : "Delete"} onClick={confirmDelete} variant="primary" disabled={processing} />

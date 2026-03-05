@@ -9,6 +9,7 @@ interface AddPlacementModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  editPlacement?: any; // If provided, we are in edit mode
 }
 
 interface Option {
@@ -16,7 +17,7 @@ interface Option {
   value: string;
 }
 
-const AddPlacementModal: React.FC<AddPlacementModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const AddPlacementModal: React.FC<AddPlacementModalProps> = ({ isOpen, onClose, onSuccess, editPlacement }) => {
   const [learners, setLearners] = useState<Option[]>([]);
   const [hosts, setHosts] = useState<Option[]>([]);
   
@@ -33,31 +34,27 @@ const AddPlacementModal: React.FC<AddPlacementModalProps> = ({ isOpen, onClose, 
   useEffect(() => {
     if (isOpen) {
       fetchInitialData();
+      if (editPlacement) {
+        setSelectedLearner(editPlacement.learner_id || "");
+        setSelectedHost(editPlacement.host_id || "");
+        setProgram(editPlacement.program || "");
+        setStartDate(editPlacement.startDate || "");
+        setEndDate(editPlacement.endDate || "");
+        setStatus(editPlacement.status || "Active");
+      } else {
+        resetForm();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, editPlacement]);
 
   const fetchInitialData = async () => {
     try {
-      // Fetch Learners
-      const { data: learnerData, error: learnerErr } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .eq("role", "learner");
-      
-      if (learnerErr) throw learnerErr;
-      setLearners((learnerData || []).map(l => ({ 
-        label: `${l.full_name || 'Unnamed'} (${l.email})`, 
-        value: l.id 
-      })));
+      const { data: learnerData } = await supabase.from("profiles").select("id, full_name, email").eq("role", "learner");
+      setLearners((learnerData || []).map(l => ({ label: `${l.full_name} (${l.email})`, value: l.id })));
 
-      // Fetch Hosts
-      const { data: hostData, error: hostErr } = await supabase
-        .from("host_organizations")
-        .select("id, name");
-      
-      if (hostErr) throw hostErr;
+      const { data: hostData } = await supabase.from("host_organizations").select("id, name");
       setHosts((hostData || []).map(h => ({ label: h.name, value: h.id })));
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error fetching modal data:", err);
     }
   };
@@ -74,24 +71,26 @@ const AddPlacementModal: React.FC<AddPlacementModalProps> = ({ isOpen, onClose, 
 
     try {
       const selectedHostName = hosts.find(h => h.value === selectedHost)?.label || "";
-      
-      const { error: insertErr } = await supabase
-        .from("learner_placements")
-        .insert([{
-          learner_id: selectedLearner,
-          host_name: selectedHostName,
-          host_id: selectedHost,
-          program: program,
-          start_date: startDate || null,
-          end_date: endDate || null,
-          status: status
-        }]);
+      const payload = {
+        learner_id: selectedLearner,
+        host_name: selectedHostName,
+        host_id: selectedHost,
+        program: program,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        status: status
+      };
 
-      if (insertErr) throw insertErr;
+      if (editPlacement) {
+        const { error: updateErr } = await supabase.from("learner_placements").update(payload).eq("id", editPlacement.id);
+        if (updateErr) throw updateErr;
+      } else {
+        const { error: insertErr } = await supabase.from("learner_placements").insert([payload]);
+        if (insertErr) throw insertErr;
+      }
 
       onSuccess();
       onClose();
-      resetForm();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -109,74 +108,35 @@ const AddPlacementModal: React.FC<AddPlacementModalProps> = ({ isOpen, onClose, 
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add New Placement">
+    <Modal isOpen={isOpen} onClose={onClose} title={editPlacement ? "Edit Placement" : "Add New Placement"}>
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '10px' }}>
-        <Dropdown
-          label="Learner"
-          value={selectedLearner}
-          onChange={setSelectedLearner}
-          options={learners}
-          placeholder="Select a learner"
-          required
-        />
-
-        <Dropdown
-          label="Host Organization"
-          value={selectedHost}
-          onChange={setSelectedHost}
-          options={hosts}
-          placeholder="Select a host"
-          required
-        />
-
-        <InputField
-          label="Program / Course"
-          value={program}
-          onChange={setProgram}
-          placeholder="e.g. Software Development"
-          required
-        />
-
+        <Dropdown label="Learner" value={selectedLearner} onChange={setSelectedLearner} options={learners} placeholder="Select a learner" required />
+        <Dropdown label="Host Organization" value={selectedHost} onChange={setSelectedHost} options={hosts} placeholder="Select a host" required />
+        <InputField label="Program / Course" value={program} onChange={setProgram} placeholder="e.g. Software Development" required />
+        
         <div style={{ display: 'flex', gap: '10px' }}>
           <div style={{ flex: 1 }}>
-            <label className="form-label">Start Date</label>
-            <input 
-              type="date" 
-              className="form-input" 
-              value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-            />
+            <label className="form-label" style={{ color: '#000' }}>Start Date</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
           </div>
           <div style={{ flex: 1 }}>
-            <label className="form-label">End Date</label>
-            <input 
-              type="date" 
-              className="form-input" 
-              value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-            />
+            <label className="form-label" style={{ color: '#000' }}>End Date</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
           </div>
         </div>
 
-        <Dropdown
-          label="Status"
-          value={status}
-          onChange={setStatus}
-          options={[
-            { label: "Active", value: "Active" },
-            { label: "Pending", value: "Pending" },
-            { label: "Suspended", value: "Suspended" },
-            { label: "Cancelled", value: "Cancelled" }
-          ]}
-        />
+        <Dropdown label="Status" value={status} onChange={setStatus} options={[
+          { label: "Active", value: "Active" },
+          { label: "Pending", value: "Pending" },
+          { label: "Suspended", value: "Suspended" },
+          { label: "Cancelled", value: "Cancelled" }
+        ]} />
 
         {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
           <Button text="Cancel" onClick={onClose} variant="secondary" type="button" />
-          <Button text={loading ? "Saving..." : "Add Placement"} variant="primary" type="submit" disabled={loading} />
+          <Button text={loading ? "Saving..." : (editPlacement ? "Update Placement" : "Add Placement")} variant="primary" type="submit" disabled={loading} />
         </div>
       </form>
     </Modal>

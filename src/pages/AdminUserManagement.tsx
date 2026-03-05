@@ -119,11 +119,18 @@ const AdminUserManagement: React.FC = () => {
 
   const handleSaveNewUser = async () => {
     const trimmedFullName = newFullName.trim();
-    const trimmedEmail = newEmail.trim();
+    const trimmedEmail = newEmail.trim().toLowerCase();
     const trimmedRole = newRole.trim();
 
     if (!trimmedFullName || !trimmedEmail || !trimmedRole) {
       setAddUserError("Please fill in Full Name, Email, and Role.");
+      return;
+    }
+
+    // Basic Email Regex for validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setAddUserError("Please enter a valid email address (e.g., user@example.com).");
       return;
     }
 
@@ -134,6 +141,8 @@ const AdminUserManagement: React.FC = () => {
       const password = generateSystemPassword();
       
       // 1. Create the user in Auth
+      // Note: In a production app, this should ideally be an Edge Function 
+      // using the service_role key to avoid session issues.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password: password,
@@ -141,14 +150,21 @@ const AdminUserManagement: React.FC = () => {
           data: {
             full_name: trimmedFullName,
             role: trimmedRole,
-          }
+          },
+          // Prevent auto-login so the Admin doesn't lose their session
+          emailRedirectTo: window.location.origin,
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        if (authError.message.includes("validate email")) {
+          throw new Error("The email format is invalid. Please double-check for typos or extra spaces.");
+        }
+        throw authError;
+      }
 
       if (authData.user) {
-        // 2. Profiles table is usually handled by a trigger, but we'll upsert to be sure
+        // 2. Profiles table sync
         const { error: profileError } = await supabase.from("profiles").upsert({
           id: authData.user.id,
           full_name: trimmedFullName,
@@ -174,12 +190,12 @@ const AdminUserManagement: React.FC = () => {
           password,
         });
 
-        showSnackbar(`User ${trimmedFullName} created successfully!`);
+        showSnackbar(`User ${trimmedFullName} account created!`);
         fetchUsers(); // Refresh list
       }
     } catch (err: any) {
       console.error("Error creating user:", err);
-      setAddUserError(`Failed to create user: ${err.message}`);
+      setAddUserError(err.message || "Failed to create user.");
     } finally {
       setProcessing(false);
     }

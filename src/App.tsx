@@ -160,18 +160,17 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setUser(session.user);
           setLoading(false);
 
-          // Always check role on login OR if we are on a potentially wrong dashboard
+          // Only force redirect on login/root OR if they are on a DASHBOARD that doesn't match their role
           const currentPath = window.location.pathname;
           if (
             currentPath === "/" ||
             currentPath === "/login" ||
-            currentPath.startsWith("/learner")
+            currentPath.endsWith("/dashboard")
           ) {
             const effectiveRole = await getEffectiveRole(session.user);
             const targetPath = getDefaultPathForRole(effectiveRole);
             
-            // Redirect if we are on the wrong dashboard
-            if (currentPath !== targetPath && (currentPath === "/login" || currentPath === "/" || currentPath.startsWith("/learner"))) {
+            if (currentPath !== targetPath) {
                navigate(targetPath);
             }
           }
@@ -255,7 +254,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (
           currentPath === "/" ||
           currentPath === "/login" ||
-          (currentPath.startsWith("/learner") && effectiveRole !== 'learner')
+          (currentPath.endsWith("/dashboard") && currentPath !== targetPath)
         ) {
           navigate(targetPath);
         }
