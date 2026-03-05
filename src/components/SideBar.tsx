@@ -83,7 +83,7 @@ const SideBar: React.FC = () => {
       super_admin: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
         { label: "PLACEMENTS", path: "/super-admin/placements" },
-        { label: "SUPER ADMIN DOCUMENTS", path: "/super-admin/documents" },
+        { label: "DOCUMENTS", path: "/super-admin/documents" },
         { label: "HOSTS", path: "/super-admin/hosts" },
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
@@ -101,7 +101,7 @@ const SideBar: React.FC = () => {
       programme_coordinator: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
         { label: "PLACEMENTS", path: "/super-admin/placements" },
-        { label: "SUPER ADMIN DOCUMENTS", path: "/super-admin/documents" },
+        { label: "DOCUMENTS", path: "/super-admin/documents" },
         { label: "HOSTS", path: "/super-admin/hosts" },
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },

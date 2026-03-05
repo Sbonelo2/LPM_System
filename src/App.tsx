@@ -90,9 +90,8 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     email?: string;
     user_metadata?: { role?: string; full_name?: string };
   }) => {
-    const metadataRole = normalizeRole(sessionUser.user_metadata?.role);
-
     try {
+      // ALWAYS check DB for the absolute source of truth
       const { data, error } = (await withTimeout(
         supabase
           .from("profiles")
@@ -108,44 +107,43 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (!error && data?.role) return normalizeRole(String(data.role));
 
-      // If no profile exists, create one with default role
-      if (error || !data) {
-        const defaultRole = metadataRole ?? "learner";
+      // If no profile exists, create one with metadata role or default
+      const metadataRole = normalizeRole(sessionUser.user_metadata?.role);
+      const defaultRole = metadataRole ?? "learner";
 
-        // Try to create profile
-        await supabase.from("profiles").upsert(
+      // Try to create profile
+      await supabase.from("profiles").upsert(
+        {
+          id: sessionUser.id,
+          email: sessionUser.email ?? "",
+          full_name:
+            sessionUser.user_metadata?.full_name ??
+            sessionUser.email?.split("@")[0] ??
+            "User",
+          role: defaultRole,
+        },
+        { onConflict: "id" },
+      );
+
+      // If role is learner, also create learner profile
+      if (defaultRole === "learner") {
+        await supabase.from("learner_profiles").upsert(
           {
-            id: sessionUser.id,
-            email: sessionUser.email ?? "",
-            full_name:
+            user_id: sessionUser.id,
+            learner_name:
               sessionUser.user_metadata?.full_name ??
               sessionUser.email?.split("@")[0] ??
-              "User",
-            role: defaultRole,
+              "Learner",
+            email: sessionUser.email ?? "",
+            programme: "Software Development",
           },
-          { onConflict: "id" },
+          { onConflict: "user_id" },
         );
-
-        // If role is learner, also create learner profile
-        if (defaultRole === "learner") {
-          await supabase.from("learner_profiles").upsert(
-            {
-              user_id: sessionUser.id,
-              learner_name:
-                sessionUser.user_metadata?.full_name ??
-                sessionUser.email?.split("@")[0] ??
-                "Learner",
-              email: sessionUser.email ?? "",
-              programme: "Software Development",
-            },
-            { onConflict: "user_id" },
-          );
-        }
       }
+      return defaultRole;
     } catch {
-      // ignore
+      return normalizeRole(sessionUser.user_metadata?.role) ?? "learner";
     }
-    return metadataRole ?? "learner";
   };
 
   useEffect(() => {
@@ -153,43 +151,39 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       async (_event, session) => {
         console.log("Auth state changed:", session?.user);
 
-        // Check if we have a dummy token - if so, don't overwrite with Supabase session
-        const superAdminToken = localStorage.getItem("super-admin-token");
-        const coordinatorToken = localStorage.getItem("coordinator-token");
-        const adminToken = localStorage.getItem("admin-token");
-        const qaToken = localStorage.getItem("qa-token");
-
         if (session?.user) {
           localStorage.removeItem("admin-token");
           localStorage.removeItem("super-admin-token");
           localStorage.removeItem("coordinator-token");
           localStorage.removeItem("qa-token");
-        } else if (
-          superAdminToken ||
-          coordinatorToken ||
-          adminToken ||
-          qaToken
-        ) {
-          console.log(
-            "Dummy token exists, ignoring Supabase auth state change",
-          );
-          return; // Don't overwrite dummy user
-        }
+          
+          setUser(session.user);
+          setLoading(false);
 
-        setUser(session?.user || null);
-        setLoading(false);
-        if (
-          session?.user &&
-          (window.location.pathname === "/" ||
-            window.location.pathname === "/login")
-        ) {
-          const effectiveRole = await getEffectiveRole(session.user);
-          navigate(getDefaultPathForRole(effectiveRole));
-        } else if (
-          !session?.user &&
-          window.location.pathname === "/dashboard"
-        ) {
-          navigate("/login");
+          // Always check role on login OR if we are on a potentially wrong dashboard
+          const currentPath = window.location.pathname;
+          if (
+            currentPath === "/" ||
+            currentPath === "/login" ||
+            currentPath.startsWith("/learner")
+          ) {
+            const effectiveRole = await getEffectiveRole(session.user);
+            const targetPath = getDefaultPathForRole(effectiveRole);
+            
+            // Redirect if we are on the wrong dashboard
+            if (currentPath !== targetPath && (currentPath === "/login" || currentPath === "/" || currentPath.startsWith("/learner"))) {
+               navigate(targetPath);
+            }
+          }
+        } else {
+          // No session - only clear if no dummy tokens
+          const hasDummy = localStorage.getItem("super-admin-token") || 
+                           localStorage.getItem("admin-token") ||
+                           localStorage.getItem("coordinator-token");
+          if (!hasDummy) {
+            setUser(null);
+            setLoading(false);
+          }
         }
       },
     );
@@ -249,17 +243,24 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Current session:", session?.user);
-      setUser(session?.user || null);
-      setLoading(false);
-      if (
-        session?.user &&
-        (window.location.pathname === "/" ||
-          window.location.pathname === "/login")
-      ) {
-        navigate(getDefaultPathForRole(session.user.user_metadata?.role));
-      } else if (!session?.user && window.location.pathname === "/dashboard") {
-        navigate("/login");
+      
+      if (session?.user) {
+        setUser(session.user);
+        setLoading(false);
+        
+        const currentPath = window.location.pathname;
+        const effectiveRole = await getEffectiveRole(session.user);
+        const targetPath = getDefaultPathForRole(effectiveRole);
+
+        if (
+          currentPath === "/" ||
+          currentPath === "/login" ||
+          (currentPath.startsWith("/learner") && effectiveRole !== 'learner')
+        ) {
+          navigate(targetPath);
+        }
+      } else {
+        setLoading(false);
       }
     };
     getUserSession();
@@ -718,7 +719,9 @@ function App() {
             path="/super-admin/users"
             element={
               <ProtectedRoute>
-                <AdminUserManagement />
+                <MainLayout>
+                  <AdminUserManagement />
+                </MainLayout>
               </ProtectedRoute>
             }
           />

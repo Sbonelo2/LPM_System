@@ -270,7 +270,7 @@ export default function CoordinatorDocuments(): React.JSX.Element {
   return (
     <div className="coordinator-documents-page">
       <div className="coordinator-documents-header">
-        <h2>SUPER ADMIN DOCUMENTS</h2>
+        <h2>SUPER ADMIN</h2>
       </div>
 
       <Snackbar
@@ -295,14 +295,6 @@ export default function CoordinatorDocuments(): React.JSX.Element {
           <Card className="coordinator-upload-panel">
             <h3 className="coordinator-upload-title">UPLOAD NEW DOCUMENT</h3>
             
-            <Dropdown
-              label="Select Document Type"
-              value={selectedType}
-              onChange={(val) => setSelectedType(val as DocumentTypeKey)}
-              options={DOCUMENT_TYPES.map(t => ({ label: t.label, value: t.key }))}
-              disabled={uploading}
-            />
-
             <InputField
               label="Subject"
               value={subject}

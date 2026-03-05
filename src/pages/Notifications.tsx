@@ -146,12 +146,16 @@ const Notifications: React.FC = () => {
 
     setProcessing(true);
     try {
+      // Check if current user ID is a valid UUID before sending to DB
+      const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+      const validCreatedBy = user?.id && isUuid(user.id) ? user.id : null;
+
       const payload = {
         user_id: formRecipient,
         message: formMessage,
         details: formDetails,
         can_reply: formCanReply,
-        created_by: user?.id,
+        created_by: validCreatedBy,
       };
 
       if (selectedNotification) {

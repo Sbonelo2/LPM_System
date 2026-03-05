@@ -1,4 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../services/supabaseClient";
+import TableComponent, { type TableColumn } from "../components/TableComponent";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import Snackbar from "../components/Snackbar";
+import AddPlacementModal from "../components/AddPlacementModal";
 import "./ProgrammeCoordinatorPlacements.css";
 
 interface Placement {
@@ -6,137 +12,164 @@ interface Placement {
   learner: string;
   host: string;
   program: string;
-  status: "Active" | "Inactive" | "Pending" | "Suspended" | "Cancelled";
+  status: string;
   startDate: string;
   endDate: string;
 }
 
 const ProgrammeCoordinatorPlacements: React.FC = () => {
-  const [placements] = useState<Placement[]>([
-    {
-      id: "1",
-      learner: "John Smith",
-      host: "Tech Solutions Inc.",
-      program: "Software Development",
-      status: "Active",
-      startDate: "2024-01-15",
-      endDate: "2024-06-15",
-    },
-    {
-      id: "2",
-      learner: "Sarah Johnson",
-      host: "Digital Agency",
-      program: "Web Development",
-      status: "Pending",
-      startDate: "2024-02-01",
-      endDate: "2024-04-01",
-    },
-    {
-      id: "3",
-      learner: "Mike Davis",
-      host: "Creative Studios",
-      program: "Data Science",
-      status: "Suspended",
-      startDate: "2023-12-01",
-      endDate: "2024-01-15",
-    },
-    {
-      id: "4",
-      learner: "Emily Brown",
-      host: "Innovation Labs",
-      program: "Mobile Development",
-      status: "Cancelled",
-      startDate: "2023-10-01",
-      endDate: "2023-12-31",
-    },
-  ]);
+  const [placements, setPlacements] = useState<Placement[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  const handleAction = (placementId: string, action: string) => {
-    console.log(`Placement ${placementId}: ${action}`);
-    // Here you would typically make an API call to update the placement status
-  };
+  const fetchPlacements = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("learner_placements")
+        .select(`
+          id,
+          program,
+          status,
+          start_date,
+          end_date,
+          host_name,
+          profiles:learner_id (full_name, email)
+        `)
+        .order("created_at", { ascending: false });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "#16A34A";
-      case "Inactive":
-        return "#6B7280";
-      case "Pending":
-        return "#F59E0B";
-      case "Suspended":
-        return "#EF4444";
-      case "Cancelled":
-        return "#DC2626";
-      default:
-        return "#6B7280";
+      if (error) throw error;
+
+      const formatted: Placement[] = (data || []).map((p: any) => ({
+        id: p.id,
+        learner: p.profiles?.full_name || p.profiles?.email || "Unknown",
+        host: p.host_name || "Unknown Host",
+        program: p.program,
+        status: p.status,
+        startDate: p.start_date || "N/A",
+        endDate: p.end_date || "N/A",
+      }));
+
+      setPlacements(formatted);
+    } catch (err: any) {
+      console.error("Error fetching placements:", err);
+      setSnackbarMessage("Failed to load placements.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchPlacements();
+  }, []);
+
+  const handleAction = async (placementId: string, newStatus: string) => {
+    if (!newStatus) return;
+    try {
+      const { error } = await supabase
+        .from("learner_placements")
+        .update({ status: newStatus })
+        .eq("id", placementId);
+
+      if (error) throw error;
+      setSnackbarMessage(`Placement status updated to ${newStatus}`);
+      fetchPlacements();
+    } catch (err: any) {
+      setSnackbarMessage("Failed to update status.");
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "active": return "#16A34A";
+      case "pending": return "#F59E0B";
+      case "suspended": return "#EF4444";
+      case "cancelled": return "#DC2626";
+      default: return "#6B7280";
+    }
+  };
+
+  const columns: TableColumn<Placement>[] = [
+    { key: "learner", header: "Learner" },
+    { key: "host", header: "Host" },
+    { key: "program", header: "Program" },
+    { 
+      key: "status", 
+      header: "Status",
+      render: (row: Placement) => (
+        <span
+          className="status-badge"
+          style={{ 
+            backgroundColor: getStatusColor(row.status),
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '0.85rem',
+            fontWeight: 500
+          }}
+        >
+          {row.status}
+        </span>
+      )
+    },
+    { key: "startDate", header: "Start Date" },
+    { key: "endDate", header: "End Date" },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (row: Placement) => (
+        <select
+          className="action-select"
+          style={{ padding: '4px', borderRadius: '4px', border: '1px solid #ddd' }}
+          onChange={(e) => handleAction(row.id, e.target.value)}
+          value={row.status}
+        >
+          <option value="Pending">Pending</option>
+          <option value="Active">Active</option>
+          <option value="Suspended">Suspended</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      )
+    }
+  ];
+
   return (
     <div className="programme-coordinator-page">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 className="page-title">Super Admin - Placements</h1>
-        <button className="add-placement-btn" style={{
-          padding: '10px 20px',
-          backgroundColor: '#3b82f6',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-          fontWeight: 600
-        }}>
-          Add Placement
-        </button>
+        <Button 
+          text="Add Placement" 
+          onClick={() => setShowAddModal(true)} 
+          variant="primary" 
+        />
       </div>
 
-      <div className="placements-table-container">
-        <table className="placements-table">
-          <thead>
-            <tr>
-              <th>Learner</th>
-              <th>Host</th>
-              <th>Program</th>
-              <th>Status</th>
-              <th>Start Date</th>
-              <th>End Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {placements.map((placement) => (
-              <tr key={placement.id}>
-                <td>{placement.learner}</td>
-                <td>{placement.host}</td>
-                <td>{placement.program}</td>
-                <td>
-                  <span
-                    className="status-badge"
-                    style={{ backgroundColor: getStatusColor(placement.status) }}
-                  >
-                    {placement.status}
-                  </span>
-                </td>
-                <td>{placement.startDate}</td>
-                <td>{placement.endDate}</td>
-                <td>
-                  <select
-                    className="action-select"
-                    onChange={(e) => handleAction(placement.id, e.target.value)}
-                    defaultValue=""
-                  >
-                    <option value="">Select Action</option>
-                    <option value="pending">Pending</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="active">Active</option>
-                  </select>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Card>
+        {loading ? (
+          <p style={{ textAlign: 'center', padding: '20px' }}>Loading placements...</p>
+        ) : (
+          <TableComponent
+            columns={columns}
+            data={placements}
+            caption="Manage learner placements and host allocations"
+          />
+        )}
+      </Card>
+
+      <AddPlacementModal 
+        isOpen={showAddModal} 
+        onClose={() => setShowAddModal(false)} 
+        onSuccess={() => {
+          setSnackbarMessage("Placement created successfully!");
+          fetchPlacements();
+        }}
+      />
+
+      <Snackbar 
+        message={snackbarMessage} 
+        onClose={() => setSnackbarMessage("")} 
+      />
     </div>
   );
 };
