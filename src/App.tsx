@@ -323,7 +323,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     pathname.includes("/coordinator") ||
     pathname.includes("/qa") ||
     pathname.includes("/mentor") ||
-    pathname.includes("/admin");
+    pathname.includes("/admin") ||
+    pathname.includes("/facilitator") ||
+    pathname.includes("/super-admin");
 
   if (!user && !forceSidebar) {
     return <>{children}</>;

@@ -83,12 +83,11 @@ const SideBar: React.FC = () => {
       super_admin: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
         { label: "PLACEMENTS", path: "/super-admin/placements" },
-        { label: "DOCUMENTS", path: "/super-admin/documents" },
+        { label: "SUPER ADMIN DOCUMENTS", path: "/super-admin/documents" },
         { label: "HOSTS", path: "/super-admin/hosts" },
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
-        { label: "SYSTEM SETTINGS", path: "/facilitator/settings" },
         { label: "NOTIFICATIONS", path: "/super-admin/notifications" },
       ],
       qa_officer: [
@@ -102,7 +101,7 @@ const SideBar: React.FC = () => {
       programme_coordinator: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
         { label: "PLACEMENTS", path: "/super-admin/placements" },
-        { label: "DOCUMENTS", path: "/super-admin/documents" },
+        { label: "SUPER ADMIN DOCUMENTS", path: "/super-admin/documents" },
         { label: "HOSTS", path: "/super-admin/hosts" },
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },

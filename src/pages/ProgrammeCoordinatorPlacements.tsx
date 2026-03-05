@@ -77,7 +77,17 @@ const ProgrammeCoordinatorPlacements: React.FC = () => {
     <div className="programme-coordinator-page">
       <div className="page-header">
         <h1 className="page-title">Super Admin - Placements</h1>
-        <div className="design-badge">Super Admin - Design</div>
+        <button className="add-placement-btn" style={{
+          padding: '10px 20px',
+          backgroundColor: '#3b82f6',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          fontWeight: 600
+        }}>
+          Add Placement
+        </button>
       </div>
 
       <div className="placements-table-container">
