@@ -5,6 +5,7 @@ import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Snackbar from "../components/Snackbar";
 import PdfViewer from "../components/PdfViewer";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import { formatDate } from "../utils/dateUtils";
 import "./MentorLearners.css";
 

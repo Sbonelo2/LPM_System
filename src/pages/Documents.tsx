@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { supabase } from "../services/supabaseClient";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent";

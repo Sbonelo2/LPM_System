@@ -6,8 +6,10 @@ type Props = {
   className?: string;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
-  variant?: "primary" | "secondary" | "ghost"; // Add variant prop
+  variant?: "primary" | "secondary" | "ghost" | "outline"; // Add variant prop
   children?: React.ReactNode; // Allow children for more flexible content (e.g., icons)
+  style?: React.CSSProperties; // Add style prop
+  size?: "small" | "medium" | "large";
 };
 
 export default function Button({
@@ -18,8 +20,10 @@ export default function Button({
   disabled,
   variant = "primary", // Default variant
   children,
+  style,
+  size = "medium",
 }: Props) {
-  const buttonClassName = `btn btn--${variant}${className ? ` ${className}` : ""}`;
+  const buttonClassName = `btn btn--${variant} btn--${size}${className ? ` ${className}` : ""}`;
 
   return (
     <button
@@ -27,6 +31,7 @@ export default function Button({
       onClick={onClick}
       type={type}
       disabled={disabled}
+      style={style}
     >
       {children || text}
     </button>

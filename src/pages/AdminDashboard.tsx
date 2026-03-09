@@ -1,31 +1,109 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
-import TableComponent, { type TableColumn } from "../components/TableComponent"; // Import TableComponent and TableColumn type
-import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
-import "./AdminDashboard.css"; // Import AdminDashboard specific styles
+import TableComponent, { type TableColumn } from "../components/TableComponent";
+import LoadingSpinner from "../components/LoadingSpinner";
+import "./Dashboard.css";
+import "./AdminDashboard.css";
+
+interface UserData {
+  fullName: string;
+  email: string;
+  role: string;
+  createdDate: string;
+}
 
 const FacilitatorDashboard: React.FC = () => {
   const navigate = useNavigate();
-  console.log("FacilitatorDashboard component rendering");
+  const [stats, setStats] = useState<any>({
+    activeLearners: 0,
+    activePlacements: 0,
+    pendingIssues: 0,
+    complianceStatus: "0%",
+  });
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Placeholder data for Admin DashboardStats
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [
+          { count: activeLearners, error: learnersError },
+          { count: activePlacements, error: placementsError },
+          { count: pendingIssues, error: issuesError },
+          { data: documents, error: documentsError },
+          { data: profiles, error: profilesError },
+        ] = await Promise.all([
+          supabase
+            .from("learner_profiles")
+            .select("*", { count: "exact", head: true }),
+          supabase
+            .from("learner_placements")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "active"),
+          supabase
+            .from("compliance_issues")
+            .select("*", { count: "exact", head: true })
+            .eq("status", "Open"),
+          supabase.from("documents").select("review_status"),
+          supabase
+            .from("profiles")
+            .select("full_name, email, role, created_at")
+            .order("created_at", { ascending: false }),
+        ]);
+
+        if (learnersError) throw learnersError;
+        if (placementsError) throw placementsError;
+        if (issuesError) {
+          if (!issuesError.message.includes("not found")) throw issuesError;
+        }
+        if (documentsError) throw documentsError;
+        if (profilesError) throw profilesError;
+
+        const approvedDocs =
+          documents?.filter((d) => d.review_status === "approved").length || 0;
+        const totalDocs = documents?.length || 0;
+        const compliancePercentage =
+          totalDocs > 0 ? Math.round((approvedDocs / totalDocs) * 100) : 0;
+
+        setStats({
+          activeLearners: activeLearners || 0,
+          activePlacements: activePlacements || 0,
+          pendingIssues: pendingIssues || 0,
+          complianceStatus: `${compliancePercentage}%`,
+        });
+
+        const formattedUsers: UserData[] =
+          profiles?.map((p: any) => ({
+            fullName: p.full_name,
+            email: p.email,
+            role: p.role,
+            createdDate: new Date(p.created_at).toLocaleDateString(),
+          })) || [];
+        setUsers(formattedUsers);
+      } catch (err: any) {
+        setError(
+          `Failed to load dashboard data: ${err.message}. Please let me know if you need to run a SQL command to create the 'compliance_issues' table.`
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const adminDashboardStats = [
-    { label: "ACTIVE LEARNERS", value: 150 },
-    { label: "ACTIVE PLACEMENTS", value: 75 },
-    { label: "PENDING ISSUES", value: 12 },
-    { label: "COMPLIANCE STATUS", value: "95%" },
+    { label: "ACTIVE LEARNERS", value: stats.activeLearners },
+    { label: "ACTIVE PLACEMENTS", value: stats.activePlacements },
+    { label: "PENDING ISSUES", value: stats.pendingIssues },
+    { label: "COMPLIANCE STATUS", value: stats.complianceStatus },
   ];
-
-  // Placeholder data for Users Table
-  interface UserData {
-    fullName: string;
-    email: string;
-    role: string;
-    createdDate: string;
-  }
 
   const userColumns: TableColumn<UserData>[] = [
     { key: "fullName", header: "Full Name" },
@@ -34,32 +112,13 @@ const FacilitatorDashboard: React.FC = () => {
     { key: "createdDate", header: "Created Date" },
   ];
 
-  const userData: UserData[] = [
-    {
-      fullName: "Sine Mathebula",
-      email: "sine@example.com",
-      role: "Learner",
-      createdDate: "2023-01-15",
-    },
-    {
-      fullName: "Jane Doe",
-      email: "jane.doe@example.com",
-      role: "Super Admin",
-      createdDate: "2022-11-01",
-    },
-    {
-      fullName: "John Smith",
-      email: "john.smith@example.com",
-      role: "Super Admin",
-      createdDate: "2023-03-20",
-    },
-    {
-      fullName: "Admin User",
-      email: "test@admin.com",
-      role: "Admin",
-      createdDate: "2023-02-10",
-    },
-  ];
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
 
   return (
     <>
@@ -88,8 +147,8 @@ const FacilitatorDashboard: React.FC = () => {
           <Card>
             <TableComponent
               columns={userColumns}
-              data={userData}
-              caption=" Active System Users"
+              data={users}
+              caption="Active System Users"
             />
           </Card>
         </div>

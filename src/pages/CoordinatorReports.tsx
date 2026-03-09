@@ -104,7 +104,13 @@ const CoordinatorReports: React.FC = () => {
       // Calculate trend data (last 6 months)
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const today = new Date();
-      const last6Months = [];
+      interface MonthTrend {
+        label: string;
+        month: number;
+        year: number;
+        value: number;
+      }
+      const last6Months: MonthTrend[] = [];
       
       for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);

@@ -48,7 +48,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<{
     id: string;
     email?: string;
-    user_metadata?: { role?: string };
+    user_metadata?: { role?: string; full_name?: string };
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();

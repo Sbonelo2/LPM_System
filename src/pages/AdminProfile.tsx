@@ -1,71 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../hooks/useAuth';
 import ProfileImageUpload from '../components/ProfileImageUpload';
 import InputField from '../components/InputField';
 import Button from '../components/Button';
-import Card from '../components/Card'; // Import Card
-import './AdminProfile.css'; // Existing CSS
-import '../pages/Dashboard.css'; // Reusing dashboard layout CSS
+import Card from '../components/Card';
+import LoadingSpinner from '../components/LoadingSpinner';
+import './AdminProfile.css';
+import '../pages/Dashboard.css';
 
 const AdminProfile: React.FC = () => {
+  const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string>("");
-  const [fullName, setFullName] = useState<string>("Admin User");
-  const [address, setAddress] = useState<string>("123 Admin St, Admin City");
-  const [email, setEmail] = useState<string>("test@admin.com"); // Email is view-only
+  const [fullName, setFullName] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
   const [message, setMessage] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [formLoading, setFormLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name, email, address')
+            .eq('id', user.id)
+            .single();
+
+          if (error) throw error;
+
+          if (data) {
+            setFullName(data.full_name || '');
+            setEmail(data.email || '');
+            setAddress(data.address || '');
+          }
+        } catch (err: any) {
+          setMessage(`Error: ${err.message}`);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setFormLoading(true);
     setMessage("");
     setPasswordError("");
 
-    // Simulate save operation
-    setTimeout(() => {
-      console.log("Admin Profile saved:", {
-        profileImage,
-        fullName,
-        address,
-      });
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: fullName, address: address })
+        .eq('id', user!.id);
+
+      if (error) throw error;
       setMessage("Profile updated successfully!");
-      setLoading(false);
-    }, 1000);
+    } catch (err: any) {
+      setMessage(`Error: ${err.message}`);
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   const handlePasswordUpdate = async () => {
-    setLoading(true);
-    setMessage("");
-    setPasswordError("");
-
     if (newPassword !== confirmPassword) {
       setPasswordError("Passwords do not match");
-      setLoading(false);
       return;
     }
     if (newPassword.length < 6) {
       setPasswordError("Password must be at least 6 characters long");
-      setLoading(false);
       return;
     }
 
-    // Simulate password update operation
-    setTimeout(() => {
-      console.log("Password changed to:", newPassword);
+    setFormLoading(true);
+    setMessage("");
+    setPasswordError("");
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      
       setMessage("Password updated successfully!");
       setNewPassword("");
       setConfirmPassword("");
-      setLoading(false);
-    }, 1000);
+    } catch (err: any) {
+      setPasswordError(`Error: ${err.message}`);
+    } finally {
+      setFormLoading(false);
+    }
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
     <>
       <div className="facilitator-dashboard-content">
-      <div className="dashboard-header">
-        <h2>FACILITATOR PROFILE</h2>
+        <div className="dashboard-header">
+          <h2>FACILITATOR PROFILE</h2>
         </div>
 
         <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
@@ -87,7 +130,7 @@ const AdminProfile: React.FC = () => {
                   onChange={setFullName}
                   placeholder="Enter full name"
                   required
-                  disabled={loading}
+                  disabled={formLoading}
                 />
                 <InputField
                   label="Address"
@@ -95,19 +138,19 @@ const AdminProfile: React.FC = () => {
                   onChange={setAddress}
                   placeholder="Enter address"
                   required
-                  disabled={loading}
+                  disabled={formLoading}
                 />
                 <InputField
                   label="Email"
                   value={email}
-                  onChange={setEmail} // onChange is required by InputField, but it's disabled
+                  onChange={() => {}}
                   type="email"
-                  disabled={true} // Email is view-only
+                  disabled={true}
                 />
                 <Button
-                  text={loading ? "Saving..." : "Save Profile Changes"}
+                  text={formLoading ? "Saving..." : "Save Profile Changes"}
                   type="submit"
-                  disabled={loading}
+                  disabled={formLoading}
                 />
               </form>
 
@@ -118,7 +161,7 @@ const AdminProfile: React.FC = () => {
                 value={newPassword}
                 onChange={setNewPassword}
                 error={passwordError}
-                disabled={loading}
+                disabled={formLoading}
               />
               <InputField
                 label="Confirm New Password"
@@ -126,18 +169,18 @@ const AdminProfile: React.FC = () => {
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 error={passwordError}
-                disabled={loading}
+                disabled={formLoading}
               />
               <Button
-                text={loading ? "Updating..." : "Update Password"}
+                text={formLoading ? "Updating..." : "Update Password"}
                 onClick={handlePasswordUpdate}
-                disabled={loading}
+                disabled={formLoading}
               />
             </div>
           </Card>
         </div>
       </div>
-      </>
+    </>
   );
 };
 

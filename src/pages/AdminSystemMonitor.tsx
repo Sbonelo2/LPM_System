@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../services/supabaseClient';
 import Card from '../components/Card';
 import TableComponent, { type TableColumn } from '../components/TableComponent';
 import LoadingSpinner from '../components/LoadingSpinner';
