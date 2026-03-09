@@ -7,14 +7,9 @@ import PdfViewer from "../components/PdfViewer";
 import { supabase } from "../services/supabaseClient";
 import { useAuth } from "../hooks/useAuth";
 import { formatDate } from "../utils/dateUtils";
+import type { LearnerProfile } from "./MentorTypes";
+import MentorStatementOfWork from "./MentorStatementOfWork";
 import "./MentorLearners.css";
-
-interface LearnerProfile {
-  user_id: string;
-  learner_name: string;
-  email: string;
-  programme: string;
-}
 
 interface DocumentRecord {
   id: string;
@@ -40,14 +35,18 @@ const DOCUMENT_TYPES = [
 export default function MentorLearners() {
   const { user } = useAuth();
   const [learners, setLearners] = useState<LearnerProfile[]>([]);
-  const [selectedLearner, setSelectedLearner] = useState<LearnerProfile | null>(null);
+  const [selectedLearner, setSelectedLearner] = useState<LearnerProfile | null>(
+    null,
+  );
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedType, setSelectedType] = useState(DOCUMENT_TYPES[0].key);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -74,7 +73,7 @@ export default function MentorLearners() {
         .eq("mentor_id", user?.id);
 
       if (error) throw error;
-      
+
       // If no learners assigned specifically, fetch all for demo/fallback
       if (!data || data.length === 0) {
         const { data: allLearners, error: allErr } = await supabase
@@ -122,8 +121,8 @@ export default function MentorLearners() {
 
     setUploading(true);
     try {
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}_${selectedFile.name.replace(/\s/g, '_')}`;
+      const fileExt = selectedFile.name.split(".").pop();
+      const fileName = `${Date.now()}_${selectedFile.name.replace(/\s/g, "_")}`;
       const filePath = `${selectedLearner.user_id}/mentor_uploads/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
@@ -132,22 +131,20 @@ export default function MentorLearners() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("documents")
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("documents").getPublicUrl(filePath);
 
-      const { error: insertError } = await supabase
-        .from("documents")
-        .insert({
-          user_id: selectedLearner.user_id,
-          file_name: selectedFile.name,
-          file_url: publicUrl,
-          document_type: selectedType,
-          review_status: 'pending',
-          review_owner_role: 'mentor', // Changed from 'learner' to 'mentor' to fix constraint error
-          uploaded_by: user.id,
-          storage_path: filePath
-        });
+      const { error: insertError } = await supabase.from("documents").insert({
+        user_id: selectedLearner.user_id,
+        file_name: selectedFile.name,
+        file_url: publicUrl,
+        document_type: selectedType,
+        review_status: "pending",
+        review_owner_role: "mentor", // Changed from 'learner' to 'mentor' to fix constraint error
+        uploaded_by: user.id,
+        storage_path: filePath,
+      });
 
       if (insertError) throw insertError;
 
@@ -166,10 +163,10 @@ export default function MentorLearners() {
     try {
       const { error } = await supabase
         .from("documents")
-        .update({ 
-          review_status: 'approved',
+        .update({
+          review_status: "approved",
           reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString()
+          reviewed_at: new Date().toISOString(),
         })
         .eq("id", docId);
 
@@ -185,9 +182,9 @@ export default function MentorLearners() {
     try {
       const { error } = await supabase
         .from("documents")
-        .update({ 
-          review_owner_role: 'super_admin',
-          review_status: 'submitted'
+        .update({
+          review_owner_role: "super_admin",
+          review_status: "submitted",
         })
         .eq("id", docId);
 
@@ -200,95 +197,101 @@ export default function MentorLearners() {
   };
 
   const documentColumns: TableColumn<DocumentRecord>[] = [
-    { 
-      key: "document_type", 
+    {
+      key: "document_type",
       header: "Type",
-      render: (row) => DOCUMENT_TYPES.find(t => t.key === row.document_type)?.label || row.document_type
+      render: (row) =>
+        DOCUMENT_TYPES.find((t) => t.key === row.document_type)?.label ||
+        row.document_type,
     },
-    { 
-      key: "file_name", 
+    {
+      key: "file_name",
       header: "File Name",
       render: (row) => (
-        <span 
-          style={{ color: '#3498db', cursor: 'pointer', fontWeight: 500 }}
+        <span
+          style={{ color: "#3498db", cursor: "pointer", fontWeight: 500 }}
           onClick={() => setViewingDocument(row)}
         >
           {row.file_name}
         </span>
-      )
+      ),
     },
-    { 
-      key: "uploaded_by", 
+    {
+      key: "uploaded_by",
       header: "Source",
-      render: (row) => row.uploaded_by === user?.id ? "Me (Mentor)" : "Learner"
+      render: (row) =>
+        row.uploaded_by === user?.id ? "Me (Mentor)" : "Learner",
     },
-    { 
-      key: "review_status", 
+    {
+      key: "review_status",
       header: "Status",
       render: (row) => (
         <span className={`status-tag status-${row.review_status}`}>
           {row.review_status.toUpperCase()}
         </span>
-      )
+      ),
     },
     {
       key: "created_at",
       header: "Date Uploaded",
-      render: (row) => formatDate(row.created_at)
+      render: (row) => formatDate(row.created_at),
     },
     {
       key: "actions",
       header: "Actions",
       render: (row) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <Button 
-            text="View" 
-            size="small" 
-            variant="outline" 
-            onClick={() => setViewingDocument(row)} 
+        <div style={{ display: "flex", gap: "8px" }}>
+          <Button
+            text="View"
+            size="small"
+            variant="outline"
+            onClick={() => setViewingDocument(row)}
           />
-          {row.uploaded_by !== user?.id && row.review_status === 'pending' && (
-            <Button 
-              text="Approve" 
-              size="small" 
-              onClick={() => handleApprove(row.id)} 
+          {row.uploaded_by !== user?.id && row.review_status === "pending" && (
+            <Button
+              text="Approve"
+              size="small"
+              onClick={() => handleApprove(row.id)}
             />
           )}
-          {row.review_status === 'approved' && row.review_owner_role !== 'super_admin' && (
-            <Button 
-              text="Submit to Admin" 
-              size="small" 
-              variant="secondary"
-              onClick={() => handleSubmitToAdmin(row.id)} 
-            />
-          )}
+          {row.review_status === "approved" &&
+            row.review_owner_role !== "super_admin" && (
+              <Button
+                text="Submit to Admin"
+                size="small"
+                variant="secondary"
+                onClick={() => handleSubmitToAdmin(row.id)}
+              />
+            )}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
     <div className="mentor-learners">
-      <Snackbar 
-        message={snackbarMessage} 
+      <Snackbar
+        message={snackbarMessage}
         onClose={() => setSnackbarMessage("")}
       />
 
       {viewingDocument && (
-        <PdfViewer 
+        <PdfViewer
           document={{
             id: viewingDocument.id,
             file_name: viewingDocument.file_name,
             file_url: viewingDocument.file_url,
-            created_at: viewingDocument.created_at
-          }} 
-          onClose={() => setViewingDocument(null)} 
+            created_at: viewingDocument.created_at,
+          }}
+          onClose={() => setViewingDocument(null)}
         />
       )}
 
       <header className="mentor-learners__header">
         <h1 className="mentor-learners__title">Learner Management</h1>
-        <p className="mentor-learners__subtitle">Manage documents and approvals for your assigned learners</p>
+        <p className="mentor-learners__subtitle">
+          Manage documents and approvals for your assigned learners
+        </p>
       </header>
 
       <div className="mentor-learners__layout">
@@ -302,15 +305,22 @@ export default function MentorLearners() {
                 {learners.map((learner) => (
                   <button
                     key={learner.user_id}
-                    className={`mentor-learners__learner-card ${selectedLearner?.user_id === learner.user_id ? 'mentor-learners__learner-card--active' : ''}`}
+                    className={`mentor-learners__learner-card ${selectedLearner?.user_id === learner.user_id ? "mentor-learners__learner-card--active" : ""}`}
                     onClick={() => setSelectedLearner(learner)}
                   >
                     <div className="mentor-learners__avatar">
-                      {learner.learner_name.split(' ').map(n => n[0]).join('')}
+                      {learner.learner_name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
                     </div>
                     <div className="mentor-learners__learner-info">
-                      <span className="mentor-learners__learner-name">{learner.learner_name}</span>
-                      <span className="mentor-learners__learner-email">{learner.email}</span>
+                      <span className="mentor-learners__learner-name">
+                        {learner.learner_name}
+                      </span>
+                      <span className="mentor-learners__learner-email">
+                        {learner.email}
+                      </span>
                     </div>
                   </button>
                 ))}
@@ -323,33 +333,44 @@ export default function MentorLearners() {
         <main className="mentor-learners__content">
           {selectedLearner ? (
             <>
+              <MentorStatementOfWork learner={selectedLearner} />
+
               <Card>
-                <h3>UPLOAD DOCUMENT FOR {selectedLearner.learner_name.toUpperCase()}</h3>
+                <h3>
+                  UPLOAD DOCUMENT FOR{" "}
+                  {selectedLearner.learner_name.toUpperCase()}
+                </h3>
                 <div className="mentor-learners__upload-section">
                   <div className="mentor-learners__upload-controls">
                     <div className="mentor-learners__field-group">
-                      <label className="mentor-learners__label">Document Type</label>
-                      <select 
+                      <label className="mentor-learners__label">
+                        Document Type
+                      </label>
+                      <select
                         className="mentor-learners__select"
                         value={selectedType}
                         onChange={(e) => setSelectedType(e.target.value)}
                       >
-                        {DOCUMENT_TYPES.map(t => (
-                          <option key={t.key} value={t.key}>{t.label}</option>
+                        {DOCUMENT_TYPES.map((t) => (
+                          <option key={t.key} value={t.key}>
+                            {t.label}
+                          </option>
                         ))}
                       </select>
                     </div>
                     <div className="mentor-learners__field-group">
-                      <label className="mentor-learners__label">Choose File</label>
-                      <input 
-                        type="file" 
+                      <label className="mentor-learners__label">
+                        Choose File
+                      </label>
+                      <input
+                        type="file"
                         ref={fileInputRef}
                         onChange={handleFileChange}
                         accept=".pdf,.doc,.docx"
                       />
                     </div>
-                    <Button 
-                      text={uploading ? "Uploading..." : "Upload for Learner"} 
+                    <Button
+                      text={uploading ? "Uploading..." : "Upload for Learner"}
                       onClick={handleUpload}
                       disabled={uploading || !selectedFile}
                     />
@@ -359,9 +380,9 @@ export default function MentorLearners() {
 
               <Card>
                 <h3>LEARNER DOCUMENTS</h3>
-                <TableComponent 
-                  columns={documentColumns} 
-                  data={documents} 
+                <TableComponent
+                  columns={documentColumns}
+                  data={documents}
                   caption={`Documents for ${selectedLearner.learner_name}`}
                 />
               </Card>

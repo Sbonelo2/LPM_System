@@ -16,6 +16,7 @@ import QADashboard from "./pages/QADashboard";
 import QADocuments from "./pages/QADocuments";
 import MentorDashboard from "./pages/MentorDashboard";
 import MentorLearners from "./pages/MentorLearners";
+import MentorModuleAssessment from "./pages/MentorModuleAssessment";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -159,7 +160,7 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem("super-admin-token");
           localStorage.removeItem("coordinator-token");
           localStorage.removeItem("qa-token");
-          
+
           setUser(session.user);
           setLoading(false);
 
@@ -172,16 +173,17 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           ) {
             const effectiveRole = await getEffectiveRole(session.user);
             const targetPath = getDefaultPathForRole(effectiveRole);
-            
+
             if (currentPath !== targetPath) {
-               navigate(targetPath);
+              navigate(targetPath);
             }
           }
         } else {
           // No session - only clear if no dummy tokens
-          const hasDummy = localStorage.getItem("super-admin-token") || 
-                           localStorage.getItem("admin-token") ||
-                           localStorage.getItem("coordinator-token");
+          const hasDummy =
+            localStorage.getItem("super-admin-token") ||
+            localStorage.getItem("admin-token") ||
+            localStorage.getItem("coordinator-token");
           if (!hasDummy) {
             setUser(null);
             setLoading(false);
@@ -245,11 +247,11 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
         setUser(session.user);
         setLoading(false);
-        
+
         const currentPath = window.location.pathname;
         const effectiveRole = await getEffectiveRole(session.user);
         const targetPath = getDefaultPathForRole(effectiveRole);
@@ -572,6 +574,24 @@ function App() {
             element={
               <MainLayout>
                 <MentorLearners />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/learners/:learnerId"
+            element={
+              <MainLayout>
+                <MentorLearners />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/learners/:learnerId/modules/:moduleId"
+            element={
+              <MainLayout>
+                <MentorModuleAssessment />
               </MainLayout>
             }
           />

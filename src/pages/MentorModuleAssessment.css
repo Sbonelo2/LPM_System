@@ -1,0 +1,274 @@
+:root {
+  --mma-primary: #2563eb;
+  --mma-primary-dark: #1d4ed8;
+  --mma-bg: #f8fafc;
+  --mma-card: #ffffff;
+  --mma-text-main: #1e293b;
+  --mma-text-muted: #64748b;
+  --mma-border: #e2e8f0;
+  --mma-success: #16a34a;
+  --mma-danger: #dc2626;
+}
+
+.mma-page {
+  background-color: var(--mma-bg);
+  color: var(--mma-text-main);
+  padding: 20px;
+}
+
+.mma-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.mma-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.mma-breadcrumb {
+  font-size: 12px;
+  color: var(--mma-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.mma-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.mma-status-pill {
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  white-space: nowrap;
+}
+
+.mma-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .mma-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mma-card {
+  background: var(--mma-card);
+  border: 1px solid var(--mma-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mma-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.mma-module-title {
+  font-size: 14px;
+  color: var(--mma-text-main);
+  font-weight: 600;
+}
+
+.mma-module-desc {
+  font-size: 13px;
+  color: var(--mma-text-muted);
+  margin-top: 8px;
+}
+
+.mma-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.mma-evidence-item {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px solid var(--mma-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  overflow: hidden;
+}
+
+.mma-evidence-item:hover {
+  transform: scale(1.02);
+  border-color: var(--mma-primary);
+}
+
+.mma-evidence-placeholder {
+  background-color: #f1f5f9;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mma-text-muted);
+  font-size: 11px;
+  text-align: center;
+  padding: 10px;
+  flex-direction: column;
+}
+
+.mma-evidence-file {
+  font-size: 9px;
+}
+
+.mma-form-group {
+  margin-bottom: 20px;
+}
+
+.mma-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--mma-text-muted);
+}
+
+.mma-form-group textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--mma-border);
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.mma-form-group textarea:focus {
+  outline: none;
+  border-color: var(--mma-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.mma-grading-options {
+  display: flex;
+  gap: 12px;
+}
+
+.mma-grade-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 2px solid var(--mma-border);
+  background: white;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.mma-grade-btn b {
+  display: block;
+  font-size: 16px;
+}
+
+.mma-grade-btn span {
+  font-size: 11px;
+  color: var(--mma-text-muted);
+}
+
+.mma-grade-btn.active-c {
+  border-color: var(--mma-success);
+  background: #f0fdf4;
+  color: var(--mma-success);
+}
+
+.mma-grade-btn.active-nyc {
+  border-color: var(--mma-danger);
+  background: #fef2f2;
+  color: var(--mma-danger);
+}
+
+.mma-btn-submit {
+  width: 100%;
+  background: var(--mma-primary);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.mma-btn-submit:hover {
+  background: var(--mma-primary-dark);
+}
+
+.mma-submit-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--mma-text-muted);
+  margin-top: 12px;
+}
+
+.mma-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mma-info-label {
+  color: var(--mma-text-muted);
+}
+
+.mma-info-value {
+  font-weight: 600;
+}
+
+.mma-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.mma-checklist-item input {
+  margin-top: 4px;
+}
+
+.mma-back-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.mma-back-btn {
+  border: 1px solid var(--mma-border);
+  background: white;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.mma-back-btn:hover {
+  border-color: var(--mma-primary);
+}
