@@ -1,7 +1,7 @@
 .mentor-learners {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 2rem 0;
+  max-width: none;
+  margin: 0;
 }
 
 .mentor-learners__title {
@@ -150,10 +150,22 @@
   font-weight: 600;
 }
 
-.status-pending { background-color: #fff3cd; color: #856404; }
-.status-approved { background-color: #d4edda; color: #155724; }
-.status-declined { background-color: #f8d7da; color: #721c24; }
-.status-submitted { background-color: #cce5ff; color: #004085; }
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+.status-approved {
+  background-color: #d4edda;
+  color: #155724;
+}
+.status-declined {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+.status-submitted {
+  background-color: #cce5ff;
+  color: #004085;
+}
 
 @media (max-width: 1024px) {
   .mentor-learners__layout {
