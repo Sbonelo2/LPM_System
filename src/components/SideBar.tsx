@@ -28,17 +28,15 @@ const SideBar: React.FC = () => {
     if (location.pathname.startsWith("/facilitator")) return "admin";
     if (location.pathname.startsWith("/super-admin")) return "super_admin";
     if (location.pathname.startsWith("/mentor")) return "mentor";
-    if (location.pathname.startsWith("/learner")) return "learner";
-    // Legacy path detection for backward compatibility
+    if (location.pathname.startsWith("/learner")) return "learner"; // Legacy path detection for backward compatibility
     if (location.pathname.startsWith("/admin")) return "admin";
     if (location.pathname.startsWith("/coordinator")) return "super_admin";
     if (location.pathname.startsWith("/qa")) return "super_admin";
     return null;
   })();
 
-  const roleFromMetadata = user?.user_metadata?.role as UserRole | undefined;
+  const roleFromMetadata = user?.user_metadata?.role as UserRole | undefined; // Prefer path-scoped role so navigation to /qa/* always shows QA menu, etc.
 
-  // Prefer path-scoped role so navigation to /qa/* always shows QA menu, etc.
   const userRole: UserRole = roleFromPath ?? roleFromMetadata ?? "learner";
 
   const handleNavigation = (path: string) => {
@@ -69,9 +67,6 @@ const SideBar: React.FC = () => {
       admin: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
-        { label: "MY DOCUMENTS", path: "/myDocuments" },
-        { label: "PROFILE", path: "/facilitator/profile" },
-        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
         { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
       ],
@@ -90,8 +85,7 @@ const SideBar: React.FC = () => {
         { label: "REPORTS", path: "/super-admin/reports" },
         { label: "COMPLIANCE", path: "/super-admin/compliance" },
         { label: "USER MANAGEMENT", path: "/super-admin/users" },
-        { label: "SYSTEM SETTINGS", path: "/super-admin/settings" },
-        { label: "PROFILE", path: "/super-admin/profile" },
+        { label: "SYSTEM MONITORING", path: "/super-admin/monitoring" },
         { label: "NOTIFICATIONS", path: "/super-admin/notifications" },
       ],
       qa_officer: [
@@ -113,16 +107,7 @@ const SideBar: React.FC = () => {
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
-<<<<<<< HEAD
         { label: "LEARNERS", path: "/mentor/learners" },
-=======
-        { label: "HOST", path: "/mentor/host" },
-        { label: "MY DOCUMENTS", path: "/myDocuments" },
-<<<<<<< HEAD
->>>>>>> feature/my-documents-screen-flm
-=======
-        { label: "PROFILE", path: "/mentor/profile" },
->>>>>>> feature/profile-smf
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
     };
@@ -145,28 +130,31 @@ const SideBar: React.FC = () => {
     <div
       style={{
         width: "250px",
-        backgroundColor: "#f8f9fa",
+        backgroundColor: "#F8F9FA",
         padding: "20px",
         display: "flex",
         flexDirection: "column",
-        borderRight: "1px solid #e9ecef",
+        borderRight: "1px solid #E9ECEF",
       }}
     >
+            
       <h2
         style={{
           fontSize: "24px",
           fontWeight: "bold",
           marginBottom: "30px",
-          color: "#2c3e50",
+          color: "#2C3E50",
           textAlign: "center",
         }}
       >
-        LPM System
+                LPM System       
       </h2>
-
+            
       <nav style={{ flex: 1 }}>
+                
         {menuItems.map((item, index) => (
           <div key={index} style={{ marginBottom: "10px" }}>
+                        
             {item.label === "NOTIFICATIONS" ? (
               <NotificationBell onClick={() => handleNavigation(item.path!)} />
             ) : (
@@ -177,13 +165,13 @@ const SideBar: React.FC = () => {
                 style={{
                   width: "100%",
                   padding: "15px 20px",
-                  border: isActive(item.path) ? "2px solid #007bff" : "none",
+                  border: isActive(item.path) ? "2px solid #007BFF" : "none",
                   borderRadius: "12px",
                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   cursor: "pointer",
                   fontSize: "14px",
                   fontWeight: 500,
-                  color: item.isSignOut ? "#dc3545" : "#2c3e50",
+                  color: item.isSignOut ? "#DC3545" : "#2C3E50",
                   textAlign: "left",
                   transition: "all 0.2s ease",
                   outline: "none",
@@ -199,56 +187,66 @@ const SideBar: React.FC = () => {
                     "0 2px 8px rgba(0, 0, 0, 0.1)";
                 }}
               >
-                {item.label}
+                                {item.label}
+                              
               </button>
             )}
+                      
           </div>
         ))}
+              
       </nav>
-
-      {/* Logged-in user info */}
+            {/* Logged-in user info */}
+            
       {user && (
         <div
           style={{
             marginTop: "auto",
             padding: "15px",
-            backgroundColor: "#ffffff",
+            backgroundColor: "#FFFFFF",
             borderRadius: "8px",
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             textAlign: "center",
           }}
         >
+                    
           <p
             style={{
               margin: 0,
               fontSize: "12px",
-              color: "#6c757d",
+              color: "#6C757D",
             }}
           >
-            Logged in as:
+                        Logged in as:           
           </p>
+                    
           <p
             style={{
               margin: "5px 0 0 0",
               fontSize: "14px",
               fontWeight: "500",
-              color: "#2c3e50",
+              color: "#2C3E50",
             }}
           >
-            {user.email}
+                        {user.email}
+                      
           </p>
+                    
           <p
             style={{
               margin: "5px 0 0 0",
               fontSize: "11px",
-              color: "#007bff",
+              color: "#007BFF",
               fontWeight: "500",
             }}
           >
-            Role: {formattedRole}
+                        Role: {formattedRole}
+                      
           </p>
+                  
         </div>
       )}
+          
     </div>
   );
 };
