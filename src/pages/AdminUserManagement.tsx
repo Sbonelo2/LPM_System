@@ -48,6 +48,7 @@ type GeneratedCredentials = {
 const AdminUserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [newFullName, setNewFullName] = useState<string>("");
   const [newEmail, setNewEmail] = useState<string>("");
@@ -61,6 +62,7 @@ const AdminUserManagement: React.FC = () => {
   const [editedFullName, setEditedFullName] = useState<string>("");
   const [editedEmail, setEditedEmail] = useState<string>("");
   const [editedRole, setEditedRole] = useState<string>("");
+  const [editedActive, setEditedActive] = useState<boolean>(true);
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
@@ -74,12 +76,13 @@ const AdminUserManagement: React.FC = () => {
 
       if (error) throw error;
 
-      const formattedUsers User[] = (data || []).map((u: any) => ({
+      const formattedUsers: User[] = (data || []).map((u: any) => ({
         id: u.id,
         fullName: u.full_name || "N/A",
         email: u.email || "N/A",
         role: u.role || "learner",
         createdDate: new Date(u.created_at).toISOString().split("T")[0],
+        isActive: u.is_active !== false, // Default to true if not specified
       }));
 
       setUsers(formattedUsers);
@@ -337,6 +340,15 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
+  const cancelEdit = () => {
+    setShowEditModal(false);
+    setUserToEdit(null);
+    setEditedFullName("");
+    setEditedEmail("");
+    setEditedRole("");
+    setEditedActive(true);
+  };
+
   const userColumns: TableColumn<User>[] = [
     { key: "fullName", header: "Full Name" },
     { key: "email", header: "Email" },
@@ -433,8 +445,9 @@ const AdminUserManagement: React.FC = () => {
                 <Button text="Done" onClick={closeAddModal} variant="primary" />
               )}
             </div>
-          </Modal>
-        )}
+          </div>
+        </Modal>
+      )}
 
       {showEditModal && userToEdit && (
         <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`Edit User: ${userToEdit.fullName}`}>
@@ -443,61 +456,12 @@ const AdminUserManagement: React.FC = () => {
             <InputField label="Email" value={editedEmail} onChange={setEditedEmail} type="email" disabled={true} />
             <Dropdown label="Role" value={editedRole} onChange={setEditedRole} options={ROLE_OPTIONS} placeholder="Select role" disabled={processing} />
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-              <Button text="Cancel" onClick={() => setShowEditModal(false)} variant="secondary" />
+              <Button text="Cancel" onClick={cancelEdit} variant="secondary" />
               <Button text={processing ? "Saving..." : "Save"} onClick={handleSaveUser} variant="primary" disabled={processing} />
             </div>
-          </Modal>
-        )}
-
-        {showEditModal && userToEdit && (
-          <Modal
-            isOpen={showEditModal}
-            onClose={cancelEdit}
-            title={`Edit User: ${userToEdit.fullName}`}
-          >
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-            >
-              <InputField
-                label="Full Name"
-                value={editedFullName}
-                onChange={setEditedFullName}
-              />
-              <InputField
-                label="Email"
-                value={editedEmail}
-                onChange={setEditedEmail}
-                type="email"
-              />
-              <Dropdown
-                label="Role"
-                value={editedRole}
-                onChange={setEditedRole}
-                options={ROLE_OPTIONS}
-                placeholder="Select role"
-              />
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "10px",
-                  marginTop: "20px",
-                }}
-              >
-                <Button
-                  text="Cancel"
-                  onClick={cancelEdit}
-                  variant="secondary"
-                />
-                <Button
-                  text="Save"
-                  onClick={handleSaveUser}
-                  variant="primary"
-                />
-              </div>
-            </div>
-          </Modal>
-        )}
+          </div>
+        </Modal>
+      )}
 
         <Snackbar message={snackbarMessage} onClose={handleCloseSnackbar} />
       </div>

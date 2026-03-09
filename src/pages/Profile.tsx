@@ -54,8 +54,8 @@ const Profile: React.FC = () => {
         setProgramme(data.programme || "Software Development");
         setProfileImage(data.profile_image_url || "");
       } else if (user) {
-        // No profile found - set name from user metadata and email from user auth
-        setLearnerName(user.user_metadata?.full_name || "");
+        // No profile found - set name from user email and email from user auth
+        setLearnerName(user.email?.split("@")[0] || "");
         setEmail(user.email || "");
       }
     } catch (err) {

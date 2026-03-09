@@ -406,7 +406,6 @@ export default function CoordinatorDocuments(): React.JSX.Element {
               onClick={handleUpload}
               disabled={uploading || !selectedFile}
               variant="primary"
-              style={{ marginTop: '10px' }}
             />
           </Card>
         </aside>
