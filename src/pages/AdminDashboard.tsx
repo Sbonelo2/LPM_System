@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
@@ -19,6 +20,8 @@ interface UserData {
 const FacilitatorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [userName, setUserName] = useState<string>("User");
   const [stats, setStats] = useState<any>({
     activeLearners: 0,
     activePlacements: 0,
@@ -89,7 +92,7 @@ const FacilitatorDashboard: React.FC = () => {
         setUsers(formattedUsers);
       } catch (err: any) {
         setError(
-          `Failed to load dashboard data: ${err.message}. Please let me know if you need to run a SQL command to create the 'compliance_issues' table.`
+          `Failed to load dashboard data: ${err.message}. Please let me know if you need to run a SQL command to create the 'compliance_issues' table.`,
         );
       } finally {
         setLoading(false);

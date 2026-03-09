@@ -21,6 +21,8 @@ const MentorDashboard: React.FC = () => {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [userName, setUserName] = useState<string>('User');
+  const [profileImage, setProfileImage] = useState<string>('');
   const [stats, setStats] = useState({
     qualifications: "BCom Degree",
     maxStudents: 10,

@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./QADashboard.css";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
+import ProfileImageUpload from "../components/ProfileImageUpload";
 import { useAuth } from "../hooks/useAuth";
 
 const QADashboard: React.FC = () => {
   const { user } = useAuth();
-  
+  const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [userName, setUserName] = useState<string>("User");
+
   // Keep a merged role for QA + Coordinator capabilities.
   useEffect(() => {
     if (user) {
@@ -77,12 +82,14 @@ const QADashboard: React.FC = () => {
 
   const handleSubmit = () => {
     if (selectedLearner) {
-      setTableData(prev =>
-        prev.map(learner =>
-          learner.id === selectedLearner.id ? selectedLearner : learner
-        )
+      setTableData((prev) =>
+        prev.map((learner) =>
+          learner.id === selectedLearner.id ? selectedLearner : learner,
+        ),
       );
-      alert(`QA Status updated: ${selectedLearner.name} - ${selectedLearner.status}`);
+      alert(
+        `QA Status updated: ${selectedLearner.name} - ${selectedLearner.status}`,
+      );
       closeModal();
     }
   };
@@ -91,16 +98,20 @@ const QADashboard: React.FC = () => {
     <div className="qa-dashboard-container">
       <div className="dashboard-content">
         <h1 className="dashboard-title">Super Admin</h1>
-        <p className="dashboard-subtitle">dashbaord for qa officer & coordinator</p>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "20px",
-          backgroundColor: "#fff",
-          borderBottom: "1px solid #e5e7eb",
-          marginBottom: "20px",
-        }}>
+        <p className="dashboard-subtitle">
+          dashbaord for qa officer & coordinator
+        </p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "20px",
+            backgroundColor: "#fff",
+            borderBottom: "1px solid #e5e7eb",
+            marginBottom: "20px",
+          }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
             <ProfileImageUpload
               currentImage={profileImage}
@@ -157,7 +168,7 @@ const QADashboard: React.FC = () => {
             { header: "SUBMITTED ON", key: "submittedOn" },
             { header: "ACTION", key: "action" },
           ]}
-          data={tableData.map(learner => ({
+          data={tableData.map((learner) => ({
             ...learner,
             action: (
               <button
@@ -175,7 +186,7 @@ const QADashboard: React.FC = () => {
           <div className="learner-modal-overlay" onClick={closeModal}>
             <div
               className="learner-modal-content"
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="modal-header">
                 <h2>QA Review Details</h2>
@@ -207,24 +218,30 @@ const QADashboard: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Programme:</span>
-                  <span className="detail-value">{selectedLearner.programme}</span>
+                  <span className="detail-value">
+                    {selectedLearner.programme}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">QA Score:</span>
-                  <span className="detail-value">{selectedLearner.qaScore}</span>
+                  <span className="detail-value">
+                    {selectedLearner.qaScore}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Compliance Status:</span>
-                  <span className="detail-value">{selectedLearner.complianceStatus}</span>
+                  <span className="detail-value">
+                    {selectedLearner.complianceStatus}
+                  </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">QA Status:</span>
                   <select
                     className="status-dropdown"
                     value={selectedLearner.status}
-                    onChange={e =>
+                    onChange={(e) =>
                       setSelectedLearner((prev: any) =>
-                        prev ? { ...prev, status: e.target.value } : null
+                        prev ? { ...prev, status: e.target.value } : null,
                       )
                     }
                   >
@@ -236,7 +253,9 @@ const QADashboard: React.FC = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Submitted On:</span>
-                  <span className="detail-value">{selectedLearner.submittedOn}</span>
+                  <span className="detail-value">
+                    {selectedLearner.submittedOn}
+                  </span>
                 </div>
               </div>
 
