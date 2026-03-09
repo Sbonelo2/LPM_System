@@ -17,16 +17,18 @@ type Learner = {
 
 const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(null);
+  const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(
+    null,
+  );
   const [learners, setLearners] = useState<Learner[]>([]);
   const [loading, setLoading] = useState(true);
   const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [userName, setUserName] = useState<string>('User');
-  const [profileImage, setProfileImage] = useState<string>('');
+  const [userName, setUserName] = useState<string>("User");
+  const [profileImage, setProfileImage] = useState<string>("");
   const [stats, setStats] = useState({
     qualifications: "BCom Degree",
     maxStudents: 10,
-    currentStudents: 0
+    currentStudents: 0,
   });
 
   useEffect(() => {
@@ -54,21 +56,20 @@ const MentorDashboard: React.FC = () => {
       if (learnerErr) throw learnerErr;
 
       // 3. Fetch documents for these learners to see "pending" status (mocking timesheet approval for now)
-      const formattedLearners: Learner[] = (learnerData || []).map(l => ({
+      const formattedLearners: Learner[] = (learnerData || []).map((l) => ({
         id: l.user_id,
         name: l.learner_name,
         email: l.email,
         weekLabel: "Current Timesheet",
         attendanceSummary: "Pending review",
-        approved: false
+        approved: false,
       }));
 
       setLearners(formattedLearners);
-      setStats(prev => ({
+      setStats((prev) => ({
         ...prev,
-        currentStudents: formattedLearners.length
+        currentStudents: formattedLearners.length,
       }));
-
     } catch (err: any) {
       setSnackbarMessage(`Error: ${err.message}`);
     } finally {
@@ -85,26 +86,26 @@ const MentorDashboard: React.FC = () => {
 
   const loadUserData = async () => {
     if (!user) return;
-    
+
     try {
       // Get user profile data
       const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, profile_image_url')
-        .eq('id', user.id)
+        .from("profiles")
+        .select("full_name, profile_image_url")
+        .eq("id", user.id)
         .single();
 
       if (error) {
-        console.error('Error loading user data:', error);
+        console.error("Error loading user data:", error);
         // Fallback to email or default
-        setUserName(user.email?.split('@')[0] || 'User');
+        setUserName(user.email?.split("@")[0] || "User");
       } else {
-        setUserName(data?.full_name || user.email?.split('@')[0] || 'User');
-        setProfileImage(data?.profile_image_url || '');
+        setUserName(data?.full_name || user.email?.split("@")[0] || "User");
+        setProfileImage(data?.profile_image_url || "");
       }
     } catch (error) {
-      console.error('Error:', error);
-      setUserName(user?.email?.split('@')[0] || 'User');
+      console.error("Error:", error);
+      setUserName(user?.email?.split("@")[0] || "User");
     }
   };
 
@@ -129,14 +130,19 @@ const MentorDashboard: React.FC = () => {
           : l,
       ),
     );
-    setSnackbarMessage(`Timesheet ${!selectedLearner?.approved ? 'approved' : 'unapproved'} for ${selectedLearner?.name}`);
+    setSnackbarMessage(
+      `Timesheet ${!selectedLearner?.approved ? "approved" : "unapproved"} for ${selectedLearner?.name}`,
+    );
   };
 
   if (loading) return <LoadingSpinner />;
 
   return (
     <div className="mentor-dashboard">
-      <Snackbar message={snackbarMessage} onClose={() => setSnackbarMessage("")} />
+      <Snackbar
+        message={snackbarMessage}
+        onClose={() => setSnackbarMessage("")}
+      />
       <div className="mentor-header">
         <h1 className="mentor-title">Mentor Overview</h1>
         <p className="mentor-subtitle">
@@ -155,7 +161,9 @@ const MentorDashboard: React.FC = () => {
         </Card>
         <Card className="mentor-stat-card">
           <div className="mentor-stat-label">Current Students</div>
-          <div className="mentor-stat-value">{stats.currentStudents} / {stats.maxStudents}</div>
+          <div className="mentor-stat-value">
+            {stats.currentStudents} / {stats.maxStudents}
+          </div>
         </Card>
       </div>
 
@@ -211,7 +219,9 @@ const MentorDashboard: React.FC = () => {
                 </span>
               </button>
             ))}
-            {learners.length === 0 && <p className="mentor-empty">No learners assigned to you.</p>}
+            {learners.length === 0 && (
+              <p className="mentor-empty">No learners assigned to you.</p>
+            )}
           </div>
         </Card>
 
@@ -262,4 +272,3 @@ const MentorDashboard: React.FC = () => {
 };
 
 export default MentorDashboard;
-
