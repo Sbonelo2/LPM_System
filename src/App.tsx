@@ -516,6 +516,15 @@ function App() {
           />
 
           <Route
+            path="/super-admin/profile"
+            element={
+              <MainLayout>
+                <AdminProfile />
+              </MainLayout>
+            }
+          />
+
+          <Route
             path="/super-admin/settings"
             element={
               <SuperAdminProtectedRoute>
@@ -593,6 +602,15 @@ function App() {
             element={
               <MainLayout>
                 <MentorDashboard />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/mentor/profile"
+            element={
+              <MainLayout>
+                <AdminProfile />
               </MainLayout>
             }
           />

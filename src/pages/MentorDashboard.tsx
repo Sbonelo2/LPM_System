@@ -1,5 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import Card from "../components/Card";
+import ProfileImageUpload from "../components/ProfileImageUpload";
+import { supabase } from "../services/supabaseClient";
 import "./MentorDashboard.css";
 
 type Learner = {
@@ -11,6 +15,10 @@ type Learner = {
 };
 
 const MentorDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
   const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(null);
 
   const [learners, setLearners] = useState<Learner[]>([
@@ -51,6 +59,38 @@ const MentorDashboard: React.FC = () => {
     },
   ]);
 
+  // Load user data for profile display
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user profile data
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, profile_image_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user data:', error);
+        // Fallback to email or default
+        setUserName(user.email?.split('@')[0] || 'User');
+      } else {
+        setUserName(data?.full_name || user.email?.split('@')[0] || 'User');
+        setProfileImage(data?.profile_image_url || '');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setUserName(user?.email?.split('@')[0] || 'User');
+    }
+  };
+
   const selectedLearner = useMemo(
     () => learners.find((l) => l.id === selectedLearnerId) ?? null,
     [learners, selectedLearnerId],
@@ -76,11 +116,53 @@ const MentorDashboard: React.FC = () => {
 
   return (
     <div className="mentor-dashboard">
-      <div className="mentor-header">
-        <h1 className="mentor-title">Mentor Overview</h1>
-        <p className="mentor-subtitle">
-          Manage your learners and approve timesheets
-        </p>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "20px",
+        backgroundColor: "#fff",
+        borderBottom: "1px solid #e5e7eb",
+        marginBottom: "20px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <ProfileImageUpload
+            currentImage={profileImage}
+            onImageChange={() => {}}
+            editable={false}
+            size={60}
+          />
+          <div>
+            <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
+              Welcome, {userName}
+            </h2>
+            <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+              {user?.email}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate("/mentor/profile")}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+            fontSize: "14px",
+            fontWeight: 500,
+            transition: "background-color 0.2s ease",
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = "#2563eb";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = "#3b82f6";
+          }}
+        >
+          Edit Profile
+        </button>
       </div>
 
       <div className="mentor-stats">

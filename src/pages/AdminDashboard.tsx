@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import DashboardStats from "../components/DashboardStats";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import Card from "../components/Card";
@@ -10,7 +11,10 @@ import "./Dashboard.css"; // Reusing the Dashboard CSS for consistent styling
 import "./AdminDashboard.css"; // Import AdminDashboard specific styles
 
 const FacilitatorDashboard: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [profileImage, setProfileImage] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
   console.log("FacilitatorDashboard component rendering");
 
   // Placeholder data for Users Table
@@ -133,6 +137,38 @@ const FacilitatorDashboard: React.FC = () => {
     loadDashboard();
   }, []);
 
+  // Load user data for profile display
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user profile data
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, profile_image_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user data:', error);
+        // Fallback to email or default
+        setUserName(user.email?.split('@')[0] || 'User');
+      } else {
+        setUserName(data?.full_name || user.email?.split('@')[0] || 'User');
+        setProfileImage(data?.profile_image_url || '');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setUserName(user?.email?.split('@')[0] || 'User');
+    }
+  };
+
   const userColumns: TableColumn<UserData>[] = [
     { key: "fullName", header: "Full Name" },
     { key: "email", header: "Email" },
@@ -153,19 +189,44 @@ const FacilitatorDashboard: React.FC = () => {
     <>
       <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
-          <h2>FACILITATOR DASHBOARD</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <p style={{ margin: 0, fontWeight: "bold" }}>
-              Logged in as FACILITATOR
-            </p>
-            <div
-              onClick={() => navigate("/facilitator/profile")}
-              style={{ cursor: "pointer" }}
-              className="facilitator-profile-icon"
-            >
-              <ProfileImageUpload editable={false} size={30} />
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <ProfileImageUpload
+              currentImage={profileImage}
+              onImageChange={() => {}}
+              editable={false}
+              size={60}
+            />
+            <div>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
+                Welcome, {userName}
+              </h2>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+                {user?.email}
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => navigate("/facilitator/profile")}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 500,
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#2563eb";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#3b82f6";
+            }}
+          >
+            Edit Profile
+          </button>
         </div>
 
         <div className="dashboard-stats-container">
