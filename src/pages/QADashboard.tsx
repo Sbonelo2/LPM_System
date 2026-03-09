@@ -92,6 +92,54 @@ const QADashboard: React.FC = () => {
       <div className="dashboard-content">
         <h1 className="dashboard-title">Super Admin</h1>
         <p className="dashboard-subtitle">dashbaord for qa officer & coordinator</p>
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "20px",
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          marginBottom: "20px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <ProfileImageUpload
+              currentImage={profileImage}
+              onImageChange={() => {}}
+              editable={false}
+              size={60}
+            />
+            <div>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
+                Welcome, {userName}
+              </h2>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+                {user?.email}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/super-admin/profile")}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 500,
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#2563eb";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#3b82f6";
+            }}
+          >
+            Edit Profile
+          </button>
+        </div>
 
         <div className="dashboard-cards">
           <DashboardStats stats={stats} />

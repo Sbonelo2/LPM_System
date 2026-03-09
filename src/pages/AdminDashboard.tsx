@@ -17,6 +17,7 @@ interface UserData {
 }
 
 const FacilitatorDashboard: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<any>({
     activeLearners: 0,
@@ -124,19 +125,44 @@ const FacilitatorDashboard: React.FC = () => {
     <>
       <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
-          <h2>FACILITATOR DASHBOARD</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-            <p style={{ margin: 0, fontWeight: "bold" }}>
-              Logged in as FACILITATOR
-            </p>
-            <div
-              onClick={() => navigate("/facilitator/profile")}
-              style={{ cursor: "pointer" }}
-              className="facilitator-profile-icon"
-            >
-              <ProfileImageUpload editable={false} size={30} />
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+            <ProfileImageUpload
+              currentImage={profileImage}
+              onImageChange={() => {}}
+              editable={false}
+              size={60}
+            />
+            <div>
+              <h2 style={{ margin: 0, fontSize: "20px", fontWeight: 600 }}>
+                Welcome, {userName}
+              </h2>
+              <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+                {user?.email}
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => navigate("/facilitator/profile")}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 500,
+              transition: "background-color 0.2s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#2563eb";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = "#3b82f6";
+            }}
+          >
+            Edit Profile
+          </button>
         </div>
 
         <div className="dashboard-stats-container">

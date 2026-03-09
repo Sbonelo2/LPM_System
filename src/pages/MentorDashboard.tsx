@@ -74,6 +74,38 @@ const MentorDashboard: React.FC = () => {
     }
   };
 
+  // Load user data for profile display
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user profile data
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, profile_image_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user data:', error);
+        // Fallback to email or default
+        setUserName(user.email?.split('@')[0] || 'User');
+      } else {
+        setUserName(data?.full_name || user.email?.split('@')[0] || 'User');
+        setProfileImage(data?.profile_image_url || '');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setUserName(user?.email?.split('@')[0] || 'User');
+    }
+  };
+
   const selectedLearner = useMemo(
     () => learners.find((l) => l.id === selectedLearnerId) ?? null,
     [learners, selectedLearnerId],

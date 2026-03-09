@@ -51,6 +51,41 @@ const AdminProfile: React.FC = () => {
     fetchProfile();
   }, [user]);
 
+  // Load user data on component mount
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, address, profile_image_url')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user data:', error);
+        // Set fallback values
+        setFullName(user.email?.split('@')[0] || 'User');
+        setEmail(user.email || '');
+      } else {
+        setFullName(data?.full_name || user.email?.split('@')[0] || 'User');
+        setAddress(data?.address || '');
+        setProfileImage(data?.profile_image_url || '');
+        setEmail(user.email || '');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      setFullName(user?.email?.split('@')[0] || 'User');
+      setEmail(user?.email || '');
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormLoading(true);
