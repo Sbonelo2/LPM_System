@@ -69,6 +69,7 @@ const SideBar: React.FC = () => {
       admin: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
+        { label: "MY DOCUMENTS", path: "/myDocuments" },
         { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
         { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
@@ -111,6 +112,7 @@ const SideBar: React.FC = () => {
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
         { label: "HOST", path: "/mentor/host" },
+        { label: "MY DOCUMENTS", path: "/myDocuments" },
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
     };
