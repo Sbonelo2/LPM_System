@@ -66,6 +66,13 @@ const AdminUserManagement: React.FC = () => {
   const [snackbarMessage, setSnackbarMessage] = useState<string>("");
   const [processing, setProcessing] = useState<boolean>(false);
 
+  // Notification states
+  const [showNotificationModal, setShowNotificationModal] = useState<boolean>(false);
+  const [selectedUserForNotification, setSelectedUserForNotification] = useState<User | null>(null);
+  const [notificationMessage, setNotificationMessage] = useState<string>("");
+  const [notificationDetails, setNotificationDetails] = useState<string>("");
+  const [notificationCanReply, setNotificationCanReply] = useState<boolean>(true);
+
   const logAudit = async (action: string, details: string) => {
     try {
       await supabase.from('audit_logs').insert([{
@@ -341,6 +348,38 @@ const AdminUserManagement: React.FC = () => {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!selectedUserForNotification || !notificationMessage.trim()) {
+      showSnackbar("Please enter a message.");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const { error } = await supabase.from("notifications").insert([
+        {
+          user_id: selectedUserForNotification.id,
+          message: notificationMessage.trim(),
+          details: notificationDetails.trim(),
+          can_reply: notificationCanReply,
+          created_by: user?.id,
+        },
+      ]);
+
+      if (error) throw error;
+
+      await logAudit('NOTIFICATION', `Sent notification to ${selectedUserForNotification.fullName}: ${notificationMessage}`);
+      showSnackbar(`Notification sent to ${selectedUserForNotification.fullName}`);
+      setShowNotificationModal(false);
+      setNotificationMessage("");
+      setNotificationDetails("");
+    } catch (err: any) {
+      showSnackbar(`Failed to send notification: ${err.message}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const userColumns: TableColumn<User>[] = [
     { key: "fullName", header: "Full Name" },
     { key: "email", header: "Email" },
@@ -385,6 +424,18 @@ const AdminUserManagement: React.FC = () => {
               </svg>
             </span>
           )}
+          <span
+            onClick={() => {
+              setSelectedUserForNotification(user);
+              setShowNotificationModal(true);
+            }}
+            style={{ cursor: "pointer", color: "#F59E0B", fontSize: "1.2em" }}
+            title="Send Notification"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+            </svg>
+          </span>
         </div>
       ),
     },
@@ -490,6 +541,61 @@ const AdminUserManagement: React.FC = () => {
               <Button 
                 text={processing ? "Assigning..." : "Assign Mentor"} 
                 onClick={handleSaveMentorAssignment} 
+                variant="primary" 
+                disabled={processing} 
+              />
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {showNotificationModal && selectedUserForNotification && (
+        <Modal 
+          isOpen={showNotificationModal} 
+          onClose={() => setShowNotificationModal(false)} 
+          title={`Send Notification to ${selectedUserForNotification.fullName}`}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+            <InputField 
+              label="Subject / Message" 
+              value={notificationMessage} 
+              onChange={setNotificationMessage} 
+              required 
+              placeholder="Quick summary"
+              disabled={processing} 
+            />
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <label style={{ fontSize: "0.9rem", color: "#000" }}>Full Details</label>
+              <textarea
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #ddd",
+                  minHeight: "100px",
+                  fontFamily: "inherit",
+                  color: "#000"
+                }}
+                value={notificationDetails}
+                onChange={(e) => setNotificationDetails(e.target.value)}
+                placeholder="Enter full notification content here..."
+                disabled={processing}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input 
+                type="checkbox" 
+                id="can_reply_admin" 
+                checked={notificationCanReply} 
+                onChange={(e) => setNotificationCanReply(e.target.checked)} 
+              />
+              <label htmlFor="can_reply_admin" style={{ cursor: 'pointer', color: '#000' }}>Allow recipient to reply</label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+              <Button text="Cancel" onClick={() => setShowNotificationModal(false)} variant="secondary" />
+              <Button 
+                text={processing ? "Sending..." : "Send Notification"} 
+                onClick={handleSendNotification} 
                 variant="primary" 
                 disabled={processing} 
               />
