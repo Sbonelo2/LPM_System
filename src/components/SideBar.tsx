@@ -69,6 +69,8 @@ const SideBar: React.FC = () => {
       admin: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
+        { label: "MY DOCUMENTS", path: "/myDocuments" },
+        { label: "SYSTEM MONITORING", path: "/facilitator/monitoring" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
         { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
       ],
@@ -109,7 +111,12 @@ const SideBar: React.FC = () => {
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
+<<<<<<< HEAD
         { label: "LEARNERS", path: "/mentor/learners" },
+=======
+        { label: "HOST", path: "/mentor/host" },
+        { label: "MY DOCUMENTS", path: "/myDocuments" },
+>>>>>>> feature/my-documents-screen-flm
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
     };
