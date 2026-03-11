@@ -28,6 +28,24 @@ create policy "Users can view assigned documents"
           and p.role = any(target_roles)
       )
     )
+    or (
+      review_owner_role is not null
+      and exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = review_owner_role
+      )
+      and (
+        review_owner_role <> 'mentor'
+        or exists (
+          select 1
+          from public.learner_profiles lp
+          where lp.user_id = documents.user_id
+            and lp.mentor_id = auth.uid()
+        )
+      )
+    )
   );
 
 -- Allow uploaders to update their own documents
@@ -37,3 +55,46 @@ create policy "Users can update their own documents"
   to authenticated
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Allow reviewers (mentor/facilitator/super admin) to update assigned documents
+drop policy if exists "Reviewers can update assigned documents" on public.documents;
+create policy "Reviewers can update assigned documents"
+  on public.documents
+  for update
+  to authenticated
+  using (
+    review_owner_role is not null
+    and exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = review_owner_role
+    )
+    and (
+      review_owner_role <> 'mentor'
+      or exists (
+        select 1
+        from public.learner_profiles lp
+        where lp.user_id = documents.user_id
+          and lp.mentor_id = auth.uid()
+      )
+    )
+  )
+  with check (
+    review_owner_role is not null
+    and exists (
+      select 1
+      from public.profiles p
+      where p.id = auth.uid()
+        and p.role = review_owner_role
+    )
+    and (
+      review_owner_role <> 'mentor'
+      or exists (
+        select 1
+        from public.learner_profiles lp
+        where lp.user_id = documents.user_id
+          and lp.mentor_id = auth.uid()
+      )
+    )
+  );

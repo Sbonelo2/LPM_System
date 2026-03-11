@@ -74,17 +74,7 @@ export default function MentorLearners() {
 
       if (error) throw error;
 
-      // If no learners assigned specifically, fetch all for demo/fallback
-      if (!data || data.length === 0) {
-        const { data: allLearners, error: allErr } = await supabase
-          .from("learner_profiles")
-          .select("user_id, learner_name, email, programme")
-          .limit(10);
-        if (allErr) throw allErr;
-        setLearners(allLearners || []);
-      } else {
-        setLearners(data);
-      }
+      setLearners(data || []);
     } catch (err: any) {
       setSnackbarMessage(`Error fetching learners: ${err.message}`);
     } finally {

@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Snackbar from "../components/Snackbar";
+import Modal from "../components/Modal";
 import PdfViewer from "../components/PdfViewer";
 import { formatDate } from "../utils/dateUtils";
 import "./Documents.css";
@@ -90,7 +91,10 @@ export default function Documents(): React.JSX.Element {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [pendingSendDocId, setPendingSendDocId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string>("");
+  const [assignedLearnerIds, setAssignedLearnerIds] = useState<string[]>([]);
   const [audienceMode, setAudienceMode] = useState<
     "self" | "system" | "roles" | "learners"
   >("self");
@@ -153,6 +157,21 @@ export default function Documents(): React.JSX.Element {
   }, [isMentor, audienceMode]);
 
   useEffect(() => {
+    const loadAssignedLearners = async () => {
+      if (!isMentor || !authUser?.id) return;
+      const { data, error } = await supabase
+        .from("learner_profiles")
+        .select("user_id")
+        .eq("mentor_id", authUser.id);
+      if (error) return;
+      const ids = (data ?? []).map((row: any) => row.user_id).filter(Boolean);
+      setAssignedLearnerIds(ids);
+    };
+
+    loadAssignedLearners();
+  }, [isMentor, authUser?.id]);
+
+  useEffect(() => {
     const fetchDocuments = async () => {
       try {
         const {
@@ -172,17 +191,42 @@ export default function Documents(): React.JSX.Element {
           )
           .order("created_at", { ascending: false });
 
-        if (userRole === "admin" || userRole === "mentor") {
-          const roleKey = userRole === "admin" ? "admin" : "mentor";
+        if (userRole === "admin") {
           query = query
             .neq("document_scope", "system")
             .or(
-              `user_id.eq.${user.id},target_user_ids.cs.{${user.id}},target_roles.cs.{${roleKey}}`,
+              `user_id.eq.${user.id},review_owner_role.eq.admin,target_user_ids.cs.{${user.id}},target_roles.cs.{admin}`,
             );
+        }
 
-          if (userRole === "admin") {
-            query = query.is("review_owner_role", null);
+        if (userRole === "mentor") {
+          const orParts = [
+            `user_id.eq.${user.id}`,
+            `target_user_ids.cs.{${user.id}}`,
+            "target_roles.cs.{mentor}",
+          ];
+          if (assignedLearnerIds.length > 0) {
+            orParts.unshift(
+              `and(review_owner_role.eq.mentor,user_id.in.(${assignedLearnerIds.join(",")}))`,
+            );
           }
+          query = query
+            .neq("document_scope", "system")
+            .or(orParts.join(","));
+        }
+
+        if (userRole === "super_admin") {
+          query = query
+            .neq("document_scope", "system")
+            .or(
+              `review_owner_role.eq.super_admin,user_id.eq.${user.id},target_user_ids.cs.{${user.id}},target_roles.cs.{super_admin}`,
+            );
+        }
+
+        if (userRole === "learner") {
+          query = query.or(
+            `user_id.eq.${user.id},document_scope.eq.system,target_user_ids.cs.{${user.id}},target_roles.cs.{learner}`,
+          );
         }
 
         const { data, error } = await query;
@@ -200,8 +244,10 @@ export default function Documents(): React.JSX.Element {
       }
     };
 
-    fetchDocuments();
-  }, []);
+    if (userRole) {
+      fetchDocuments();
+    }
+  }, [userRole, assignedLearnerIds.length]);
 
   const handleChooseFile = () => {
     fileInputRef.current?.click();
@@ -235,6 +281,40 @@ export default function Documents(): React.JSX.Element {
         `Delete failed: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
+      );
+    }
+  };
+
+  const openSendToSuperAdmin = (documentId: string) => {
+    setPendingSendDocId(documentId);
+    setShowSendModal(true);
+  };
+
+  const handleSendToSuperAdmin = async () => {
+    if (!pendingSendDocId) return;
+    try {
+      const { error } = await supabase
+        .from("documents")
+        .update({ review_owner_role: "super_admin", review_status: "pending" })
+        .eq("id", pendingSendDocId);
+
+      if (error) {
+        throw error;
+      }
+
+      setDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === pendingSendDocId
+            ? { ...doc, review_owner_role: "super_admin", review_status: "pending" }
+            : doc,
+        ),
+      );
+      setSnackbarMessage("Sent to Super Admin for review.");
+      setShowSendModal(false);
+      setPendingSendDocId(null);
+    } catch (error: unknown) {
+      setSnackbarMessage(
+        `Send failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   };
@@ -444,6 +524,28 @@ export default function Documents(): React.JSX.Element {
               <path fill="currentColor" d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5Z"/>
             </svg>
           </span>
+          {userRole === "mentor" && row.review_owner_role === "mentor" && (
+            <span
+              onClick={() => openSendToSuperAdmin(row.id)}
+              style={{ cursor: "pointer", color: "#f59e0b", fontSize: "1.2em" }}
+              title="Send to Super Admin"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2L3 9h3v9h6v-6h2v6h6V9h3zm0 4.8l4.5 3.7H7.5z"/>
+              </svg>
+            </span>
+          )}
+          {userRole === "admin" && row.review_owner_role == null && (
+            <span
+              onClick={() => openSendToSuperAdmin(row.id)}
+              style={{ cursor: "pointer", color: "#f59e0b", fontSize: "1.2em" }}
+              title="Send to Super Admin"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2L3 9h3v9h6v-6h2v6h6V9h3zm0 4.8l4.5 3.7H7.5z"/>
+              </svg>
+            </span>
+          )}
           <span
             onClick={() => handleDelete(row.id)}
             style={{ cursor: "pointer", color: "var(--secondary-color)", fontSize: "1.2em" }}
@@ -475,6 +577,36 @@ export default function Documents(): React.JSX.Element {
           }} 
           onClose={() => setViewingDocument(null)} 
         />
+      )}
+
+      {showSendModal && (
+        <Modal
+          isOpen={showSendModal}
+          onClose={() => {
+            setShowSendModal(false);
+            setPendingSendDocId(null);
+          }}
+          title="Send To Super Admin"
+        >
+          <p style={{ color: "#000", marginBottom: "16px" }}>
+            Send this document to Super Admin for review?
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+            <Button
+              text="Cancel"
+              onClick={() => {
+                setShowSendModal(false);
+                setPendingSendDocId(null);
+              }}
+              variant="secondary"
+            />
+            <Button
+              text="Send"
+              onClick={handleSendToSuperAdmin}
+              variant="primary"
+            />
+          </div>
+        </Modal>
       )}
 
       <div className="documents-layout">
