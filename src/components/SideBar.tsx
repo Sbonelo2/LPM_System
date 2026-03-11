@@ -66,8 +66,10 @@ const SideBar: React.FC = () => {
     const roleSpecificItems: Record<UserRole, MenuItem[]> = {
       admin: [
         { label: "DASHBOARD", path: "/facilitator/dashboard" },
+        { label: "PROFILE", path: "/facilitator/profile" },
         { label: "USER MANAGEMENT", path: "/facilitator/users" },
         { label: "MAINTENANCE", path: "/facilitator/maintenance" },
+        { label: "DOCUMENTS", path: "/facilitator/documents" },
         { label: "NOTIFICATIONS", path: "/facilitator/notifications" },
       ],
       learner: [
@@ -79,6 +81,7 @@ const SideBar: React.FC = () => {
       ],
       super_admin: [
         { label: "DASHBOARD", path: "/super-admin/dashboard" },
+        { label: "PROFILE", path: "/super-admin/profile" },
         { label: "PLACEMENTS", path: "/super-admin/placements" },
         { label: "DOCUMENTS", path: "/super-admin/documents" },
         { label: "HOSTS", path: "/super-admin/hosts" },
@@ -107,6 +110,7 @@ const SideBar: React.FC = () => {
       ],
       mentor: [
         { label: "DASHBOARD", path: "/mentor/dashboard" },
+        { label: "PROFILE", path: "/mentor/profile" },
         { label: "LEARNERS", path: "/mentor/learners" },
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],

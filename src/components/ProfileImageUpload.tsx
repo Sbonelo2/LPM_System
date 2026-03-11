@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './ProfileImageUpload.css';
 
 interface ProfileImageUploadProps {
@@ -16,6 +16,10 @@ const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
 }) => {
   const [imageUrl, setImageUrl] = useState<string>(currentImage || '');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setImageUrl(currentImage || '');
+  }, [currentImage]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

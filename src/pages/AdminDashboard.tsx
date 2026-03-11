@@ -102,6 +102,37 @@ const FacilitatorDashboard: React.FC = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const loadProfileHeader = async () => {
+      if (!user) return;
+      try {
+        const [{ data, error }, { data: imageRow }] = await Promise.all([
+          supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+          supabase
+            .from("role_profile_images")
+            .select("image_url")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+
+        if (error) throw error;
+        setUserName(
+          data?.full_name ||
+            (user.user_metadata?.full_name as string | undefined) ||
+            "User",
+        );
+        setProfileImage(imageRow?.image_url || "");
+      } catch (err) {
+        setUserName(
+          (user.user_metadata?.full_name as string | undefined) || "User",
+        );
+        setProfileImage("");
+      }
+    };
+
+    loadProfileHeader();
+  }, [user]);
+
   const adminDashboardStats = [
     { label: "ACTIVE LEARNERS", value: stats.activeLearners },
     { label: "ACTIVE PLACEMENTS", value: stats.activePlacements },

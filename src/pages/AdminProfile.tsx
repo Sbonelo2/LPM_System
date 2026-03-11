@@ -13,7 +13,6 @@ const AdminProfile: React.FC = () => {
   const { user } = useAuth();
   const [profileImage, setProfileImage] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
-  const [address, setAddress] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -22,6 +21,15 @@ const AdminProfile: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [formLoading, setFormLoading] = useState<boolean>(false);
 
+  const roleLabel = (() => {
+    const role = user?.user_metadata?.role as string | undefined;
+    if (!role) return "PROFILE";
+    if (role === "super_admin") return "SUPER ADMIN PROFILE";
+    if (role === "mentor") return "MENTOR PROFILE";
+    if (role === "admin") return "FACILITATOR PROFILE";
+    return `${role.replace("_", " ").toUpperCase()} PROFILE`;
+  })();
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (user) {
@@ -29,7 +37,7 @@ const AdminProfile: React.FC = () => {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('full_name, email, address')
+            .select('full_name, email')
             .eq('id', user.id)
             .single();
 
@@ -38,7 +46,6 @@ const AdminProfile: React.FC = () => {
           if (data) {
             setFullName(data.full_name || '');
             setEmail(data.email || '');
-            setAddress(data.address || '');
           }
         } catch (err: any) {
           setMessage(`Error: ${err.message}`);
@@ -62,22 +69,26 @@ const AdminProfile: React.FC = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, address, profile_image_url')
-        .eq('id', user.id)
-        .single();
+      const [{ data: profile, error }, { data: imageRow }] = await Promise.all([
+        supabase.from('profiles').select('full_name').eq('id', user.id).single(),
+        supabase
+          .from('role_profile_images')
+          .select('image_url')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+      ]);
 
       if (error) {
         console.error('Error loading user data:', error);
-        // Set fallback values
         setFullName(user.email?.split('@')[0] || 'User');
         setEmail(user.email || '');
       } else {
-        setFullName(data?.full_name || user.email?.split('@')[0] || 'User');
-        setAddress(data?.address || '');
-        setProfileImage(data?.profile_image_url || '');
+        setFullName(profile?.full_name || user.email?.split('@')[0] || 'User');
         setEmail(user.email || '');
+      }
+
+      if (imageRow?.image_url) {
+        setProfileImage(imageRow.image_url);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -95,10 +106,23 @@ const AdminProfile: React.FC = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName, address: address })
+        .update({ full_name: fullName })
         .eq('id', user!.id);
 
       if (error) throw error;
+
+      const { error: imageError } = await supabase
+        .from('role_profile_images')
+        .upsert(
+          {
+            user_id: user!.id,
+            image_url: profileImage || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' },
+        );
+
+      if (imageError) throw imageError;
       setMessage("Profile updated successfully!");
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
@@ -143,7 +167,7 @@ const AdminProfile: React.FC = () => {
     <>
       <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
-          <h2>FACILITATOR PROFILE</h2>
+          <h2>{roleLabel}</h2>
         </div>
 
         <div style={{ maxWidth: "600px", margin: "auto", padding: "20px" }}>
@@ -164,14 +188,6 @@ const AdminProfile: React.FC = () => {
                   value={fullName}
                   onChange={setFullName}
                   placeholder="Enter full name"
-                  required
-                  disabled={formLoading}
-                />
-                <InputField
-                  label="Address"
-                  value={address}
-                  onChange={setAddress}
-                  placeholder="Enter address"
                   required
                   disabled={formLoading}
                 />

@@ -17,6 +17,11 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [passwordError, setPasswordError] = useState<string>("");
+  const [passwordMessage, setPasswordMessage] = useState<string>("");
+  const [savingPassword, setSavingPassword] = useState<boolean>(false);
 
   useEffect(() => {
     if (user) {
@@ -74,6 +79,7 @@ const Profile: React.FC = () => {
 
     setSaving(true);
     setMessage("");
+    setPasswordMessage("");
 
     try {
       // Build the profile data
@@ -107,6 +113,34 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handlePasswordUpdate = async () => {
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setSavingPassword(true);
+    setPasswordMessage("");
+    setPasswordError("");
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      setPasswordMessage("Password updated successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setPasswordError(`Error: ${err.message}`);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="profile-page">
       <div className="profile-card">
@@ -131,6 +165,19 @@ const Profile: React.FC = () => {
               }}
             >
               {message}
+            </div>
+          )}
+          {passwordMessage && (
+            <div
+              style={{
+                padding: "12px",
+                marginBottom: "16px",
+                borderRadius: "6px",
+                backgroundColor: "#d1fae5",
+                color: "#065f46",
+              }}
+            >
+              {passwordMessage}
             </div>
           )}
           <InputField
@@ -200,6 +247,31 @@ const Profile: React.FC = () => {
               type="submit"
               className="save-button"
               disabled={saving || loading}
+            />
+          </div>
+
+          <div style={{ marginTop: "24px" }}>
+            <h3 style={{ marginBottom: "12px" }}>Change Password</h3>
+            <InputField
+              label="New Password"
+              type="password"
+              value={newPassword}
+              onChange={setNewPassword}
+              error={passwordError}
+              disabled={savingPassword}
+            />
+            <InputField
+              label="Confirm New Password"
+              type="password"
+              value={confirmPassword}
+              onChange={setConfirmPassword}
+              error={passwordError}
+              disabled={savingPassword}
+            />
+            <Button
+              text={savingPassword ? "Updating..." : "Update Password"}
+              onClick={handlePasswordUpdate}
+              disabled={savingPassword}
             />
           </div>
         </form>

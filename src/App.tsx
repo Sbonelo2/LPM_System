@@ -508,6 +508,14 @@ function App() {
               </MainLayout>
             }
           />
+          <Route
+            path="/super-admin/profile"
+            element={
+              <MainLayout>
+                <AdminProfile />
+              </MainLayout>
+            }
+          />
 
           <Route
             path="/super-admin/compliance"
@@ -565,6 +573,14 @@ function App() {
             element={
               <MainLayout>
                 <MentorDashboard />
+              </MainLayout>
+            }
+          />
+          <Route
+            path="/mentor/profile"
+            element={
+              <MainLayout>
+                <AdminProfile />
               </MainLayout>
             }
           />
@@ -662,6 +678,16 @@ function App() {
               <AdminProtectedRoute>
                 <MainLayout>
                   <MaintenanceSettings />
+                </MainLayout>
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/facilitator/documents"
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <Documents />
                 </MainLayout>
               </AdminProtectedRoute>
             }
