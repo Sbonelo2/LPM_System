@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../services/supabaseClient";
 import "./QADashboard.css";
 import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
@@ -11,6 +12,36 @@ const QADashboard: React.FC = () => {
   const navigate = useNavigate();
   const [profileImage, setProfileImage] = useState<string>("");
   const [userName, setUserName] = useState<string>("User");
+
+  useEffect(() => {
+    const loadHeaderProfile = async () => {
+      if (!user) return;
+      try {
+        const [{ data: profile }, { data: imageRow }] = await Promise.all([
+          supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+          supabase
+            .from("role_profile_images")
+            .select("image_url")
+            .eq("user_id", user.id)
+            .maybeSingle(),
+        ]);
+
+        setUserName(
+          profile?.full_name ||
+            (user.user_metadata?.full_name as string | undefined) ||
+            "User",
+        );
+        setProfileImage(imageRow?.image_url || "");
+      } catch (error) {
+        setUserName(
+          (user.user_metadata?.full_name as string | undefined) || "User",
+        );
+        setProfileImage("");
+      }
+    };
+
+    loadHeaderProfile();
+  }, [user]);
 
   // Keep a merged role for QA + Coordinator capabilities.
   useEffect(() => {

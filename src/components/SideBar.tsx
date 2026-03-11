@@ -112,6 +112,7 @@ const SideBar: React.FC = () => {
         { label: "DASHBOARD", path: "/mentor/dashboard" },
         { label: "PROFILE", path: "/mentor/profile" },
         { label: "LEARNERS", path: "/mentor/learners" },
+        { label: "DOCUMENTS", path: "/mentor/documents" },
         { label: "NOTIFICATIONS", path: "/mentor/notifications" },
       ],
     };

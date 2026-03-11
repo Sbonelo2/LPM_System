@@ -620,6 +620,14 @@ function App() {
               </MainLayout>
             }
           />
+          <Route
+            path="/mentor/documents"
+            element={
+              <MainLayout>
+                <Documents />
+              </MainLayout>
+            }
+          />
           <Route path="/" element={<Login />} />
 
           <Route

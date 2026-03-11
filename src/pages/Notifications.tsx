@@ -63,6 +63,7 @@ const Notifications: React.FC = () => {
     }
   }, [user]);
 
+
   const fetchUserRole = async () => {
     try {
       const { data } = await supabase.from('profiles').select('role').eq('id', user?.id).single();

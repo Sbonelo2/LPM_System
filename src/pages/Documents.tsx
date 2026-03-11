@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import TableComponent, { type TableColumn } from "../components/TableComponent";
@@ -26,6 +27,9 @@ type DocumentRecord = {
   review_owner_role?: string;
   review_status?: string;
   uploaded_by?: string;
+  document_scope?: string;
+  target_roles?: string[];
+  target_user_ids?: string[];
 };
 
 const DOCUMENT_TYPES: Array<{ key: DocumentTypeKey; label: string }> = [
@@ -77,6 +81,7 @@ function resolveDocumentType(fileName: string): DocumentTypeKey | null {
 }
 
 export default function Documents(): React.JSX.Element {
+  const { user: authUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -85,6 +90,67 @@ export default function Documents(): React.JSX.Element {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [viewingDocument, setViewingDocument] = useState<DocumentRecord | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
+  const [audienceMode, setAudienceMode] = useState<
+    "self" | "system" | "roles" | "learners"
+  >("self");
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(["learner"]);
+  const [selectedLearners, setSelectedLearners] = useState<string[]>([]);
+  const [learnerOptions, setLearnerOptions] = useState<
+    Array<{ id: string; name: string; email?: string }>
+  >([]);
+
+  const isMentor = userRole === "mentor";
+  const availableRoles = useMemo(
+    () => [
+      { key: "learner", label: "Learner" },
+      { key: "mentor", label: "Mentor" },
+      { key: "admin", label: "Facilitator" },
+      { key: "super_admin", label: "Super Admin" },
+      { key: "qa_officer", label: "QA Officer" },
+      { key: "programme_coordinator", label: "Programme Coordinator" },
+    ],
+    [],
+  );
+
+  useEffect(() => {
+    const loadRole = async () => {
+      if (!authUser?.id) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", authUser.id)
+        .maybeSingle();
+      setUserRole(
+        data?.role ||
+          (authUser.user_metadata?.role as string | undefined) ||
+          "learner",
+      );
+    };
+
+    loadRole();
+  }, [authUser?.id, authUser?.user_metadata?.role]);
+
+  useEffect(() => {
+    const loadLearners = async () => {
+      if (!isMentor || audienceMode !== "learners") return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .eq("role", "learner")
+        .order("full_name", { ascending: true });
+      if (error) return;
+      setLearnerOptions(
+        (data ?? []).map((row: any) => ({
+          id: row.id,
+          name: row.full_name || row.email || "Learner",
+          email: row.email,
+        })),
+      );
+    };
+
+    loadLearners();
+  }, [isMentor, audienceMode]);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -99,11 +165,27 @@ export default function Documents(): React.JSX.Element {
           return;
         }
 
-        const { data, error } = await supabase
+        let query = supabase
           .from("documents")
-          .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status, uploaded_by")
-          .eq("user_id", user.id)
+          .select(
+            "id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status, uploaded_by, document_scope, target_roles, target_user_ids",
+          )
           .order("created_at", { ascending: false });
+
+        if (userRole === "admin" || userRole === "mentor") {
+          const roleKey = userRole === "admin" ? "admin" : "mentor";
+          query = query
+            .neq("document_scope", "system")
+            .or(
+              `user_id.eq.${user.id},target_user_ids.cs.{${user.id}},target_roles.cs.{${roleKey}}`,
+            );
+
+          if (userRole === "admin") {
+            query = query.is("review_owner_role", null);
+          }
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         setDocuments(data ?? []);
@@ -162,6 +244,18 @@ export default function Documents(): React.JSX.Element {
       setSnackbarMessage("Please choose a file first.");
       return;
     }
+      if (isMentor && audienceMode === "roles" && selectedRoles.length === 0) {
+      setSnackbarMessage("Select at least one role for targeted uploads.");
+      return;
+    }
+    if (
+      isMentor &&
+      audienceMode === "learners" &&
+      selectedLearners.length === 0
+    ) {
+      setSnackbarMessage("Select at least one learner for targeted uploads.");
+      return;
+    }
 
     setUploading(true);
     setSnackbarMessage("Uploading document...");
@@ -196,19 +290,42 @@ export default function Documents(): React.JSX.Element {
       } = supabase.storage.from("documents").getPublicUrl(filePath);
 
       const taggedFileName = `${TYPE_PREFIX}${selectedType}__${selectedFile.name}`;
+      const isTargetedRoles = isMentor && audienceMode === "roles";
+      const isTargetedLearners = isMentor && audienceMode === "learners";
+      const documentScope = isMentor
+        ? audienceMode === "system"
+          ? "system"
+          : isTargetedRoles || isTargetedLearners
+            ? "targeted"
+            : "personal"
+        : "personal";
+
+      const targetRoles =
+        isTargetedRoles && selectedRoles.length > 0 ? selectedRoles : null;
+      const targetUserIds =
+        isTargetedLearners && selectedLearners.length > 0
+          ? selectedLearners
+          : null;
+
       const { data: inserted, error: insertError } = await supabase
         .from("documents")
         .insert([
           {
             user_id: user.id,
+            uploaded_by: user.id,
             file_name: taggedFileName,
             file_url: publicUrl,
             document_type: selectedType,
-            review_owner_role: submitTo,
+            review_owner_role: isMentor ? null : submitTo,
+            document_scope: documentScope,
+            target_roles: targetRoles,
+            target_user_ids: targetUserIds,
             storage_path: filePath
           },
         ])
-        .select("id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status")
+        .select(
+          "id, user_id, file_name, file_url, created_at, document_type, review_owner_role, review_status, uploaded_by, document_scope, target_roles, target_user_ids",
+        )
         .single();
 
       if (insertError) {
@@ -217,10 +334,31 @@ export default function Documents(): React.JSX.Element {
 
       setDocuments((prev) => [inserted, ...prev]);
       setSelectedFile(null);
+      if (isMentor) {
+        setAudienceMode("self");
+        setSelectedRoles(["learner"]);
+        setSelectedLearners([]);
+      }
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-      setSnackbarMessage(`Upload complete. Document submitted to ${submitTo === 'mentor' ? 'Mentor' : 'Super Admin'}.`);
+      if (isMentor) {
+        const audienceLabel =
+          audienceMode === "system"
+            ? "all users"
+            : audienceMode === "roles"
+              ? "selected roles"
+              : audienceMode === "learners"
+                ? "selected learners"
+                : "your documents";
+        setSnackbarMessage(`Upload complete. Document shared with ${audienceLabel}.`);
+      } else {
+        setSnackbarMessage(
+          `Upload complete. Document submitted to ${
+            submitTo === "mentor" ? "Mentor" : "Super Admin"
+          }.`,
+        );
+      }
     } catch (error: unknown) {
       setSnackbarMessage(
         `Upload failed: ${
@@ -260,12 +398,23 @@ export default function Documents(): React.JSX.Element {
     { 
       key: "review_owner_role", 
       header: "Submitted To",
-      render: (row: DocumentRecord) => row.review_owner_role === "super_admin" ? "Super Admin" : "Mentor"
+      render: (row: DocumentRecord) =>
+        row.review_owner_role === "super_admin"
+          ? "Super Admin"
+          : row.review_owner_role === "mentor"
+            ? "Mentor"
+            : "N/A",
     },
     {
       key: "uploaded_by",
       header: "Source",
-      render: (row: DocumentRecord) => row.uploaded_by === row.user_id ? "Self" : "Mentor"
+      render: (row: DocumentRecord) => {
+        if (row.document_scope === "system") return "System";
+        if (row.uploaded_by && row.uploaded_by === authUser?.id) {
+          return "Self";
+        }
+        return "Assigned";
+      },
     },
     { 
       key: "review_status", 
@@ -370,25 +519,133 @@ export default function Documents(): React.JSX.Element {
               ))}
             </select>
 
-            <label
-              className="upload-panel__label"
-              htmlFor="submit-to-select"
-              style={{ marginTop: '15px' }}
-            >
-              Submit To
-            </label>
-            <select
-              id="submit-to-select"
-              className="upload-panel__select"
-              value={submitTo}
-              onChange={(event) =>
-                setSubmitTo(event.target.value as "mentor" | "super_admin")
-              }
-              disabled={uploading}
-            >
-              <option value="mentor">Mentor</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
+            {!isMentor && (
+              <>
+                <label
+                  className="upload-panel__label"
+                  htmlFor="submit-to-select"
+                  style={{ marginTop: "15px" }}
+                >
+                  Submit To
+                </label>
+              <select
+                id="submit-to-select"
+                className="upload-panel__select"
+                value={submitTo}
+                onChange={(event) =>
+                  setSubmitTo(event.target.value as "mentor" | "super_admin")
+                }
+                disabled={uploading}
+              >
+                <option value="mentor">Mentor</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+              </>
+            )}
+
+            {isMentor && (
+              <div style={{ marginTop: "15px" }}>
+                <label className="upload-panel__label">Audience</label>
+                <div style={{ display: "grid", gap: "8px" }}>
+                  <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="radio"
+                      name="audience"
+                      value="self"
+                      checked={audienceMode === "self"}
+                      onChange={() => setAudienceMode("self")}
+                      disabled={uploading}
+                    />
+                    My documents only
+                  </label>
+                  <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="radio"
+                      name="audience"
+                      value="system"
+                      checked={audienceMode === "system"}
+                      onChange={() => setAudienceMode("system")}
+                      disabled={uploading}
+                    />
+                    All users (system)
+                  </label>
+                  <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="radio"
+                      name="audience"
+                      value="roles"
+                      checked={audienceMode === "roles"}
+                      onChange={() => setAudienceMode("roles")}
+                      disabled={uploading}
+                    />
+                    Specific roles
+                  </label>
+                  <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input
+                      type="radio"
+                      name="audience"
+                      value="learners"
+                      checked={audienceMode === "learners"}
+                      onChange={() => setAudienceMode("learners")}
+                      disabled={uploading}
+                    />
+                    Specific learners
+                  </label>
+                </div>
+
+                {audienceMode === "roles" && (
+                  <div style={{ marginTop: "10px", display: "grid", gap: "6px" }}>
+                    {availableRoles.map((role) => (
+                      <label
+                        key={role.key}
+                        style={{ display: "flex", gap: "8px", alignItems: "center" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRoles.includes(role.key)}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedRoles((prev) => [...prev, role.key]);
+                            } else {
+                              setSelectedRoles((prev) =>
+                                prev.filter((r) => r !== role.key),
+                              );
+                            }
+                          }}
+                          disabled={uploading}
+                        />
+                        {role.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {audienceMode === "learners" && (
+                  <div style={{ marginTop: "10px" }}>
+                    <label className="upload-panel__label">Select Learners</label>
+                    <select
+                      className="upload-panel__select"
+                      multiple
+                      size={6}
+                      value={selectedLearners}
+                      onChange={(event) => {
+                        const values = Array.from(event.target.selectedOptions).map(
+                          (opt) => opt.value,
+                        );
+                        setSelectedLearners(values);
+                      }}
+                      disabled={uploading}
+                    >
+                      {learnerOptions.map((learner) => (
+                        <option key={learner.id} value={learner.id}>
+                          {learner.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <input
               ref={fileInputRef}
