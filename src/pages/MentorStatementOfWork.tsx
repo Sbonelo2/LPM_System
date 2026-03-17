@@ -12,9 +12,13 @@ export type WorkplaceModuleSummary = {
 
 type Props = {
   learner: LearnerProfile;
+  buildModuleLink?: (moduleId: string) => string;
 };
 
-export default function MentorStatementOfWork({ learner }: Props) {
+export default function MentorStatementOfWork({
+  learner,
+  buildModuleLink,
+}: Props) {
   const navigate = useNavigate();
 
   const modules = useMemo<WorkplaceModuleSummary[]>(
@@ -96,12 +100,18 @@ export default function MentorStatementOfWork({ learner }: Props) {
 
           <div className="sow-host-block">
             <div>
-              <h3 className="sow-label-small sow-host-label">Workplace Host Authority</h3>
+              <h3 className="sow-label-small sow-host-label">
+                Workplace Host Authority
+              </h3>
               <p className="sow-host-name">Volt-Tech Solutions (Pty) Ltd</p>
-              <p className="sow-host-sub">SETA Approval No: WPA-2023-ELC-0092</p>
+              <p className="sow-host-sub">
+                SETA Approval No: WPA-2023-ELC-0092
+              </p>
             </div>
             <div className="sow-host-right">
-              <p className="sow-label-small sow-host-label">Verification Site</p>
+              <p className="sow-label-small sow-host-label">
+                Verification Site
+              </p>
               <p className="sow-host-site">Sandton, South Africa</p>
             </div>
           </div>
@@ -126,7 +136,9 @@ export default function MentorStatementOfWork({ learner }: Props) {
                     className="sow-module-row"
                     onClick={() =>
                       navigate(
-                        `/mentor/learners/${encodeURIComponent(learner.user_id)}/modules/${encodeURIComponent(m.moduleId)}`,
+                        buildModuleLink
+                          ? buildModuleLink(m.moduleId)
+                          : `/mentor/learners/${encodeURIComponent(learner.user_id)}/modules/${encodeURIComponent(m.moduleId)}`,
                       )
                     }
                   >
@@ -143,7 +155,10 @@ export default function MentorStatementOfWork({ learner }: Props) {
                 <tr>
                   <td colSpan={2}>Total Notional Hours Logged</td>
                   <td className="sow-total-hours">{totalHours}</td>
-                  <td style={{ textAlign: "right" }} className="sow-label-small">
+                  <td
+                    style={{ textAlign: "right" }}
+                    className="sow-label-small"
+                  >
                     Verified Total
                   </td>
                 </tr>
@@ -160,7 +175,9 @@ export default function MentorStatementOfWork({ learner }: Props) {
               <p className="sow-sig-info">
                 Sarah Jenkins (Licensed Master Electrician)
               </p>
-              <p className="sow-sig-sub">Digitally Verified Stamp &amp; Signature</p>
+              <p className="sow-sig-sub">
+                Digitally Verified Stamp &amp; Signature
+              </p>
             </div>
 
             <div className="sow-sig-line">
@@ -201,16 +218,21 @@ export default function MentorStatementOfWork({ learner }: Props) {
 
           <footer className="sow-footer">
             <p className="sow-footer-text">
-              This document confirms the completion of the workplace-based learning component.
+              This document confirms the completion of the workplace-based
+              learning component.
               <br />
-              It must be presented to a registered assessment centre for EISA registration.
+              It must be presented to a registered assessment centre for EISA
+              registration.
             </p>
           </footer>
         </div>
       </div>
 
       <div className="sow-action-bar">
-        <button className="sow-btn sow-btn-secondary" onClick={() => window.print()}>
+        <button
+          className="sow-btn sow-btn-secondary"
+          onClick={() => window.print()}
+        >
           Print Draft
         </button>
         <button className="sow-btn sow-btn-primary" type="button">

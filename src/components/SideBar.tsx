@@ -75,6 +75,7 @@ const SideBar: React.FC = () => {
       learner: [
         { label: "DASHBOARD", path: "/learner/dashboard" },
         { label: "MY PLACEMENTS", path: "/learner/placements" },
+        { label: "STATEMENT OF WORK", path: "/learner/statement-of-work" },
         { label: "MY DOCUMENTS", path: "/learner/documents" },
         { label: "PROFILE", path: "/learner/profile" },
         { label: "NOTIFICATIONS", path: "/learner/notifications" },

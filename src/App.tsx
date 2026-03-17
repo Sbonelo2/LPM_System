@@ -17,6 +17,8 @@ import QADocuments from "./pages/QADocuments";
 import MentorDashboard from "./pages/MentorDashboard";
 import MentorLearners from "./pages/MentorLearners";
 import MentorModuleAssessment from "./pages/MentorModuleAssessment";
+import LearnerStatementOfWork from "./pages/LearnerStatementOfWork";
+import LearnerModuleAssessment from "./pages/LearnerModuleAssessment";
 import SignUp from "./pages/SignUp";
 import { AuthContext } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
@@ -286,6 +288,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const [profileRole, setProfileRole] = useState<string | undefined>(undefined);
+  const [profileRoleLoading, setProfileRoleLoading] = useState(false);
 
   // Debug: Log the current state
   console.log("ProtectedRoute - user:", user);
@@ -313,6 +317,139 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
         </div>
       </div>
     );
+  }
+
+  const normalizeRole = (role?: string) => {
+    if (!role) return undefined;
+    const normalized = role
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    if (normalized === "superadmin") return "super_admin";
+    if (normalized === "program_coordinator") return "programme_coordinator";
+    if (normalized === "facilitator") return "facilitator";
+    return normalized;
+  };
+
+  const getMaintenanceSnapshot = () => {
+    try {
+      const raw = localStorage.getItem("maintenance-settings");
+      if (!raw) return null;
+      return JSON.parse(raw) as {
+        status?: "active" | "inactive";
+        allowedDuringMaintenance?: {
+          mentors?: boolean;
+          learners?: boolean;
+        };
+        allowedUsers?: { email?: string; role?: string; enabled?: boolean }[];
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const maintenance = getMaintenanceSnapshot();
+  const maintenanceActive = maintenance?.status === "active";
+  const metadataRole = normalizeRole(user?.user_metadata?.role);
+
+  useEffect(() => {
+    const loadProfileRole = async () => {
+      if (!user?.id) return;
+      if (metadataRole) return;
+
+      setProfileRoleLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!error) {
+          setProfileRole(normalizeRole(data?.role));
+        }
+      } finally {
+        setProfileRoleLoading(false);
+      }
+    };
+
+    void loadProfileRole();
+  }, [user?.id, metadataRole]);
+
+  if (!metadataRole && profileRoleLoading) {
+    return <div>Loading authentication...</div>;
+  }
+
+  const role = metadataRole ?? profileRole;
+
+  if (maintenanceActive) {
+    const allowed = maintenance?.allowedDuringMaintenance ?? {};
+
+    const isSuperAdminRole = role === "super_admin";
+    const isAdminRole = role === "admin";
+    const isFacilitatorRole = role === "facilitator";
+    const isMentorRole = role === "mentor";
+    const isLearnerRole = role === "learner";
+
+    const isMaintenanceSettingsPage =
+      location.pathname === "/facilitator/maintenance";
+
+    const isAllowedDuringMaintenance =
+      isSuperAdminRole ||
+      isAdminRole ||
+      isFacilitatorRole ||
+      (allowed.mentors ? isMentorRole : false) ||
+      (allowed.learners ? isLearnerRole : false);
+
+    if (!isAllowedDuringMaintenance && !isMaintenanceSettingsPage) {
+      return (
+        <div
+          style={{
+            padding: 24,
+            maxWidth: 720,
+            margin: "0 auto",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 10 }}>
+            System Maintenance
+          </div>
+          <div style={{ color: "#666", marginBottom: 14 }}>
+            The system is currently under maintenance. Your account does not
+            have access during this maintenance window.
+          </div>
+          <div
+            style={{
+              fontFamily: "monospace",
+              fontSize: 12,
+              whiteSpace: "pre-wrap",
+              textAlign: "left",
+              border: "1px solid #eee",
+              borderRadius: 8,
+              padding: 12,
+              background: "#fafafa",
+            }}
+          >
+            role: {String(role ?? "unknown")}
+          </div>
+          <button
+            type="button"
+            style={{
+              marginTop: 16,
+              padding: "10px 14px",
+              borderRadius: 8,
+              border: "1px solid #ddd",
+              background: "white",
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+            onClick={() => void supabase.auth.signOut()}
+          >
+            Sign out
+          </button>
+        </div>
+      );
+    }
   }
 
   // User is authenticated, render children
@@ -467,6 +604,26 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Documents />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learner/statement-of-work"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <LearnerStatementOfWork />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/learner/modules/:moduleId"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <LearnerModuleAssessment />
                 </MainLayout>
               </ProtectedRoute>
             }

@@ -17,12 +17,24 @@ type ModuleSpec = {
   evidence: EvidenceItem[];
 };
 
-export default function MentorModuleAssessment() {
+type Props = {
+  backToLearnersPath?: string;
+  backToSowPath?: string;
+};
+
+const MentorModuleAssessment: React.FC<Props> = ({
+  backToLearnersPath,
+  backToSowPath,
+}) => {
   const navigate = useNavigate();
   const params = useParams();
 
   const learnerId = params.learnerId ?? "";
   const moduleId = params.moduleId ?? "WM-01";
+
+  const resolvedBackToLearnersPath = backToLearnersPath ?? "/mentor/learners";
+  const resolvedBackToSowPath =
+    backToSowPath ?? `/mentor/learners/${encodeURIComponent(learnerId)}`;
 
   const moduleSpec = useMemo<ModuleSpec>(() => {
     const map: Record<string, ModuleSpec> = {
@@ -63,12 +75,8 @@ export default function MentorModuleAssessment() {
       <div className="mma-container">
         <header className="mma-header">
           <div>
-            <p className="mma-breadcrumb">
-              Workplace Placements / Learner
-            </p>
-            <h1>
-              Module Assessment: {moduleSpec.moduleId}
-            </h1>
+            <p className="mma-breadcrumb">Workplace Placements / Learner</p>
+            <h1>Module Assessment: {moduleSpec.moduleId}</h1>
           </div>
           <div className="mma-status-pill">Awaiting Mentor Review</div>
         </header>
@@ -82,7 +90,9 @@ export default function MentorModuleAssessment() {
             </div>
 
             <div className="mma-card">
-              <div className="mma-card-title">Learner Evidence ({moduleSpec.evidence.length} Files Uploaded)</div>
+              <div className="mma-card-title">
+                Learner Evidence ({moduleSpec.evidence.length} Files Uploaded)
+              </div>
               <div className="mma-evidence-grid">
                 {moduleSpec.evidence.map((e, idx) => (
                   <div className="mma-evidence-item" key={idx}>
@@ -97,7 +107,9 @@ export default function MentorModuleAssessment() {
             </div>
 
             <div className="mma-card">
-              <div className="mma-card-title">Mentor Feedback &amp; Outcome</div>
+              <div className="mma-card-title">
+                Mentor Feedback &amp; Outcome
+              </div>
 
               <div className="mma-form-group">
                 <label>Observation Comments / Technical Feedback</label>
@@ -134,7 +146,8 @@ export default function MentorModuleAssessment() {
                 Sign-off &amp; Submit Assessment
               </button>
               <p className="mma-submit-note">
-                By submitting, you are digitally signing that you have personally observed the learner's competence in this module.
+                By submitting, you are digitally signing that you have
+                personally observed the learner's competence in this module.
               </p>
             </div>
 
@@ -142,7 +155,9 @@ export default function MentorModuleAssessment() {
               <button
                 type="button"
                 className="mma-back-btn"
-                onClick={() => navigate(`/mentor/learners`, { replace: false })}
+                onClick={() =>
+                  navigate(resolvedBackToLearnersPath, { replace: false })
+                }
               >
                 Back to learners
               </button>
@@ -150,10 +165,7 @@ export default function MentorModuleAssessment() {
                 type="button"
                 className="mma-back-btn"
                 onClick={() =>
-                  navigate(
-                    `/mentor/learners/${encodeURIComponent(learnerId)}`,
-                    { replace: false },
-                  )
+                  navigate(resolvedBackToSowPath, { replace: false })
                 }
               >
                 Back to statement of work
@@ -170,7 +182,9 @@ export default function MentorModuleAssessment() {
               </div>
               <div className="mma-info-row">
                 <span className="mma-info-label">Credits</span>
-                <span className="mma-info-value">{moduleSpec.credits} Credits</span>
+                <span className="mma-info-value">
+                  {moduleSpec.credits} Credits
+                </span>
               </div>
               <div className="mma-info-row">
                 <span className="mma-info-label">Logged Hours</span>
@@ -178,7 +192,9 @@ export default function MentorModuleAssessment() {
               </div>
               <div className="mma-info-row">
                 <span className="mma-info-label">Submission Date</span>
-                <span className="mma-info-value">{moduleSpec.submissionDate}</span>
+                <span className="mma-info-value">
+                  {moduleSpec.submissionDate}
+                </span>
               </div>
             </div>
 
@@ -190,7 +206,9 @@ export default function MentorModuleAssessment() {
               </div>
               <div className="mma-checklist-item">
                 <input type="checkbox" defaultChecked />
-                <span>Installation levels and verticality are within tolerance.</span>
+                <span>
+                  Installation levels and verticality are within tolerance.
+                </span>
               </div>
               <div className="mma-checklist-item">
                 <input type="checkbox" />
@@ -206,4 +224,6 @@ export default function MentorModuleAssessment() {
       </div>
     </div>
   );
-}
+};
+
+export default MentorModuleAssessment;
