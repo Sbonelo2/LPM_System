@@ -290,6 +290,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   const location = useLocation();
   const [profileRole, setProfileRole] = useState<string | undefined>(undefined);
   const [profileRoleLoading, setProfileRoleLoading] = useState(false);
+  const [maintenanceSnapshot, setMaintenanceSnapshot] = useState<any>(null);
 
   // Debug: Log the current state
   console.log("ProtectedRoute - user:", user);
@@ -348,7 +349,39 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const maintenance = getMaintenanceSnapshot();
+  useEffect(() => {
+    const loadMaintenance = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("maintenance_settings")
+          .select("settings")
+          .eq("key", "global")
+          .maybeSingle();
+
+        if (error) {
+          setMaintenanceSnapshot(getMaintenanceSnapshot());
+          return;
+        }
+
+        const settings = (data as { settings?: unknown } | null)?.settings;
+        if (!settings) {
+          setMaintenanceSnapshot(getMaintenanceSnapshot());
+          return;
+        }
+
+        setMaintenanceSnapshot(settings);
+        localStorage.setItem("maintenance-settings", JSON.stringify(settings));
+      } catch {
+        setMaintenanceSnapshot(getMaintenanceSnapshot());
+      }
+    };
+
+    void loadMaintenance();
+  }, []);
+
+  const maintenance =
+    (maintenanceSnapshot as ReturnType<typeof getMaintenanceSnapshot>) ??
+    getMaintenanceSnapshot();
   const maintenanceActive = maintenance?.status === "active";
   const metadataRole = normalizeRole(user?.user_metadata?.role);
 
@@ -385,6 +418,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
   if (maintenanceActive) {
     const allowed = maintenance?.allowedDuringMaintenance ?? {};
 
+    const scheduledStart = (maintenance as any)?.scheduledStart as
+      | string
+      | undefined;
+    const scheduledEnd = (maintenance as any)?.scheduledEnd as
+      | string
+      | undefined;
+    const subject = (maintenance as any)?.subject as string | undefined;
+    const message = (maintenance as any)?.message as string | undefined;
+
     const isSuperAdminRole = role === "super_admin";
     const isAdminRole = role === "admin";
     const isFacilitatorRole = role === "facilitator";
@@ -418,6 +460,49 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
             The system is currently under maintenance. Your account does not
             have access during this maintenance window.
           </div>
+          {(scheduledStart || scheduledEnd) && (
+            <div
+              style={{
+                marginBottom: 12,
+                textAlign: "left",
+                border: "1px solid #eee",
+                borderRadius: 8,
+                padding: 12,
+                background: "#fff",
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Schedule</div>
+              <div style={{ color: "#444" }}>
+                Start: {scheduledStart ? scheduledStart : "Not set"}
+              </div>
+              <div style={{ color: "#444" }}>
+                End: {scheduledEnd ? scheduledEnd : "Not set"}
+              </div>
+            </div>
+          )}
+          {(subject || message) && (
+            <div
+              style={{
+                marginBottom: 12,
+                textAlign: "left",
+                border: "1px solid #eee",
+                borderRadius: 8,
+                padding: 12,
+                background: "#fff",
+              }}
+            >
+              {subject && (
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                  {subject}
+                </div>
+              )}
+              {message && (
+                <div style={{ color: "#444", whiteSpace: "pre-wrap" }}>
+                  {message}
+                </div>
+              )}
+            </div>
+          )}
           <div
             style={{
               fontFamily: "monospace",
@@ -443,7 +528,18 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({
               cursor: "pointer",
               fontWeight: 600,
             }}
-            onClick={() => void supabase.auth.signOut()}
+            onClick={async () => {
+              localStorage.removeItem("admin-token");
+              localStorage.removeItem("super-admin-token");
+              localStorage.removeItem("coordinator-token");
+              localStorage.removeItem("qa-token");
+              localStorage.removeItem("mentor-token");
+              try {
+                await supabase.auth.signOut({ scope: "local" });
+              } finally {
+                window.location.assign("/login");
+              }
+            }}
           >
             Sign out
           </button>

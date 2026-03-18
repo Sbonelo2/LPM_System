@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { supabase } from "../services/supabaseClient";
 import { Link, useNavigate } from "react-router-dom";
 import InputField from "../components/InputField";
@@ -11,6 +11,24 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const navigate = useNavigate();
+
+  const maintenance = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("maintenance-settings");
+      if (!raw) return null;
+      return JSON.parse(raw) as {
+        status?: "active" | "inactive";
+        scheduledStart?: string;
+        scheduledEnd?: string;
+        subject?: string;
+        message?: string;
+      };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const maintenanceActive = maintenance?.status === "active";
 
   const withTimeout = async <T,>(
     promise: PromiseLike<T>,
@@ -136,6 +154,40 @@ const Login: React.FC = () => {
     <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Login</h1>
+
+        {maintenanceActive && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid #fde68a",
+              background: "#fffbeb",
+              color: "#92400e",
+              textAlign: "left",
+            }}
+          >
+            <div style={{ fontWeight: 800, marginBottom: 6 }}>
+              System is under maintenance
+            </div>
+            {(maintenance.scheduledStart || maintenance.scheduledEnd) && (
+              <div style={{ marginBottom: 8 }}>
+                <div>Start: {maintenance.scheduledStart || "Not set"}</div>
+                <div>End: {maintenance.scheduledEnd || "Not set"}</div>
+              </div>
+            )}
+            {maintenance.subject && (
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                {maintenance.subject}
+              </div>
+            )}
+            {maintenance.message && (
+              <div style={{ whiteSpace: "pre-wrap" }}>
+                {maintenance.message}
+              </div>
+            )}
+          </div>
+        )}
 
         <form className="auth-form" onSubmit={handleLogin}>
           <InputField
