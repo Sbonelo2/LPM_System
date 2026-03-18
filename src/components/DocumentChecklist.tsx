@@ -31,53 +31,57 @@ const DocumentChecklist: React.FC = () => {
   // Define required documents for learners
   const requiredDocuments: RequiredDocument[] = [
     {
-      id: '1',
-      title: 'ID Copy',
-      description: 'Clear copy of your South African ID document or passport',
-      document_type: 'ID_COPY',
+      id: "1",
+      title: "ID Copy",
+      description:
+        "Certified clear copy of your South African ID document or passport (not older than 6 months)",
+      document_type: "ID_COPY",
       is_required: true,
-      category: 'Identification'
+      category: "Identification",
     },
     {
-      id: '2',
-      title: 'Matric Certificate',
-      description: 'Your National Senior Certificate or equivalent qualification',
-      document_type: 'MATRIC_CERTIFICATE',
+      id: "2",
+      title: "Matric Certificate",
+      description:
+        "Certified copy of your National Senior Certificate or equivalent qualification (not older than 6 months)",
+      document_type: "MATRIC_CERTIFICATE",
       is_required: true,
-      category: 'Education'
+      category: "Education",
     },
     {
-      id: '3',
-      title: 'Tertiary Qualification',
-      description: 'Degree, diploma or certificate from tertiary institution',
-      document_type: 'TERTIARY_QUALIFICATION',
+      id: "3",
+      title: "Tertiary Qualification",
+      description:
+        "Certified copy of your degree, diploma or certificate from tertiary institution (not older than 6 months)",
+      document_type: "TERTIARY_QUALIFICATION",
       is_required: true,
-      category: 'Education'
+      category: "Education",
     },
     {
-      id: '4',
-      title: 'Proof of Address',
-      description: 'Recent utility bill or bank statement (not older than 3 months)',
-      document_type: 'PROOF_OF_ADDRESS',
+      id: "4",
+      title: "Proof of Address",
+      description:
+        "Recent utility bill or bank statement (not older than 6 months)",
+      document_type: "PROOF_OF_ADDRESS",
       is_required: true,
-      category: 'Verification'
+      category: "Verification",
     },
     {
-      id: '5',
-      title: 'Timesheet Template',
-      description: 'Completed timesheet showing work experience hours',
-      document_type: 'TIMESHEET',
+      id: "5",
+      title: "Timesheet Template",
+      description: "Completed timesheet showing work experience hours",
+      document_type: "TIMESHEET",
       is_required: false,
-      category: 'Workplace'
+      category: "Workplace",
     },
     {
-      id: '6',
-      title: 'Evidence of Work',
-      description: 'Portfolio or evidence of completed work/projects',
-      document_type: 'EVIDENCE',
+      id: "6",
+      title: "Evidence of Work",
+      description: "Portfolio or evidence of completed work/projects",
+      document_type: "EVIDENCE",
       is_required: false,
-      category: 'Workplace'
-    }
+      category: "Workplace",
+    },
   ];
 
   useEffect(() => {
