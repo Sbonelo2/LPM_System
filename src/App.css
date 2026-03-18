@@ -48,3 +48,8 @@
 .read-the-docs {
   color: #888;
 }
+
+.mentor-profile-dashboard:hover {
+  background-color: white;
+  border-color: aliceblue;
+}

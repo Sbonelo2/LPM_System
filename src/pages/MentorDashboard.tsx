@@ -5,6 +5,8 @@ import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/LoadingSpinner";
 import Snackbar from "../components/Snackbar";
 import "./MentorDashboard.css";
+import { useNavigate } from "react-router-dom";
+import ProfileImageUpload from "../components/ProfileImageUpload";
 
 type Learner = {
   id: string;
@@ -17,6 +19,7 @@ type Learner = {
 
 const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedLearnerId, setSelectedLearnerId] = useState<string | null>(
     null,
   );
@@ -29,6 +32,8 @@ const MentorDashboard: React.FC = () => {
     qualifications: "BCom Degree",
     maxStudents: 10,
     currentStudents: 0,
+    currentLearners: 0,
+
   });
 
   useEffect(() => {
@@ -88,12 +93,15 @@ const MentorDashboard: React.FC = () => {
     if (!user) return;
 
     try {
-      // Get user profile data
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("full_name, profile_image_url")
-        .eq("id", user.id)
-        .single();
+      // Get user profile data and role-specific profile image
+      const [{ data, error }, { data: imageRow }] = await Promise.all([
+        supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+        supabase
+          .from("role_profile_images")
+          .select("image_url")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
 
       if (error) {
         console.error("Error loading user data:", error);
@@ -101,7 +109,7 @@ const MentorDashboard: React.FC = () => {
         setUserName(user.email?.split("@")[0] || "User");
       } else {
         setUserName(data?.full_name || user.email?.split("@")[0] || "User");
-        setProfileImage(data?.profile_image_url || "");
+        setProfileImage(imageRow?.image_url || "");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -113,6 +121,33 @@ const MentorDashboard: React.FC = () => {
     () => learners.find((l) => l.id === selectedLearnerId) ?? null,
     [learners, selectedLearnerId],
   );
+
+  //for a  profile image to appear in the mentor dashoarb as well
+  const handleImageChange = async (imageUrl: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("role_profile_images")
+        .upsert(
+          {
+            user_id: user.id,
+            image_url: imageUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+
+      if (error) throw error;
+      setProfileImage(imageUrl);
+
+      //snackbar for success notification
+      setSnackbarMessage("Profile image updated successfully!");
+    } catch (error: any) {
+      console.log("Error saving image", error);
+      setSnackbarMessage(`Failed to save image: ${error.message}`);
+    }
+  };
 
   const initials = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
@@ -143,6 +178,75 @@ const MentorDashboard: React.FC = () => {
         message={snackbarMessage}
         onClose={() => setSnackbarMessage("")}
       />
+      <div
+        className="dashboard-header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          alignContent: "space-between",
+          justifyContent: "start",
+          padding: "10px",
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          marginBottom: "20px",
+          borderRadius: "8px solid red",
+          // remove the color once document......
+        }}
+      >
+        <div
+          className="mentor-profile-dashboard"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "15px",
+            width: "100%",
+            justifyContent: "start",
+          }}
+        >
+          <button
+            onClick={() => navigate("/mentor/profile")}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#fff",
+              borderRadius: "100px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            <ProfileImageUpload
+              currentImage={profileImage}
+              onImageChange={(handleImageChange)}
+              editable={false}
+              size={100}
+            />
+          </button>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+              alignContent: "center",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "30px",
+                fontWeight: 600,
+                alignContent: "start",
+                justifyContent: "center",
+              }}
+            >
+              Welcome, {userName}
+            </h2>
+            <p style={{ margin: 0, color: "#6b7280", fontSize: "14px" }}>
+              {user?.email}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="mentor-header">
         <h1 className="mentor-title">Mentor Overview</h1>
         <p className="mentor-subtitle">

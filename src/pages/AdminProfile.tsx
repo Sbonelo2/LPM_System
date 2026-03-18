@@ -31,71 +31,44 @@ const AdminProfile: React.FC = () => {
   })();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (user) {
-        setLoading(true);
-        try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', user.id)
-            .single();
+    const loadUserData = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        const [{ data: profile, error }, { data: imageRow }] = await Promise.all([
+          supabase.from('profiles').select('full_name, email').eq('id', user.id).single(),
+          supabase
+            .from('role_profile_images')
+            .select('image_url')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+        ]);
 
-          if (error) throw error;
-
-          if (data) {
-            setFullName(data.full_name || '');
-            setEmail(data.email || '');
-          }
-        } catch (err: any) {
-          setMessage(`Error: ${err.message}`);
-        } finally {
-          setLoading(false);
+        if (error) {
+          console.error('Error loading user data:', error);
+          setFullName(user.email?.split('@')[0] || 'User');
+          setEmail(user.email || '');
+        } else {
+          setFullName(profile?.full_name || user.email?.split('@')[0] || 'User');
+          setEmail(profile?.email || user.email || '');
         }
+
+        if (imageRow?.image_url) {
+          setProfileImage(imageRow.image_url);
+        }
+      } catch (error: any) {
+        console.error('Error:', error);
+        setMessage(`Error: ${error.message}`);
+        setFullName(user?.email?.split('@')[0] || 'User');
+        setEmail(user?.email || '');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProfile();
+    loadUserData();
   }, [user]);
-
-  // Load user data on component mount
-  useEffect(() => {
-    if (user) {
-      loadUserData();
-    }
-  }, [user]);
-
-  const loadUserData = async () => {
-    if (!user) return;
-    
-    try {
-      const [{ data: profile, error }, { data: imageRow }] = await Promise.all([
-        supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-        supabase
-          .from('role_profile_images')
-          .select('image_url')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-      ]);
-
-      if (error) {
-        console.error('Error loading user data:', error);
-        setFullName(user.email?.split('@')[0] || 'User');
-        setEmail(user.email || '');
-      } else {
-        setFullName(profile?.full_name || user.email?.split('@')[0] || 'User');
-        setEmail(user.email || '');
-      }
-
-      if (imageRow?.image_url) {
-        setProfileImage(imageRow.image_url);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      setFullName(user?.email?.split('@')[0] || 'User');
-      setEmail(user?.email || '');
-    }
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
