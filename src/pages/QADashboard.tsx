@@ -6,6 +6,31 @@ import DashboardStats from "../components/DashboardStats";
 import TableComponent from "../components/TableComponent";
 import ProfileImageUpload from "../components/ProfileImageUpload";
 import { useAuth } from "../hooks/useAuth";
+import LoadingSpinner from "../components/LoadingSpinner";
+
+type QAStatus = "pending" | "approved" | "declined";
+
+const normalizeStatus = (value?: string): QAStatus => {
+  const normalized = (value || "").toLowerCase();
+  if (normalized.startsWith("pending")) return "pending";
+  if (normalized === "under review") return "pending";
+  if (normalized === "qa approved" || normalized === "approved") return "approved";
+  if (
+    normalized === "qa rejected" ||
+    normalized === "rejected" ||
+    normalized === "declined"
+  ) {
+    return "declined";
+  }
+  return "pending";
+};
+
+const statusLabel = (value?: string): string => {
+  const normalized = normalizeStatus(value);
+  if (normalized === "approved") return "QA Approved";
+  if (normalized === "declined") return "QA Rejected";
+  return "Pending QA";
+};
 
 const QADashboard: React.FC = () => {
   const { user } = useAuth();
@@ -43,17 +68,8 @@ const QADashboard: React.FC = () => {
     loadHeaderProfile();
   }, [user]);
 
-  // Keep a merged role for QA + Coordinator capabilities.
-  useEffect(() => {
-    if (user) {
-      user.user_metadata = {
-        ...user.user_metadata,
-        role: "super_admin",
-      };
-    }
-  }, [user]);
-
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showLearnerModal, setShowLearnerModal] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState<any>(null);
   const [tableData, setTableData] = useState<any[]>([]);
@@ -64,42 +80,81 @@ const QADashboard: React.FC = () => {
     { label: "COMPLIANCE RATE", value: "0%" },
   ]);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchDashboardData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    setError(null);
     try {
-      // 1. Fetch documents that need QA review
+      // 1. Fetch documents that need QA review (no embedded joins)
       const { data: docs, error: docsError } = await supabase
         .from("documents")
-        .select(`
+        .select(
+          `
           id,
           file_name,
           file_url,
           review_status,
           created_at,
-          user_id,
-          profiles:user_id (full_name, email),
-          learner_profiles!inner (learner_name, learner_identifier, programme)
-        `)
-        .or("review_status.eq.Pending QA,review_status.eq.Under Review")
+          user_id
+        `,
+        )
+        .or("review_status.ilike.pending%,review_status.eq.Under Review")
         .order("created_at", { ascending: false });
 
       if (docsError) throw docsError;
 
-      const formattedData = (docs || []).map((doc: any) => ({
-        id: doc.learner_profiles?.learner_identifier || doc.id.slice(0, 8),
-        documentId: doc.id,
-        name: doc.learner_profiles?.learner_name || doc.profiles?.full_name || "Unknown",
-        host: "See Placement", // Host is in learner_placements, can be added later if needed
-        programme: doc.learner_profiles?.programme || "General",
-        status: doc.review_status || "Pending QA",
-        submittedOn: new Date(doc.created_at).toLocaleDateString(),
-        email: doc.profiles?.email || "",
-        phone: "N/A",
-        qaScore: "N/A",
-        complianceStatus: doc.review_status === "QA Approved" ? "Compliant" : "Pending",
-        fileUrl: doc.file_url,
-        fileName: doc.file_name
-      }));
+      const userIds = Array.from(new Set((docs || []).map((d) => d.user_id)));
+      let hostMap: Record<string, string> = {};
+      let learnerProfileMap: Record<
+        string,
+        { learner_name?: string; learner_identifier?: string; programme?: string; email?: string }
+      > = {};
+
+      if (userIds.length > 0) {
+        const [{ data: placements }, { data: learnerProfiles }] = await Promise.all([
+          supabase
+            .from("learner_placements")
+            .select("learner_id, host_name")
+            .in("learner_id", userIds),
+          supabase
+            .from("learner_profiles")
+            .select("user_id, learner_name, learner_identifier, programme, email")
+            .in("user_id", userIds),
+        ]);
+
+        placements?.forEach((p) => {
+          hostMap[p.learner_id] = p.host_name;
+        });
+
+        learnerProfiles?.forEach((p) => {
+          learnerProfileMap[p.user_id] = {
+            learner_name: p.learner_name,
+            learner_identifier: p.learner_identifier,
+            programme: p.programme,
+            email: p.email,
+          };
+        });
+      }
+
+      const formattedData = (docs || []).map((doc: any) => {
+        const statusValue = normalizeStatus(doc.review_status);
+        const learner = learnerProfileMap[doc.user_id] || {};
+        return {
+          id: learner.learner_identifier || doc.id.slice(0, 8),
+          documentId: doc.id,
+          name: learner.learner_name || "Unknown",
+          host: hostMap[doc.user_id] || "Unassigned",
+          programme: learner.programme || "General",
+          status: statusValue,
+          statusLabel: statusLabel(statusValue),
+          submittedOn: new Date(doc.created_at).toLocaleDateString(),
+          email: learner.email || "",
+          phone: "N/A",
+          qaScore: "N/A",
+          complianceStatus: statusValue === "approved" ? "Compliant" : "Pending",
+          fileUrl: doc.file_url,
+          fileName: doc.file_name,
+        };
+      });
 
       setTableData(formattedData);
 
@@ -111,8 +166,14 @@ const QADashboard: React.FC = () => {
       if (statsError) throw statsError;
 
       const total = allDocs?.length || 0;
-      const pending = allDocs?.filter(d => d.review_status === "Pending QA" || d.review_status === "Under Review").length || 0;
-      const approved = allDocs?.filter(d => d.review_status === "QA Approved").length || 0;
+      const pending =
+        allDocs?.filter(
+          (d) =>
+            d.review_status?.toLowerCase().startsWith("pending") ||
+            d.review_status === "Under Review",
+        ).length || 0;
+      const approved =
+        allDocs?.filter((d) => d.review_status === "approved").length || 0;
       const complianceRate = total > 0 ? Math.round((approved / total) * 100) : 0;
 
       setStats([
@@ -122,19 +183,52 @@ const QADashboard: React.FC = () => {
         { label: "COMPLIANCE RATE", value: `${complianceRate}%` },
       ]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching QA dashboard data:", error);
+      setError(
+        error?.message
+          ? `Failed to load QA dashboard: ${error.message}`
+          : "Failed to load QA dashboard.",
+      );
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchDashboardData();
+    const channel = supabase
+      .channel("qa-dashboard-live")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "documents" },
+        () => {
+          fetchDashboardData(true);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "learner_profiles" },
+        () => {
+          fetchDashboardData(true);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "learner_placements" },
+        () => {
+          fetchDashboardData(true);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleViewLearner = (learner: any) => {
-    setSelectedLearner({ ...learner });
+    setSelectedLearner({ ...learner, status: normalizeStatus(learner.status) });
     setShowLearnerModal(true);
   };
 
@@ -148,19 +242,27 @@ const QADashboard: React.FC = () => {
       try {
         const { error } = await supabase
           .from("documents")
-          .update({ review_status: selectedLearner.status })
+          .update({ review_status: normalizeStatus(selectedLearner.status) })
           .eq("id", selectedLearner.documentId);
 
         if (error) throw error;
         
         alert(`QA Status updated for ${selectedLearner.name}`);
-        fetchDashboardData(); // Refresh data
+        fetchDashboardData(true); // Refresh data quietly
         closeModal();
       } catch (error: any) {
         alert(`Error updating status: ${error.message}`);
       }
     }
   };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
 
   return (
     <div className="qa-dashboard-container">
@@ -231,7 +333,7 @@ const QADashboard: React.FC = () => {
             { header: "LEARNER", key: "name" },
             { header: "HOST", key: "host" },
             { header: "PROGRAMME", key: "programme" },
-            { header: "QA STATUS", key: "status" },
+            { header: "QA STATUS", key: "statusLabel" },
             { header: "QA SCORE", key: "qaScore" },
             { header: "SUBMITTED ON", key: "submittedOn" },
             { header: "ACTION", key: "action" },
@@ -259,7 +361,7 @@ const QADashboard: React.FC = () => {
               <div className="modal-header">
                 <h2>QA Review Details</h2>
                 <button className="modal-close-btn" onClick={closeModal}>
-                  ×
+                  X
                 </button>
               </div>
 
@@ -313,9 +415,9 @@ const QADashboard: React.FC = () => {
                       )
                     }
                   >
-                    <option value="Pending QA">Pending QA</option>
-                    <option value="Under Review">Under Review</option>
-                    <option value="QA Approved">QA Approved</option>
+                    <option value="pending">Pending QA</option>
+                    <option value="approved">QA Approved</option>
+                    <option value="declined">QA Rejected</option>
                     <option value="QA Rejected">QA Rejected</option>
                   </select>
                 </div>
