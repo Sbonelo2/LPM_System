@@ -53,53 +53,86 @@ const QADashboard: React.FC = () => {
     }
   }, [user]);
 
+  const [loading, setLoading] = useState(true);
   const [showLearnerModal, setShowLearnerModal] = useState(false);
   const [selectedLearner, setSelectedLearner] = useState<any>(null);
-  const [tableData, setTableData] = useState([
-    {
-      id: "STU001",
-      name: "John Doe",
-      host: "ABC Company",
-      programme: "ICT Training",
-      status: "Under Review",
-      submittedOn: "2026-02-15",
-      email: "john.doe@example.com",
-      phone: "+27 123 456 7890",
-      qaScore: "85%",
-      complianceStatus: "Compliant",
-    },
-    {
-      id: "STU002",
-      name: "Jane Smith",
-      host: "XYZ Organization",
-      programme: "Business Analysis",
-      status: "Pending QA",
-      submittedOn: "2026-02-14",
-      email: "jane.smith@example.com",
-      phone: "+27 987 654 3210",
-      qaScore: "92%",
-      complianceStatus: "Non-Compliant",
-    },
-    {
-      id: "STU003",
-      name: "Mike Johnson",
-      host: "Tech Solutions",
-      programme: "Software Development",
-      status: "QA Approved",
-      submittedOn: "2026-02-13",
-      email: "mike.j@example.com",
-      phone: "+27 555 123 4567",
-      qaScore: "78%",
-      complianceStatus: "Compliant",
-    },
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [stats, setStats] = useState([
+    { label: "TOTAL REVIEWS", value: 0 },
+    { label: "PENDING QA", value: 0 },
+    { label: "QA APPROVED", value: 0 },
+    { label: "COMPLIANCE RATE", value: "0%" },
   ]);
 
-  const stats = [
-    { label: "TOTAL REVIEWS", value: 45 },
-    { label: "PENDING QA", value: 12 },
-    { label: "QA APPROVED", value: 28 },
-    { label: "COMPLIANCE RATE", value: "87%" },
-  ];
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      // 1. Fetch documents that need QA review (those assigned to super_admin or qa_officer role)
+      // For now, let's fetch documents where review_status is not null and not approved
+      const { data: docs, error: docsError } = await supabase
+        .from("documents")
+        .select(`
+          id,
+          file_name,
+          file_url,
+          review_status,
+          created_at,
+          user_id,
+          profiles:user_id (full_name, email),
+          learner_profiles!inner (learner_name, learner_identifier, host_name, programme)
+        `)
+        .or("review_status.eq.Pending QA,review_status.eq.Under Review")
+        .order("created_at", { ascending: false });
+
+      if (docsError) throw docsError;
+
+      const formattedData = (docs || []).map((doc: any) => ({
+        id: doc.learner_profiles?.learner_identifier || doc.id.slice(0, 8),
+        documentId: doc.id,
+        name: doc.learner_profiles?.learner_name || doc.profiles?.full_name || "Unknown",
+        host: doc.learner_profiles?.host_name || "Not assigned",
+        programme: doc.learner_profiles?.programme || "General",
+        status: doc.review_status || "Pending QA",
+        submittedOn: new Date(doc.created_at).toLocaleDateString(),
+        email: doc.profiles?.email || "",
+        phone: "N/A", // Phone not in current schema
+        qaScore: "N/A", // Score calculation logic can be added later
+        complianceStatus: doc.review_status === "QA Approved" ? "Compliant" : "Pending",
+        fileUrl: doc.file_url,
+        fileName: doc.file_name
+      }));
+
+      setTableData(formattedData);
+
+      // 2. Fetch overall stats
+      const { data: allDocs, error: statsError } = await supabase
+        .from("documents")
+        .select("review_status");
+
+      if (statsError) throw statsError;
+
+      const total = allDocs?.length || 0;
+      const pending = allDocs?.filter(d => d.review_status === "Pending QA" || d.review_status === "Under Review").length || 0;
+      const approved = allDocs?.filter(d => d.review_status === "QA Approved").length || 0;
+      const complianceRate = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+      setStats([
+        { label: "TOTAL REVIEWS", value: total },
+        { label: "PENDING QA", value: pending },
+        { label: "QA APPROVED", value: approved },
+        { label: "COMPLIANCE RATE", value: `${complianceRate}%` },
+      ]);
+
+    } catch (error) {
+      console.error("Error fetching QA dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
   const handleViewLearner = (learner: any) => {
     setSelectedLearner({ ...learner });
@@ -111,17 +144,22 @@ const QADashboard: React.FC = () => {
     setSelectedLearner(null);
   };
 
-  const handleSubmit = () => {
-    if (selectedLearner) {
-      setTableData((prev) =>
-        prev.map((learner) =>
-          learner.id === selectedLearner.id ? selectedLearner : learner,
-        ),
-      );
-      alert(
-        `QA Status updated: ${selectedLearner.name} - ${selectedLearner.status}`,
-      );
-      closeModal();
+  const handleSubmit = async () => {
+    if (selectedLearner && selectedLearner.documentId) {
+      try {
+        const { error } = await supabase
+          .from("documents")
+          .update({ review_status: selectedLearner.status })
+          .eq("id", selectedLearner.documentId);
+
+        if (error) throw error;
+        
+        alert(`QA Status updated for ${selectedLearner.name}`);
+        fetchDashboardData(); // Refresh data
+        closeModal();
+      } catch (error: any) {
+        alert(`Error updating status: ${error.message}`);
+      }
     }
   };
 
