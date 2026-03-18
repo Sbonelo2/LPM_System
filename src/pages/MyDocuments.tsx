@@ -1,6 +1,6 @@
 import React from "react";
-import "./MyDocuments.css";
 import Documents from "./Documents";
+import "./MyDocuments.css";
 
 const MyDocuments: React.FC = () => {
   return (

@@ -7,8 +7,10 @@ import TableComponent, { type TableColumn } from "../components/TableComponent";
 import Snackbar from "../components/Snackbar";
 import Modal from "../components/Modal";
 import PdfViewer from "../components/PdfViewer";
+// import DocumentChecklist from "../components/DocumentChecklist";
 import { formatDate } from "../utils/dateUtils";
 import "./Documents.css";
+import DocumentChecklist from "../components/DocumentChecklist";
 
 type DocumentTypeKey =
   | "ID_COPY"
@@ -100,6 +102,38 @@ export default function Documents(): React.JSX.Element {
   >("self");
   const [selectedRoles, setSelectedRoles] = useState<string[]>(["learner"]);
   const [selectedLearners, setSelectedLearners] = useState<string[]>([]);
+
+  // Add event listener for document viewing from checklist
+  useEffect(() => {
+    const handleViewDocument = (event: CustomEvent) => {
+      console.log('Received view document event:', event.detail);
+      setViewingDocument(event.detail);
+    };
+
+    // Add event listener
+    window.addEventListener('viewDocument', handleViewDocument as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('viewDocument', handleViewDocument as EventListener);
+    };
+  }, []);
+
+  // Add event listener for document viewing from checklist
+  useEffect(() => {
+    const handleViewDocument = (event: CustomEvent) => {
+      console.log('Received view document event:', event.detail);
+      setViewingDocument(event.detail);
+    };
+
+    // Add event listener
+    window.addEventListener('viewDocument', handleViewDocument as EventListener);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('viewDocument', handleViewDocument as EventListener);
+    };
+  }, []);
   const [learnerOptions, setLearnerOptions] = useState<
     Array<{ id: string; name: string; email?: string }>
   >([]);
@@ -224,14 +258,15 @@ export default function Documents(): React.JSX.Element {
         }
 
         if (userRole === "learner") {
-          query = query.or(
-            `user_id.eq.${user.id},document_scope.eq.system,target_user_ids.cs.{${user.id}},target_roles.cs.{learner}`,
-          );
+          // For learners on My Documents screen, only show their own uploaded documents
+          query = query.eq('user_id', user.id);
         }
 
         const { data, error } = await query;
 
         if (error) throw error;
+        
+        
         setDocuments(data ?? []);
       } catch (error: unknown) {
         setSnackbarMessage(
@@ -422,6 +457,20 @@ export default function Documents(): React.JSX.Element {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+      
+      // Trigger checklist refresh for learners
+      if (userRole === "learner") {
+        console.log('Triggering checklist refresh after upload');
+        const refreshEvent = new CustomEvent('refreshChecklist');
+        window.dispatchEvent(refreshEvent);
+      }
+      
+      // Trigger checklist refresh for learners
+      if (userRole === "learner") {
+        console.log('Triggering checklist refresh after upload');
+        const refreshEvent = new CustomEvent('refreshChecklist');
+        window.dispatchEvent(refreshEvent);
+      }
       if (isMentor) {
         const audienceLabel =
           audienceMode === "system"
@@ -609,7 +658,12 @@ export default function Documents(): React.JSX.Element {
         </Modal>
       )}
 
+     
+
       <div className="documents-layout">
+        {/* Show document checklist for learners */}
+        {userRole === "learner" && <DocumentChecklist />}
+        
         <div className="documents-list-section">
           <Card>
             <h3>MY UPLOADED DOCUMENTS</h3>

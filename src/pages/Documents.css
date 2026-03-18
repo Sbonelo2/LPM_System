@@ -23,6 +23,11 @@
   align-items: start;
 }
 
+/* Make checklist span full width like documents table */
+.document-checklist {
+  grid-column: 1 / -1; /* Span all columns */
+}
+
 .documents-list-section h3 {
   margin: 0 0 15px 0;
   font-size: 1.25rem;
