@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Card from "../components/Card";
 import Button from "../components/Button";
+import Snackbar from "../components/Snackbar";
+import { supabase } from "../services/supabaseClient";
 import "./Dashboard.css";
 import "./SystemSettings.css";
 import "./MaintenanceSettings.css";
@@ -33,11 +35,15 @@ type MaintenanceSettingsSnapshot = {
 };
 
 const STORAGE_KEY = "maintenance-settings";
+const DB_TABLE = "maintenance_settings";
+const DB_KEY = "global";
 
 export default function MaintenanceSettings() {
   const [status, setStatus] = useState<MaintenanceStatus>("active");
   const [scheduledStart, setScheduledStart] = useState("");
   const [scheduledEnd, setScheduledEnd] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const [allowedDuringMaintenance, setAllowedDuringMaintenance] =
     useState<AllowedDuringMaintenance>({
@@ -59,11 +65,7 @@ export default function MaintenanceSettings() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Partial<MaintenanceSettingsSnapshot>;
-
+    const applySnapshot = (parsed: Partial<MaintenanceSettingsSnapshot>) => {
       if (parsed.status === "active" || parsed.status === "inactive") {
         setStatus(parsed.status);
       }
@@ -98,12 +100,51 @@ export default function MaintenanceSettings() {
       if (typeof parsed.message === "string") {
         setMessage(parsed.message);
       }
-    } catch {
-      // ignore invalid localStorage value
-    }
+    };
+
+    const loadFromLocalStorage = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as Partial<MaintenanceSettingsSnapshot>;
+        applySnapshot(parsed);
+      } catch {
+        // ignore invalid localStorage value
+      }
+    };
+
+    const loadFromDb = async () => {
+      try {
+        const { data, error } = await supabase
+          .from(DB_TABLE)
+          .select("settings")
+          .eq("key", DB_KEY)
+          .maybeSingle();
+
+        if (error) {
+          loadFromLocalStorage();
+          return;
+        }
+
+        const settings = (data as { settings?: unknown } | null)?.settings;
+        if (!settings) {
+          loadFromLocalStorage();
+          return;
+        }
+
+        applySnapshot(settings as Partial<MaintenanceSettingsSnapshot>);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      } catch {
+        loadFromLocalStorage();
+      }
+    };
+
+    void loadFromDb();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
+    setSnackbarMessage("");
     const snapshot: MaintenanceSettingsSnapshot = {
       status,
       scheduledStart,
@@ -116,10 +157,36 @@ export default function MaintenanceSettings() {
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+
+    try {
+      const { error } = await supabase.from(DB_TABLE).upsert(
+        {
+          key: DB_KEY,
+          settings: snapshot,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "key" },
+      );
+
+      if (error) {
+        setSnackbarMessage(error.message);
+        return;
+      }
+
+      setSnackbarMessage("Settings saved.");
+    } catch {
+      setSnackbarMessage("Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <>
+      <Snackbar
+        message={snackbarMessage}
+        onClose={() => setSnackbarMessage("")}
+      />
       <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
           <h2>MAINTENANCE</h2>
@@ -334,7 +401,12 @@ export default function MaintenanceSettings() {
         </section>
 
         <div className="maintenance__actions">
-          <Button text="Save Settings" variant="primary" onClick={handleSave} />
+          <Button
+            text={saving ? "Saving..." : "Save Settings"}
+            variant="primary"
+            onClick={() => void handleSave()}
+            disabled={saving}
+          />
         </div>
       </div>
     </>
