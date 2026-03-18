@@ -125,7 +125,7 @@ export default function DocumentCard({
           <button
             type="button"
             className="document-card__toggle"
-            aria-expanded={isExpanded}
+            aria-expanded={isExpanded ? "true" : "false"}
             aria-controls={contentId}
             onClick={() => setExpanded(!isExpanded)}
           >
