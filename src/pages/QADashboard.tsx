@@ -67,8 +67,7 @@ const QADashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch documents that need QA review (those assigned to super_admin or qa_officer role)
-      // For now, let's fetch documents where review_status is not null and not approved
+      // 1. Fetch documents that need QA review
       const { data: docs, error: docsError } = await supabase
         .from("documents")
         .select(`
@@ -79,7 +78,7 @@ const QADashboard: React.FC = () => {
           created_at,
           user_id,
           profiles:user_id (full_name, email),
-          learner_profiles!inner (learner_name, learner_identifier, host_name, programme)
+          learner_profiles!inner (learner_name, learner_identifier, programme)
         `)
         .or("review_status.eq.Pending QA,review_status.eq.Under Review")
         .order("created_at", { ascending: false });
@@ -90,13 +89,13 @@ const QADashboard: React.FC = () => {
         id: doc.learner_profiles?.learner_identifier || doc.id.slice(0, 8),
         documentId: doc.id,
         name: doc.learner_profiles?.learner_name || doc.profiles?.full_name || "Unknown",
-        host: doc.learner_profiles?.host_name || "Not assigned",
+        host: "See Placement", // Host is in learner_placements, can be added later if needed
         programme: doc.learner_profiles?.programme || "General",
         status: doc.review_status || "Pending QA",
         submittedOn: new Date(doc.created_at).toLocaleDateString(),
         email: doc.profiles?.email || "",
-        phone: "N/A", // Phone not in current schema
-        qaScore: "N/A", // Score calculation logic can be added later
+        phone: "N/A",
+        qaScore: "N/A",
         complianceStatus: doc.review_status === "QA Approved" ? "Compliant" : "Pending",
         fileUrl: doc.file_url,
         fileName: doc.file_name
