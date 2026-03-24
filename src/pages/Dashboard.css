@@ -13,6 +13,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 20px;
   background-color: #ffffff;
   padding: 20px;
@@ -47,4 +49,23 @@
   color: #333;
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .dashboard-content {
+    padding: 12px;
+  }
+
+  .dashboard-header {
+    padding: 14px;
+    align-items: flex-start;
+  }
+
+  .dashboard-topbar {
+    margin: -12px -12px 12px;
+  }
+
+  .dashboard-my-placements-container {
+    padding: 14px;
+  }
 }

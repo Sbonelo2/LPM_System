@@ -1,6 +1,7 @@
 .facilitator-dashboard-content {
   width: 100%;
   padding: 20px;
+  box-sizing: border-box;
   background-color: #f8fafc;
   min-height: 100vh;
 }
@@ -12,4 +13,16 @@
 
 .facilitator-profile-icon:hover {
   opacity: 0.8;
+}
+
+@media (max-width: 900px) {
+  .facilitator-dashboard-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .facilitator-dashboard-content {
+    padding: 12px;
+  }
 }

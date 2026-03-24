@@ -80,7 +80,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  min-width: 300px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .save-button:hover {
@@ -90,6 +91,35 @@
 .save-button:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
+}
+
+@media (max-width: 900px) {
+  .profile-page {
+    padding: 16px;
+  }
+
+  .profile-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .profile-page {
+    padding: 12px;
+  }
+
+  .profile-card {
+    padding: 16px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .save-button {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Disabled input styling for greyed out email */

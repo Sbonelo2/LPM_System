@@ -43,10 +43,22 @@
   display: inline-block;
 }
 
-.status-pending { background: #fef3c7; color: #92400e; }
-.status-approved { background: #d1fae5; color: #065f46; }
-.status-rejected { background: #fee2e2; color: #991b1b; }
-.status-needs_revision { background: #dbeafe; color: #1e40af; }
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.status-needs_revision {
+  background: #dbeafe;
+  color: #1e40af;
+}
 
 .no-documents-message {
   text-align: center;
@@ -231,6 +243,55 @@
   color: #fff;
   font-size: 22px;
   font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .documents-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .upload-panel-wrap {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .documents-page {
+    padding: 14px 12px;
+  }
+
+  .documents-page__title {
+    font-size: 24px;
+    margin-bottom: 14px;
+  }
+
+  .document-card__file-row {
+    flex-wrap: wrap;
+  }
+
+  .document-card__file-link {
+    font-size: 18px;
+    word-break: break-word;
+  }
+
+  .document-card__date {
+    font-size: 16px;
+  }
+
+  .upload-panel {
+    min-height: unset;
+    padding: 18px 14px;
+  }
+
+  .upload-panel__title {
+    font-size: 24px;
+  }
+
+  .upload-panel__choose-btn,
+  .upload-panel__upload-btn {
+    font-size: 18px;
+  }
 }
 
 .upload-panel__choose-btn {

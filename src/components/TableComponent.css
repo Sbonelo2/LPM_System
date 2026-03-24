@@ -31,7 +31,9 @@
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
   font-size: 0.875rem;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
 }
 
 .search-input:focus {
@@ -44,6 +46,31 @@
   display: flex;
   gap: 0.5rem;
   align-items: center;
+}
+
+@media (max-width: 600px) {
+  .table-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .search-control {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filter-controls {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .filter-column-select,
+  .filter-value-select {
+    min-width: 0;
+    flex: 1;
+  }
 }
 
 .filter-column-select,
@@ -170,39 +197,39 @@
   .table-container {
     border-color: #4a5568; /* dark gray border */
   }
-  
+
   .table-controls {
     background-color: #2d3748;
     border-bottom-color: #4a5568;
   }
-  
+
   .search-input {
     background-color: #1a202c;
     border-color: #4a5568;
     color: #e2e8f0;
   }
-  
+
   .search-input:focus {
     border-color: #3b82f6;
   }
-  
+
   .filter-column-select,
   .filter-value-select {
     background-color: #1a202c;
     border-color: #4a5568;
     color: #e2e8f0;
   }
-  
+
   .table-results-info {
     background-color: #2d3748;
     border-top-color: #4a5568;
     color: #a0aec0;
   }
-  
+
   .sortable-header:hover {
     background-color: #4a5568;
   }
-  
+
   .table-caption {
     color: #e2e8f0; /* light gray text */
     background-color: #2d3748; /* dark gray background */

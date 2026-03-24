@@ -232,3 +232,24 @@
     max-width: 100%;
   }
 }
+
+@media (max-width: 600px) {
+  .system-settings__tabs {
+    flex-wrap: wrap;
+  }
+
+  .system-settings__tab {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .required-documents__modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .required-documents__modal-actions > * {
+    width: 100%;
+  }
+}

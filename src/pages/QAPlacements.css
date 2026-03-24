@@ -9,3 +9,11 @@
   padding-left: 12px;
   padding-right: 12px;
 }
+
+@media (max-width: 600px) {
+  .qa-placements-page .placements-table-container {
+    padding-left: 12px;
+    padding-right: 12px;
+    overflow-x: auto;
+  }
+}

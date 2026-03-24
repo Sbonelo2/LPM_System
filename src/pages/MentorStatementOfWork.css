@@ -173,6 +173,51 @@
   margin-bottom: 40px;
 }
 
+@media (max-width: 900px) {
+  .sow-document-wrapper {
+    padding: 28px;
+  }
+
+  .sow-header {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .sow-details-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .sow-signature-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sow-document-wrapper {
+    padding: 16px;
+  }
+
+  .sow-header-ref {
+    text-align: left;
+  }
+
+  .sow-host-block {
+    flex-direction: column;
+  }
+
+  .sow-host-right {
+    text-align: left;
+  }
+
+  .sow-evidence-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 .sow-evidence-table thead tr {
   border-top: 1px solid var(--sow-slate-200);
   border-bottom: 1px solid var(--sow-slate-200);

@@ -154,6 +154,39 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 900px) {
+  .admin-profile-page {
+    padding: 16px;
+  }
+
+  .admin-profile-card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-profile-page {
+    padding: 12px;
+  }
+
+  .admin-profile-header {
+    flex-wrap: wrap;
+  }
+
+  .admin-profile-card {
+    padding: 16px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .save-button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 /* Disabled input styling for greyed out email */
 input:disabled,
 input[disabled] {

@@ -19,7 +19,11 @@ interface MenuItem {
   isSignOut?: boolean;
 }
 
-const SideBar: React.FC = () => {
+const SideBar: React.FC<{
+  isMobile?: boolean;
+  isOpen?: boolean;
+  onRequestClose?: () => void;
+}> = ({ isMobile = false, isOpen = true, onRequestClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
@@ -41,6 +45,7 @@ const SideBar: React.FC = () => {
 
   const handleNavigation = (path: string) => {
     navigate(path);
+    onRequestClose?.();
   };
 
   const handleSignOut = async () => {
@@ -59,6 +64,7 @@ const SideBar: React.FC = () => {
     } finally {
       navigate("/login", { replace: true });
       window.location.assign("/login");
+      onRequestClose?.();
     }
   };
 
@@ -133,127 +139,144 @@ const SideBar: React.FC = () => {
       : userRole.replace("_", " ").toUpperCase();
 
   return (
-    <div
-      style={{
-        width: "250px",
-        backgroundColor: "#F8F9FA",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        borderRight: "1px solid #E9ECEF",
-      }}
-    >
-            
-      <h2
+    <>
+      {isMobile && (
+        <div
+          role="presentation"
+          onClick={() => onRequestClose?.()}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.45)",
+            zIndex: 999,
+            opacity: isOpen ? 1 : 0,
+            pointerEvents: isOpen ? "auto" : "none",
+            transition: "opacity 150ms ease",
+          }}
+        />
+      )}
+      <div
         style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          marginBottom: "30px",
-          color: "#2C3E50",
-          textAlign: "center",
+          width: "250px",
+          backgroundColor: "#F8F9FA",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          borderRight: "1px solid #E9ECEF",
+          ...(isMobile
+            ? {
+                position: "fixed" as const,
+                top: 0,
+                left: 0,
+                height: "100vh",
+                zIndex: 1000,
+                boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
+                transform: isOpen ? "translateX(0)" : "translateX(-110%)",
+                transition: "transform 180ms ease",
+              }
+            : {}),
         }}
       >
-                LPM System       
-      </h2>
-            
-      <nav style={{ flex: 1 }}>
-                
-        {menuItems.map((item, index) => (
-          <div key={index} style={{ marginBottom: "10px" }}>
-                        
-            {item.label === "NOTIFICATIONS" ? (
-              <NotificationBell onClick={() => handleNavigation(item.path!)} />
-            ) : (
-              <button
-                onClick={() =>
-                  item.action ? item.action() : handleNavigation(item.path!)
-                }
-                style={{
-                  width: "100%",
-                  padding: "15px 20px",
-                  border: isActive(item.path) ? "2px solid #007BFF" : "none",
-                  borderRadius: "12px",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: item.isSignOut ? "#DC3545" : "#2C3E50",
-                  textAlign: "left",
-                  transition: "all 0.2s ease",
-                  outline: "none",
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow =
-                    "0 4px 12px rgba(0, 0, 0, 0.15)";
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)";
-                  e.currentTarget.style.boxShadow =
-                    "0 2px 8px rgba(0, 0, 0, 0.1)";
-                }}
-              >
-                                {item.label}
-                              
-              </button>
-            )}
-                      
-          </div>
-        ))}
-              
-      </nav>
-            {/* Logged-in user info */}
-            
-      {user && (
-        <div
+        <h2
           style={{
-            marginTop: "auto",
-            padding: "15px",
-            backgroundColor: "#FFFFFF",
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+            fontSize: "24px",
+            fontWeight: "bold",
+            marginBottom: "30px",
+            color: "#2C3E50",
             textAlign: "center",
           }}
         >
-                    
-          <p
+          LPM System
+        </h2>
+
+        <nav style={{ flex: 1 }}>
+          {menuItems.map((item, index) => (
+            <div key={index} style={{ marginBottom: "10px" }}>
+              {item.label === "NOTIFICATIONS" ? (
+                <NotificationBell
+                  onClick={() => handleNavigation(item.path!)}
+                />
+              ) : (
+                <button
+                  onClick={() =>
+                    item.action ? item.action() : handleNavigation(item.path!)
+                  }
+                  style={{
+                    width: "100%",
+                    padding: "15px 20px",
+                    border: isActive(item.path) ? "2px solid #007BFF" : "none",
+                    borderRadius: "12px",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: item.isSignOut ? "#DC3545" : "#2C3E50",
+                    textAlign: "left",
+                    transition: "all 0.2s ease",
+                    outline: "none",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(0, 0, 0, 0.15)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow =
+                      "0 2px 8px rgba(0, 0, 0, 0.1)";
+                  }}
+                >
+                  {item.label}
+                </button>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {user && (
+          <div
             style={{
-              margin: 0,
-              fontSize: "12px",
-              color: "#6C757D",
+              marginTop: "auto",
+              padding: "15px",
+              backgroundColor: "#FFFFFF",
+              borderRadius: "8px",
+              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
             }}
           >
-                        Logged in as:           
-          </p>
-                    
-          <p
-            style={{
-              margin: "5px 0 0 0",
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#2C3E50",
-            }}
-          >
-                        {user.email}
-                      
-          </p>
-                    
-          <p
-            style={{
-              margin: "5px 0 0 0",
-              fontSize: "11px",
-              color: "#007BFF",
-              fontWeight: "500",
-            }}
-          >
-                        Role: {formattedRole}
-                      
-          </p>
-                  
-        </div>
-      )}
-          
-    </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "12px",
+                color: "#6C757D",
+              }}
+            >
+              Logged in as:
+            </p>
+            <p
+              style={{
+                margin: "5px 0 0 0",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#2C3E50",
+              }}
+            >
+              {user.email}
+            </p>
+            <p
+              style={{
+                margin: "5px 0 0 0",
+                fontSize: "11px",
+                color: "#007BFF",
+                fontWeight: "500",
+              }}
+            >
+              Role: {formattedRole}
+            </p>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

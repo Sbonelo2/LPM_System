@@ -9,6 +9,8 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .modal-overlay .modal-content {
@@ -19,6 +21,9 @@
   width: 90%;
   box-shadow: var(--shadow-small);
   position: relative;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .modal-header {
@@ -51,4 +56,16 @@
 .modal-body {
   color: var(--text-color-primary);
   line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-overlay .modal-content {
+    width: 100%;
+    padding: 16px;
+    max-height: calc(100vh - 24px);
+  }
 }

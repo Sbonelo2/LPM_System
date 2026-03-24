@@ -89,3 +89,37 @@
 .btn.auth-cta:disabled {
   opacity: 0.7;
 }
+
+@media (max-width: 600px) {
+  .auth-page {
+    padding: 16px 12px;
+  }
+
+  .auth-card {
+    border-radius: 24px;
+  }
+
+  .auth-title {
+    font-size: 32px;
+  }
+
+  .btn.auth-cta {
+    height: 54px;
+    border-radius: 18px;
+    font-size: 18px;
+  }
+
+  .auth-card .input-field__label {
+    font-size: 16px;
+  }
+
+  .auth-card .input-field__control {
+    height: 54px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+
+  .auth-links {
+    font-size: 16px;
+  }
+}

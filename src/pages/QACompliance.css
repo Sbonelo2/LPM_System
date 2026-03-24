@@ -89,3 +89,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 600px) {
+  .qa-compliance__issues-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .qa-compliance__modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
+  .qa-compliance__modal-actions > * {
+    width: 100%;
+  }
+}

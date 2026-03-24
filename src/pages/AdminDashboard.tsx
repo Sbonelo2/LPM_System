@@ -107,7 +107,11 @@ const FacilitatorDashboard: React.FC = () => {
       if (!user) return;
       try {
         const [{ data, error }, { data: imageRow }] = await Promise.all([
-          supabase.from("profiles").select("full_name").eq("id", user.id).single(),
+          supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", user.id)
+            .single(),
           supabase
             .from("role_profile_images")
             .select("image_url")
@@ -118,13 +122,15 @@ const FacilitatorDashboard: React.FC = () => {
         if (error) throw error;
         setUserName(
           data?.full_name ||
-            (user.user_metadata?.full_name as string | undefined) ||
+            ((user.user_metadata as { full_name?: string } | undefined)
+              ?.full_name as string | undefined) ||
             "User",
         );
         setProfileImage(imageRow?.image_url || "");
       } catch (err) {
         setUserName(
-          (user.user_metadata?.full_name as string | undefined) || "User",
+          ((user.user_metadata as { full_name?: string } | undefined)
+            ?.full_name as string | undefined) || "User",
         );
         setProfileImage("");
       }
@@ -159,7 +165,15 @@ const FacilitatorDashboard: React.FC = () => {
     <>
       <div className="facilitator-dashboard-content">
         <div className="dashboard-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "15px",
+              flexWrap: "wrap",
+              minWidth: 0,
+            }}
+          >
             <ProfileImageUpload
               currentImage={profileImage}
               onImageChange={() => {}}
