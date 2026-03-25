@@ -237,6 +237,32 @@
   font-size: 0.95rem;
 }
 
+@media (max-width: 768px) {
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .detail-label {
+    min-width: 0;
+  }
+
+  .detail-value {
+    text-align: left;
+    width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .modal-action-btn {
+    width: 100%;
+  }
+}
+
 .approve-btn {
   background: #94c73d;
   color: white;
@@ -319,27 +345,27 @@
     width: 95%;
     margin: 1rem;
   }
-  
+
   .modal-header,
   .modal-body,
   .modal-footer {
     padding: 1rem;
   }
-  
+
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
+
   .detail-label {
     min-width: auto;
   }
-  
+
   .detail-value {
     text-align: left;
   }
-  
+
   .modal-footer {
     flex-direction: column;
   }

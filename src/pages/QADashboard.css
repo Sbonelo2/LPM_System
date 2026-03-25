@@ -261,11 +261,17 @@
   .detail-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 4px;
+    gap: 6px;
+  }
+
+  .status-dropdown {
+    width: 100%;
+    min-width: 0;
   }
 
   .modal-footer {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .modal-action-btn {

@@ -1,4 +1,3 @@
-
 .notifications-page {
   padding: 20px;
   max-width: 90%;
@@ -72,4 +71,32 @@
   gap: 10px;
   align-items: center;
   margin-left: 20px;
+}
+
+@media (max-width: 900px) {
+  .notifications-page {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .notifications-page {
+    padding: 14px 12px;
+  }
+
+  .notifications-main-card {
+    padding: 14px;
+  }
+
+  .notification-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .notification-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
 }

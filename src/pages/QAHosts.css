@@ -103,6 +103,10 @@
     padding: 16px;
   }
 
+  .qa-hosts-grid {
+    grid-template-columns: 1fr;
+  }
+
   .qa-host-modal__row {
     flex-direction: column;
     gap: 4px;

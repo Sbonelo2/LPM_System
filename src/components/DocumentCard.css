@@ -174,7 +174,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 0.2s, opacity 0.2s;
+  transition:
+    color 0.2s,
+    opacity 0.2s;
   opacity: 0.95;
 }
 
@@ -216,6 +218,46 @@
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s;
+}
+
+@media (max-width: 600px) {
+  .document-card {
+    padding: 16px;
+  }
+
+  .document-card__title {
+    font-size: 22px;
+  }
+
+  .document-card__panel {
+    padding: 12px;
+  }
+
+  .document-card__current {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .document-card__thumb {
+    width: 100%;
+    height: 80px;
+    border-radius: 6px;
+  }
+
+  .document-card__file {
+    font-size: 16px;
+    word-break: break-word;
+  }
+
+  .document-card__date {
+    font-size: 14px;
+  }
+
+  .previous-document-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
 }
 
 .document-card__delete-btn:hover {

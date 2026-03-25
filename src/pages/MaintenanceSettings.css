@@ -109,3 +109,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 600px) {
+  .maintenance__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .maintenance__actions > * {
+    width: 100%;
+  }
+}

@@ -146,3 +146,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 600px) {
+  .monitor-grid {
+    gap: 14px;
+  }
+
+  .monitor-health-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .monitor-metric-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

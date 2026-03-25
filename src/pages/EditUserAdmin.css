@@ -60,7 +60,20 @@
 }
 
 @media (max-width: 720px) {
+  .edit-user-admin__content {
+    padding: 16px 12px 28px;
+  }
+
   .edit-user-admin__card {
     padding: 28px 20px;
+  }
+
+  .edit-user-admin__actions {
+    justify-content: stretch;
+  }
+
+  .edit-user-admin__edit-btn {
+    width: 100%;
+    min-width: 0;
   }
 }

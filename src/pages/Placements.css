@@ -13,3 +13,15 @@
 .placements-table {
   width: 100%;
 }
+
+@media (max-width: 600px) {
+  .placements-page {
+    padding: 14px 12px;
+  }
+
+  .placements-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

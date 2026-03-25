@@ -1,0 +1,14 @@
+.qa-documents-page {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+@media (max-width: 600px) {
+  .qa-documents-page {
+    padding: 14px 12px;
+  }
+
+  .qa-documents-page .table-container {
+    overflow-x: auto;
+  }
+}

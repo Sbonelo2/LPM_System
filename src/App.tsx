@@ -556,6 +556,9 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const pathname = `${location.pathname}${location.hash}`;
   const forceSidebar =
     pathname.includes("/coordinator") ||
@@ -565,14 +568,75 @@ const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     pathname.includes("/facilitator") ||
     pathname.includes("/super-admin");
 
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 900px)");
+
+    const apply = () => {
+      setIsMobile(mql.matches);
+      if (!mql.matches) {
+        setSidebarOpen(false);
+      }
+    };
+
+    apply();
+    mql.addEventListener("change", apply);
+    return () => {
+      mql.removeEventListener("change", apply);
+    };
+  }, []);
+
   if (!user && !forceSidebar) {
     return <>{children}</>;
   }
 
   return (
-    <div style={{ display: "flex" }}>
-      <SideBar />
-      <main style={{ flex: 1, overflow: "auto" }}>{children}</main>
+    <div style={{ display: "flex", minHeight: "100vh" }}>
+      <SideBar
+        isMobile={isMobile}
+        isOpen={!isMobile || sidebarOpen}
+        onRequestClose={() => setSidebarOpen(false)}
+      />
+      <main
+        style={{
+          flex: 1,
+          overflow: "auto",
+          width: "100%",
+          minWidth: 0,
+        }}
+      >
+        {isMobile && (
+          <div
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 10,
+              background: "#fff",
+              borderBottom: "1px solid #eee",
+              padding: "10px 12px",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid #ddd",
+                background: "white",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
+            >
+              Menu
+            </button>
+            <div style={{ fontWeight: 800, color: "#111" }}>LPM System</div>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 };
