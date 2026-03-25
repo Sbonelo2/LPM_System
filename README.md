@@ -1,3 +1,4 @@
+<img src="https://socialify.git.ci/Sbonelo2/LPM_System/image?language=1&owner=1&name=1&stargazers=1&theme=Light" alt="LPM_System" width="640" height="320" />
 # LPM System - Learner Placement Management
 
 A comprehensive Learner Placement Management system built with React, TypeScript, and Supabase.
