@@ -38,7 +38,7 @@ A comprehensive Learner Placement Management system built with React, TypeScript
 ### Installation
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/Sbonelo2/LPM_System.git
 cd lpm-system
 
 # Install dependencies
